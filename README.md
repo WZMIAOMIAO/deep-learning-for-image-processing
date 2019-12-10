@@ -15,7 +15,7 @@
     * VggNet
     * GoogLeNet
     * ResNet
-* 目标识别跟踪
+* 目标识别检测
     * Faster RCNN
     * SSD
     * LOYO v3
@@ -30,4 +30,6 @@
 * torchvision 0.4.2 (pip package)
 * tensorflow 2.0.0rc1 (pip package)
 
-[你可能遇到的问题](./summary_problem.md)
+[你可能遇到的问题](./summary_problem.md)    
+如果有什么问题，也可以到我的CSDN中一起讨论。   
+https://blog.csdn.net/qq_37541097/article/details/103482003
