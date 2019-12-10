@@ -79,12 +79,6 @@ class Bottleneck(layers.Layer):
         return x
 
 
-# class make_block_layer(layers.Layer):
-#
-#     def __init__(self, block, in_channel, channel, block_num, name, strides=1, **kwargs):
-#         super(make_block_layer, self).__init__(**kwargs)
-
-
 def _make_layer(block, in_channel, channel, block_num, name, strides=1):
     downsample = None
     if strides != 1 or in_channel != channel * block.expansion:
