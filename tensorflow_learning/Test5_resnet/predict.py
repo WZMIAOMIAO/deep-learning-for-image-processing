@@ -39,7 +39,7 @@ model = tf.keras.Sequential([feature,
                              tf.keras.layers.Dense(1024),
                              tf.keras.layers.Dropout(rate=0.2),
                              tf.keras.layers.Dense(5)])
-model.build((None, 224, 224, 3))  # when using subclass model
+# model.build((None, 224, 224, 3))  # when using subclass model
 model.load_weights('./save_weights/resNet_5.ckpt')
 result = model.predict(img)
 prediction = tf.keras.backend.softmax(result)

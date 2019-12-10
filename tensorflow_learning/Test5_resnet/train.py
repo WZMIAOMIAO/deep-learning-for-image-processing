@@ -73,7 +73,7 @@ model = tf.keras.Sequential([feature,
                              tf.keras.layers.Dense(1024),
                              tf.keras.layers.Dropout(rate=0.2),
                              tf.keras.layers.Dense(5)])
-model.build((None, 224, 224, 3))
+# model.build((None, 224, 224, 3))
 model.summary()
 
 # using keras low level api for training
