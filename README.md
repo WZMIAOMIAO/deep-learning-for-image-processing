@@ -25,7 +25,7 @@
 ## 所需环境
 * Anaconda3（建议使用）
 * python3.6
-* pycharm 2019.3 EAP 2版本 (IDE)
+* pycharm 2019.3 (IDE)
 * pytorch 1.3.1 (pip package)
 * torchvision 0.4.2 (pip package)
 * tensorflow 2.0.0rc1 (pip package)

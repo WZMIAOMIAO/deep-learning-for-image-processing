@@ -1,6 +1,4 @@
 from tensorflow.keras import layers, Model, Sequential
-import tensorflow.keras.applications.vgg16 as vgg
-import torchvision.models.resnet
 
 
 class BasicBlock(layers.Layer):
