@@ -1,0 +1,11 @@
+##ignore this file##
+*.idea
+__pycache__
+*.zip
+flower_data
+*.h5
+*.pth
+*.jpg
+*.ckpt.*
+*.ckpt
+*.config
