@@ -55,21 +55,21 @@ class Bottleneck(layers.Layer):
         self.downsample = downsample
         self.add = layers.Add()
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(self, inputs, **kwargs):
         identity = inputs
         if self.downsample is not None:
-            identity = self.downsample(inputs, training=training)
+            identity = self.downsample(inputs)
 
         x = self.conv1(inputs)
-        x = self.bn1(x, training=training)
+        x = self.bn1(x)
         x = self.relu(x)
 
         x = self.conv2(x)
-        x = self.bn2(x, training=training)
+        x = self.bn2(x)
         x = self.relu(x)
 
         x = self.conv3(x)
-        x = self.bn3(x, training=training)
+        x = self.bn3(x)
 
         x = self.add([x, identity])
         x = self.relu(x)
