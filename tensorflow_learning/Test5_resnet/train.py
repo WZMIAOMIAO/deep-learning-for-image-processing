@@ -141,4 +141,4 @@ for epoch in range(1, epochs + 1):
                           test_accuracy.result() * 100))
     if test_loss.result() < best_test_loss:
         best_test_loss = test_loss.result()
-        model.save_weights("./save_weights/resNet_{}.ckpt".format(epoch), save_format='tf')
+        model.save_weights("./save_weights/resNet_{}.ckpt".format(epoch), save_format="tf")

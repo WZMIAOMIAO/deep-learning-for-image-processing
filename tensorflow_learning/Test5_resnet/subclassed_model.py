@@ -1,5 +1,5 @@
 from tensorflow.keras import layers, Model, Sequential
-import tensorflow.keras.applications.mobilenet_v2
+
 
 class Bottleneck(layers.Layer):
     expansion = 4
@@ -62,7 +62,7 @@ class ResNet(Model):
             self.fc = layers.Dense(num_classes, name="logits")
             self.softmax = layers.Softmax()
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs):
         x = self.conv1(inputs)
         x = self.bn1(x)
         x = self.relu1(x)

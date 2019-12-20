@@ -33,6 +33,7 @@ except Exception as e:
     exit(-1)
 
 feature = resnet101(num_classes=5, include_top=False)
+feature.trainable = False
 model = tf.keras.Sequential([feature,
                              tf.keras.layers.GlobalAvgPool2D(),
                              tf.keras.layers.Dropout(rate=0.2),
@@ -40,7 +41,7 @@ model = tf.keras.Sequential([feature,
                              tf.keras.layers.Dropout(rate=0.2),
                              tf.keras.layers.Dense(5)])
 # model.build((None, 224, 224, 3))  # when using subclass model
-model.load_weights('./save_weights/resNet_5.ckpt')
+model.load_weights('./save_weights/resNet_1.h5', by_name=True)
 result = model.predict(img)
 prediction = tf.keras.backend.softmax(result)
 predict_class = np.argmax(result)
