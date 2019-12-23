@@ -10,6 +10,7 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
+# 50000张训练图片
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=36,
@@ -51,8 +52,8 @@ for epoch in range(5):  # loop over the dataset multiple times
         if step % 500 == 499:    # print every 500 mini-batches
             with torch.no_grad():
                 outputs = net(test_image)  # [batch, 10]
-                predict_y = torch.max(outputs, dim=1)[1].data.numpy()
-                accuracy = (predict_y == test_label.data.numpy()).astype(int).sum() / float(test_label.size(0))
+                predict_y = torch.max(outputs, dim=1)[1]
+                accuracy = (predict_y == test_label).sum().item() / test_label.size(0)
 
                 print('[%d, %5d] train_loss: %.3f  test_accuracy: %.3f' %
                       (epoch + 1, step + 1, running_loss / 500, accuracy))
