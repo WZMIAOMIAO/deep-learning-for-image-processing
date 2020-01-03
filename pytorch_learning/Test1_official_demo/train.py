@@ -5,24 +5,24 @@ from model import LeNet
 import torch.optim as optim
 import torchvision.transforms as transforms
 
-
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 # 50000张训练图片
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+trainset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                         download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=36,
-                                          shuffle=True, num_workers=0)
+                                          shuffle=False, num_workers=0)
 
 # 10000张测试图片
 testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=False, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=10000,
+testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                          shuffle=False, num_workers=0)
 test_data_iter = iter(testloader)
 test_image, test_label = test_data_iter.next()
+
 
 # classes = ('plane', 'car', 'bird', 'cat',
 #            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -40,7 +40,6 @@ for epoch in range(5):  # loop over the dataset multiple times
 
         # zero the parameter gradients
         optimizer.zero_grad()
-
         # forward + backward + optimize
         outputs = net(inputs)
         loss = loss_function(outputs, labels)

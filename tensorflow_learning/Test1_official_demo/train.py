@@ -62,6 +62,11 @@ def test_step(images, labels):
 EPOCHS = 5
 
 for epoch in range(EPOCHS):
+    train_loss.reset_states()        # clear history info
+    train_accuracy.reset_states()    # clear history info
+    test_loss.reset_states()         # clear history info
+    test_accuracy.reset_states()     # clear history info
+    
     for images, labels in train_ds:
         train_step(images, labels)
 
