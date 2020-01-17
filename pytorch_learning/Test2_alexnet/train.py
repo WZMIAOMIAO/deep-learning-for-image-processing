@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torchvision import transforms, datasets
+from torchvision import transforms, datasets, utils
 import matplotlib.pyplot as plt
 import numpy as np
 import torch.optim as optim
@@ -10,6 +10,7 @@ import json
 import time
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 data_transform = {
     "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -34,26 +35,29 @@ json_str = json.dumps(cla_dict, indent=4)
 with open('class_indices.json', 'w') as json_file:
     json_file.write(json_str)
 
-batch_size = 64
+batch_size = 32
 train_loader = torch.utils.data.DataLoader(train_dataset,
                                            batch_size=batch_size, shuffle=True,
-                                           num_workers=16)
+                                           num_workers=0)
 
 validate_dataset = datasets.ImageFolder(root=image_path + "/val",
                                         transform=data_transform["val"])
 val_num = len(validate_dataset)
 validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                               batch_size=batch_size, shuffle=False,
-                                              num_workers=16)
+                                              num_workers=0)
 
 # test_data_iter = iter(validate_loader)
 # test_image, test_label = test_data_iter.next()
-
+#
 # def imshow(img):
 #     img = img / 2 + 0.5  # unnormalize
 #     npimg = img.numpy()
 #     plt.imshow(np.transpose(npimg, (1, 2, 0)))
 #     plt.show()
+#
+# print(' '.join('%5s' % flower_list[test_label[j]] for j in range(4)))
+# imshow(utils.make_grid(test_image))
 
 
 net = AlexNet(num_classes=5, init_weights=True)
@@ -72,8 +76,6 @@ for epoch in range(15):
     t1 = time.perf_counter()
     for step, data in enumerate(train_loader, start=0):
         images, labels = data
-        # imshow(torchvision.utils.make_grid(images))
-        # print(' '.join('%5s' % flower_set[labels[j]] for j in range(8)))
         optimizer.zero_grad()
         outputs = net(images.to(device))
         loss = loss_function(outputs, labels.to(device))
