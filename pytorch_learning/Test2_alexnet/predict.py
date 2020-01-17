@@ -37,5 +37,5 @@ with torch.no_grad():
     output = torch.squeeze(model(img))
     predict = torch.softmax(output, dim=0)
     predict_cla = torch.argmax(predict).numpy()
-print(class_indict[str(predict_cla)])
+print(class_indict[str(predict_cla)], predict[predict_cla].item())
 plt.show()
