@@ -11,7 +11,7 @@ class MyModel(Model):
         self.d2 = Dense(10, activation='softmax')
 
     def call(self, x):
-        x = self.conv1(x)
-        x = self.flatten(x)
-        x = self.d1(x)
-        return self.d2(x)
+        x = self.conv1(x)      # input[batch, 28, 28, 1] output[batch, 26, 26, 32]
+        x = self.flatten(x)    # output [batch, 21632]
+        x = self.d1(x)         # output [batch, 128]
+        return self.d2(x)      # output [batch, 10]

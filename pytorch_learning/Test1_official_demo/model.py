@@ -24,3 +24,4 @@ class LeNet(nn.Module):
         x = self.fc3(x)              # output(10)
         return x
 
+
