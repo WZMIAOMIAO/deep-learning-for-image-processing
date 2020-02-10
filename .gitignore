@@ -9,3 +9,4 @@ flower_data
 *.ckpt.*
 *.ckpt
 *.config
+data

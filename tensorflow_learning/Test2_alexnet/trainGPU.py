@@ -134,7 +134,7 @@ for epoch in range(1, epochs+1):
                           test_loss.result(),
                           test_accuracy.result() * 100))
     if test_loss.result() < best_test_loss:
-        model.save_weights("./save_weights/myAlex_{}.ckpt".format(epoch), save_format='tf')
+        model.save_weights("./save_weights/myAlex.ckpt".format(epoch), save_format='tf')
 
 # # using keras high level api for training
 # model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),

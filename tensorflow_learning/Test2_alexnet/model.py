@@ -16,9 +16,9 @@ def AlexNet_v1(im_height=224, im_width=224, class_num=1000):
 
     x = layers.Flatten()(x)                         # output(None, 6*6*128)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(1024, activation="relu")(x)    # output(None, 2048)
+    x = layers.Dense(2048, activation="relu")(x)    # output(None, 2048)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(128, activation="relu")(x)    # output(None, 2048)
+    x = layers.Dense(2048, activation="relu")(x)    # output(None, 2048)
     x = layers.Dense(class_num)(x)                  # output(None, 5)
     predict = layers.Softmax()(x)
 
@@ -50,7 +50,7 @@ class AlexNet_v2(Model):
             layers.Softmax()
         ])
 
-    def call(self, inputs):
+    def call(self, inputs, **kwargs):
         x = self.features(inputs)
         x = self.flatten(x)
         x = self.classifier(x)

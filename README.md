@@ -26,9 +26,9 @@
 * Anaconda3（建议使用）
 * python3.6
 * pycharm 2019.3 (IDE)
-* pytorch 1.3.1 (pip package)
+* pytorch 1.3 (pip package)
 * torchvision 0.4.2 (pip package)
-* tensorflow 2.0.0rc1 (pip package)
+* tensorflow 2.1 (pip package)
 
 [你可能遇到的问题](./summary_problem.md)     
 

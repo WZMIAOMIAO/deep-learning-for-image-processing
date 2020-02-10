@@ -10,10 +10,14 @@ image_path = data_root + "/data_set/flower_data/"  # flower data set path
 train_dir = image_path + "train"
 validation_dir = image_path + "val"
 
+# create direction for saving weights
+if not os.path.exists("save_weights"):
+    os.makedirs("save_weights")
+
 im_height = 224
 im_width = 224
 batch_size = 32
-epochs = 2
+epochs = 10
 
 # data generator with data augmentation
 train_image_generator = ImageDataGenerator(rescale=1. / 255,
@@ -39,15 +43,15 @@ with open('class_indices.json', 'w') as json_file:
 
 val_data_gen = validation_image_generator.flow_from_directory(directory=validation_dir,
                                                               batch_size=batch_size,
-                                                              shuffle=True,
+                                                              shuffle=False,
                                                               target_size=(im_height, im_width),
                                                               class_mode='categorical')
 total_val = val_data_gen.n
 
-# sample_training_images, sample_training_labels = next(train_data_gen)
-
-
-# This function will plot images in the form of a grid with 1 row and 5 columns where images are placed in each column.
+# sample_training_images, sample_training_labels = next(train_data_gen)  # label is one-hot coding
+#
+#
+# # This function will plot images in the form of a grid with 1 row and 5 columns where images are placed in each column.
 # def plotImages(images_arr):
 #     fig, axes = plt.subplots(1, 5, figsize=(20, 20))
 #     axes = axes.flatten()
@@ -56,8 +60,8 @@ total_val = val_data_gen.n
 #         ax.axis('off')
 #     plt.tight_layout()
 #     plt.show()
-
-
+#
+#
 # plotImages(sample_training_images[:5])
 
 model = AlexNet_v1(im_height=im_height, im_width=im_width, class_num=5)
@@ -70,7 +74,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
               metrics=["accuracy"])
 
-callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myAlex_{epoch}.h5',
+callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myAlex.h5',
                                                 save_best_only=True,
                                                 save_weights_only=True,
                                                 monitor='val_loss')]
@@ -82,6 +86,31 @@ history = model.fit(x=train_data_gen,
                     validation_data=val_data_gen,
                     validation_steps=total_val // batch_size,
                     callbacks=callbacks)
+
+# plot loss and accuracy image
+history_dict = history.history
+train_loss = history_dict["loss"]
+train_accuracy = history_dict["accuracy"]
+val_loss = history_dict["val_loss"]
+val_accuracy = history_dict["val_accuracy"]
+
+# figure 1
+plt.figure()
+plt.plot(range(epochs), train_loss, label='train_loss')
+plt.plot(range(epochs), val_loss, label='val_loss')
+plt.legend()
+plt.xlabel('epochs')
+plt.ylabel('loss')
+
+# figure 2
+plt.figure()
+plt.plot(range(epochs), train_accuracy, label='train_accuracy')
+plt.plot(range(epochs), val_accuracy, label='val_accuracy')
+plt.legend()
+plt.xlabel('epochs')
+plt.ylabel('accuracy')
+plt.show()
+
 
 # history = model.fit_generator(generator=train_data_gen,
 #                               steps_per_epoch=total_train // batch_size,
@@ -104,7 +133,7 @@ history = model.fit(x=train_data_gen,
 # @tf.function
 # def train_step(images, labels):
 #     with tf.GradientTape() as tape:
-#         predictions = model(images)
+#         predictions = model(images, training=True)
 #         loss = loss_object(labels, predictions)
 #     gradients = tape.gradient(loss, model.trainable_variables)
 #     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -115,7 +144,7 @@ history = model.fit(x=train_data_gen,
 #
 # @tf.function
 # def test_step(images, labels):
-#     predictions = model(images)
+#     predictions = model(images, training=False)
 #     t_loss = loss_object(labels, predictions)
 #
 #     test_loss(t_loss)
@@ -143,4 +172,4 @@ history = model.fit(x=train_data_gen,
 #                           test_loss.result(),
 #                           test_accuracy.result() * 100))
 #     if test_loss.result() < best_test_loss:
-#         model.save_weights("./save_weights/myAlex_{}.ckpt".format(epoch), save_format='tf')
+#        model.save_weights("./save_weights/myAlex.ckpt", save_format='tf')

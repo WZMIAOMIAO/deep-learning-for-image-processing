@@ -28,8 +28,8 @@ except Exception as e:
     exit(-1)
 
 model = AlexNet_v1(class_num=5)
-model.load_weights("./save_weights/myAlex_6.h5")
-result = model.predict(img)
+model.load_weights("./save_weights/myAlex.h5")
+result = np.squeeze(model.predict(img))
 predict_class = np.argmax(result)
-print(class_indict[str(predict_class)])
+print(class_indict[str(predict_class)], result[predict_class])
 plt.show()
