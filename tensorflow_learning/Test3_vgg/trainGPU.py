@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from model import AlexNet_v1, AlexNet_v2
+from model import vgg
 import tensorflow as tf
 import json
 import os
@@ -69,14 +69,12 @@ val_dataset = val_dataset.map(process_path, num_parallel_calls=tf.data.experimen
                          .repeat().batch(batch_size)
 
 # 实例化模型
-model = AlexNet_v1(im_height=im_height, im_width=im_width, class_num=5)
-# model = AlexNet_v2(class_num=5)
-# model.build((batch_size, 224, 224, 3))  # when using subclass model
+model = vgg("vgg16", 224, 224, 5)
 model.summary()
 
 # using keras low level api for training
 loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.0005)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 
 train_loss = tf.keras.metrics.Mean(name='train_loss')
 train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
@@ -134,14 +132,14 @@ for epoch in range(1, epochs+1):
                           test_loss.result(),
                           test_accuracy.result() * 100))
     if test_loss.result() < best_test_loss:
-        model.save_weights("./save_weights/myAlex.ckpt".format(epoch), save_format='tf')
+        model.save_weights("./save_weights/myVGG.ckpt".format(epoch), save_format='tf')
 
 # # using keras high level api for training
 # model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),
 #               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
 #               metrics=["accuracy"])
 #
-# callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myAlex_{epoch}.h5',
+# callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myVGG_{epoch}.h5',
 #                                                 save_best_only=True,
 #                                                 save_weights_only=True,
 #                                                 monitor='val_loss')]

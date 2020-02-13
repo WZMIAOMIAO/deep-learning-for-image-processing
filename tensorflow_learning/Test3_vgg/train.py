@@ -46,8 +46,6 @@ val_data_gen = train_image_generator.flow_from_directory(directory=validation_di
 total_val = val_data_gen.n
 
 model = vgg("vgg16", 224, 224, 5)
-# model = AlexNet_v2(class_num=5)
-# model.build((batch_size, 224, 224, 3))  # when using subclass model
 model.summary()
 
 # using keras high level api for training
