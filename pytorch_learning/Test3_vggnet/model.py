@@ -3,15 +3,17 @@ import torch
 
 
 class VGG(nn.Module):
-    def __init__(self, features, num_classes=1000, init_weights=False):
+    def __init__(self, features, class_num=1000, init_weights=False):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.2),
-            nn.Linear(512*7*7, 1024),
+            nn.Dropout(p=0.5),
+            nn.Linear(512*7*7, 2048),
             nn.ReLU(True),
-            nn.Dropout(p=0.2),
-            nn.Linear(1024, num_classes)
+            nn.Dropout(p=0.5),
+            nn.Linear(2048, 2048),
+            nn.ReLU(True),
+            nn.Linear(2048, class_num)
         )
         if init_weights:
             self._initialize_weights()
@@ -28,13 +30,13 @@ class VGG(nn.Module):
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                nn.init.xavier_uniform_(m.weight)
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                # nn.init.xavier_uniform_(m.weight)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                # nn.init.normal_(m.weight, 0, 0.01)
+                # nn.init.xavier_uniform_(m.weight)
+                nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
 

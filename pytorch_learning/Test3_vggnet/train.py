@@ -1,12 +1,13 @@
-import torch
 import torch.nn as nn
 from torchvision import transforms, datasets
-import torchvision
 import json
 import os
 import torch.optim as optim
 from model import vgg
 import torch
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 data_transform = {
     "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -25,9 +26,9 @@ train_dataset = datasets.ImageFolder(root=image_path+"train",
                                      transform=data_transform["train"])
 train_num = len(train_dataset)
 
-# ['daisy', 'dandelion', 'roses', 'sunflower', 'tulips']
-flower_list = train_dataset.classes
-cla_dict = dict((key, val) for key, val in enumerate(flower_list))
+# {'daisy':0, 'dandelion':1, 'roses':2, 'sunflower':3, 'tulips':4}
+flower_list = train_dataset.class_to_idx
+cla_dict = dict((val, key) for key, val in flower_list.items())
 # write dict into json file
 json_str = json.dumps(cla_dict, indent=4)
 with open('class_indices.json', 'w') as json_file:
@@ -49,22 +50,22 @@ validate_loader = torch.utils.data.DataLoader(validate_dataset,
 # test_image, test_label = test_data_iter.next()
 
 model_name = "vgg16"
-net = vgg(model_name=model_name, num_classes=5)
+net = vgg(model_name=model_name, class_num=5, init_weights=True)
+net.to(device)
 loss_function = nn.CrossEntropyLoss()
-optimizer = optim.Adam(net.parameters(), lr=0.0002)
+optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
 best_acc = 0.0
 save_path = './{}Net.pth'.format(model_name)
-for epoch in range(20):
-
+for epoch in range(30):
     # train
     net.train()
     running_loss = 0.0
     for step, data in enumerate(train_loader, start=0):
         images, labels = data
         optimizer.zero_grad()
-        outputs = net(images)
-        loss = loss_function(outputs, labels)
+        outputs = net(images.to(device))
+        loss = loss_function(outputs, labels.to(device))
         loss.backward()
         optimizer.step()
 
@@ -84,9 +85,9 @@ for epoch in range(20):
         for data_test in validate_loader:
             test_images, test_labels = data_test
             optimizer.zero_grad()
-            outputs = net(test_images)
+            outputs = net(test_images.to(device))
             predict_y = torch.max(outputs, dim=1)[1]
-            acc += (predict_y == test_labels).sum().item()
+            acc += (predict_y == test_labels.to(device)).sum().item()
         accurate_test = acc / val_num
         if accurate_test > best_acc:
             best_acc = accurate_test
