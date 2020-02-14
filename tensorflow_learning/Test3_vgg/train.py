@@ -58,9 +58,10 @@ callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myAlex_
                                                 save_weights_only=True,
                                                 monitor='val_loss')]
 
-history = model.fit_generator(generator=train_data_gen,
-                              steps_per_epoch=total_train // batch_size,
-                              epochs=epochs,
-                              validation_data=val_data_gen,
-                              validation_steps=total_val // batch_size,
-                              callbacks=callbacks)
+# tensorflow2.1 recommend to using fit
+history = model.fit(x=train_data_gen,
+                    steps_per_epoch=total_train // batch_size,
+                    epochs=epochs,
+                    validation_data=val_data_gen,
+                    validation_steps=total_val // batch_size,
+                    callbacks=callbacks)
