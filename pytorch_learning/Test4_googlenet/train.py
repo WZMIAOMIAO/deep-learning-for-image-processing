@@ -47,8 +47,8 @@ validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                               batch_size=batch_size, shuffle=False,
                                               num_workers=0)
 
-test_data_iter = iter(validate_loader)
-test_image, test_label = test_data_iter.next()
+# test_data_iter = iter(validate_loader)
+# test_image, test_label = test_data_iter.next()
 
 # net = torchvision.models.googlenet(num_classes=5)
 # model_dict = net.state_dict()
@@ -66,7 +66,7 @@ optimizer = optim.Adam(net.parameters(), lr=0.0003)
 
 best_acc = 0.0
 save_path = './googleNet.pth'
-for epoch in range(2):
+for epoch in range(30):
     # train
     net.train()
     running_loss = 0.0
