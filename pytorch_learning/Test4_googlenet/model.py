@@ -1,14 +1,11 @@
 import torch.nn as nn
 import torch
-from collections import namedtuple
 import torch.nn.functional as F
 
-_GoogLeNetOutputs = namedtuple('GoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
 
-
-class googleNet(nn.Module):
+class GoogLeNet(nn.Module):
     def __init__(self, num_classes=1000, aux_logits=True, init_weights=False):
-        super(googleNet, self).__init__()
+        super(GoogLeNet, self).__init__()
         self.aux_logits = aux_logits
 
         self.conv1 = BasicConv2d(3, 64, kernel_size=7, stride=2, padding=3)
@@ -36,7 +33,7 @@ class googleNet(nn.Module):
             self.aux2 = InceptionAux(528, num_classes)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.4)
         self.fc = nn.Linear(1024, num_classes)
         if init_weights:
             self._initialize_weights()
@@ -91,7 +88,7 @@ class googleNet(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:   # eval model lose this layer
-            return _GoogLeNetOutputs(x, aux2, aux1)
+            return x, aux2, aux1
         return x
 
     def _initialize_weights(self):
@@ -122,7 +119,7 @@ class Inception(nn.Module):
         )
 
         self.branch4 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
             BasicConv2d(in_channels, pool_proj, kernel_size=1)
         )
 
@@ -140,7 +137,7 @@ class InceptionAux(nn.Module):
     def __init__(self, in_channels, num_classes):
         super(InceptionAux, self).__init__()
         self.averagePool = nn.AvgPool2d(kernel_size=5, stride=3)
-        self.conv = BasicConv2d(in_channels, 128, kernel_size=1)
+        self.conv = BasicConv2d(in_channels, 128, kernel_size=1)  # output[batch, 128, 4, 4]
 
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
@@ -152,14 +149,13 @@ class InceptionAux(nn.Module):
         x = self.conv(x)
         # N x 128 x 4 x 4
         x = torch.flatten(x, 1)
-        x = F.dropout(x, 0.2, training=self.training)
+        x = F.dropout(x, 0.5, training=self.training)
         # N x 2048
         x = F.relu(self.fc1(x), inplace=True)
-        x = F.dropout(x, 0.2, training=self.training)
+        x = F.dropout(x, 0.5, training=self.training)
         # N x 1024
         x = self.fc2(x)
         # N x num_classes
-
         return x
 
 
@@ -173,5 +169,3 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.relu(x)
         return x
-    
-    

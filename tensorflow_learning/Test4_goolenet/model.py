@@ -104,10 +104,10 @@ class InceptionAux(layers.Layer):
         x = self.conv(x)
         # N x 128 x 4 x 4
         x = layers.Flatten()(x)
-        x = layers.Dropout(rate=0.2)(x)
+        x = layers.Dropout(rate=0.5)(x)
         # N x 2048
         x = self.fc1(x)
-        x = layers.Dropout(rate=0.2)(x)
+        x = layers.Dropout(rate=0.5)(x)
         # N x 1024
         x = self.fc2(x)
         # N x num_classes

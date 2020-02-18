@@ -6,8 +6,10 @@ import json
 import matplotlib.pyplot as plt
 import os
 import torch.optim as optim
-from model import googleNet
-import copy
+from model import GoogLeNet
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 data_transform = {
     "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -25,9 +27,9 @@ train_dataset = datasets.ImageFolder(root=image_path + "train",
                                      transform=data_transform["train"])
 train_num = len(train_dataset)
 
-# ['daisy', 'dandelion', 'roses', 'sunflower', 'tulips']
-flower_list = train_dataset.classes
-cla_dict = dict((key, val) for key, val in enumerate(flower_list))
+# {'daisy':0, 'dandelion':1, 'roses':2, 'sunflower':3, 'tulips':4}
+flower_list = train_dataset.class_to_idx
+cla_dict = dict((val, key) for key, val in flower_list.items())
 # write dict into json file
 json_str = json.dumps(cla_dict, indent=4)
 with open('class_indices.json', 'w') as json_file:
@@ -57,31 +59,36 @@ test_image, test_label = test_data_iter.next()
 # pretrain_dict = {k: v for k, v in pretrain_model.items() if k not in del_list}
 # model_dict.update(pretrain_dict)
 # net.load_state_dict(model_dict)
-net = googleNet(num_classes=5, aux_logits=True)
+net = GoogLeNet(num_classes=5, aux_logits=True, init_weights=True)
+net.to(device)
 loss_function = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.0003)
 
-best_model_wts = copy.deepcopy(net.state_dict())
 best_acc = 0.0
+save_path = './googleNet.pth'
 for epoch in range(2):
     # train
     net.train()
     running_loss = 0.0
     for step, data in enumerate(train_loader, start=0):
         images, labels = data
-        # imshow(torchvision.utils.make_grid(images))
-        # print(' '.join('%5s' % flower_set[labels[j]] for j in range(8)))
         optimizer.zero_grad()
-        logits, aux_logits2, aux_logits1 = net(images)
-        loss0 = loss_function(logits, labels)
-        loss1 = loss_function(aux_logits1, labels)
-        loss2 = loss_function(aux_logits2, labels)
+        logits, aux_logits2, aux_logits1 = net(images.to(device))
+        loss0 = loss_function(logits, labels.to(device))
+        loss1 = loss_function(aux_logits1, labels.to(device))
+        loss2 = loss_function(aux_logits2, labels.to(device))
         loss = loss0 + loss1 * 0.3 + loss2 * 0.3
         loss.backward()
         optimizer.step()
 
         # print statistics
         running_loss += loss.item()
+        # print train process
+        rate = (step + 1) / len(train_loader)
+        a = "*" * int(rate * 50)
+        b = "." * int((1 - rate) * 50)
+        print("\rtrain loss: {:^3.0f}%[{}->{}]{:.3f}".format(int(rate * 100), a, b, loss), end="")
+    print()
 
     # validate
     net.eval()
@@ -89,16 +96,13 @@ for epoch in range(2):
     with torch.no_grad():
         for data_test in validate_loader:
             test_images, test_labels = data_test
-            outputs = net(test_images)  # eval model only have last output layer
+            outputs = net(test_images.to(device))  # eval model only have last output layer
             predict_y = torch.max(outputs, dim=1)[1]
-            acc += (predict_y == test_labels).sum().item()
+            acc += (predict_y == test_labels.to(device)).sum().item()
         accurate_test = acc / val_num
         if accurate_test > best_acc:
-            best_acc = accurate_test
-            best_model_wts = copy.deepcopy(net.state_dict())
+            torch.save(net.state_dict(), save_path)
         print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
               (epoch + 1, running_loss / step, accurate_test))
 
 print('Finished Training')
-save_path = './googleNet.pth'
-torch.save(best_model_wts, save_path)

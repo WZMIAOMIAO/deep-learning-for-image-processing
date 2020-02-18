@@ -1,5 +1,5 @@
 import torch
-from model import googleNet
+from model import GoogLeNet
 from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
@@ -27,7 +27,7 @@ except Exception as e:
     exit(-1)
 
 # create model
-model = googleNet(num_classes=5, aux_logits=False)
+model = GoogLeNet(num_classes=5, aux_logits=False)
 # load model weights
 model_weight_path = "./googleNet.pth"
 missing_keys, unexpected_keys = model.load_state_dict(torch.load(model_weight_path), strict=False)

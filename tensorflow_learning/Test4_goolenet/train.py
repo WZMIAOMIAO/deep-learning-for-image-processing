@@ -16,9 +16,9 @@ batch_size = 32
 epochs = 15
 
 # data generator with data augmentation
-train_image_generator = ImageDataGenerator(rescale=1. / 255,
+train_image_generator = ImageDataGenerator(rescale=((1. / 255) - 0.5) / 0.5,
                                            horizontal_flip=True)
-validation_image_generator = ImageDataGenerator(rescale=1. / 255)
+validation_image_generator = ImageDataGenerator(rescale=((1. / 255) - 0.5) / 0.5)
 
 train_data_gen = train_image_generator.flow_from_directory(directory=train_dir,
                                                            batch_size=batch_size,
@@ -49,32 +49,9 @@ model = GoogLeNet(im_height=im_height, im_width=im_width, class_num=5, aux_logit
 # model.build((batch_size, 224, 224, 3))  # when using subclass model
 model.summary()
 
-# using keras high level api for training
-# model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-#               loss={"aux1": tf.keras.losses.CategoricalCrossentropy(from_logits=False),
-#                     "aux2": tf.keras.losses.CategoricalCrossentropy(from_logits=False),
-#                     "output": tf.keras.losses.CategoricalCrossentropy(from_logits=False)},
-#               loss_weights={"aux1": 0.3,
-#                             "aux2": 0.3,
-#                             "output": 1.0},
-#               metrics=["accuracy"])
-#
-# callbacks = [tf.keras.callbacks.ModelCheckpoint(
-#     filepath='./save_weights/myAlex_{epoch}.h5',
-#     save_best_only=True,
-#     save_weights_only=True,
-#     monitor='val_loss')]
-#
-# history = model.fit_generator(generator=train_data_gen,
-#                               steps_per_epoch=total_train // batch_size,
-#                               epochs=epochs,
-#                               validation_data=val_data_gen,
-#                               validation_steps=total_val // batch_size,
-#                               callbacks=callbacks)
-
 # using keras low level api for training
 loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0003)
 
 train_loss = tf.keras.metrics.Mean(name='train_loss')
 train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
