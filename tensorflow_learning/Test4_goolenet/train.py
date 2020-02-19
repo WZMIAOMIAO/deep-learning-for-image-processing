@@ -10,6 +10,10 @@ image_path = data_root + "/data_set/flower_data/"  # flower data set path
 train_dir = image_path + "train"
 validation_dir = image_path + "val"
 
+# create direction for saving weights
+if not os.path.exists("save_weights"):
+    os.makedirs("save_weights")
+
 im_height = 224
 im_width = 224
 batch_size = 32
@@ -45,7 +49,6 @@ val_data_gen = train_image_generator.flow_from_directory(directory=validation_di
 total_val = val_data_gen.n
 
 model = GoogLeNet(im_height=im_height, im_width=im_width, class_num=5, aux_logits=True)
-# model = AlexNet_v2(class_num=5)
 # model.build((batch_size, 224, 224, 3))  # when using subclass model
 model.summary()
 
@@ -111,4 +114,4 @@ for epoch in range(1, epochs+1):
                           test_accuracy.result() * 100))
     if test_loss.result() < best_test_loss:
         best_test_loss = test_loss.result()
-        model.save_weights("./save_weights/myGoogleNet_{}.h5".format(epoch))   # save_format='tf'
+        model.save_weights("./save_weights/myGoogLeNet.h5")

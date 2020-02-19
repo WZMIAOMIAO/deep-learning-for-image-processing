@@ -3,13 +3,15 @@ from tensorflow.keras import layers, models, Model, Sequential
 
 def GoogLeNet(im_height=224, im_width=224, class_num=1000, aux_logits=False):
     # tensorflow中的tensor通道排序是NHWC
-    # (None, 224, 224, 3)
     input_image = layers.Input(shape=(im_height, im_width, 3), dtype="float32")
+    # (None, 224, 224, 3)
     x = layers.Conv2D(64, kernel_size=7, strides=2, padding="SAME", activation="relu", name="conv2d_1")(input_image)
     # (None, 112, 112, 64)
-    x = layers.MaxPool2D(pool_size=2, strides=2, name="maxpool_1")(x)
+    x = layers.MaxPool2D(pool_size=2, strides=2, name="maxpool_2")(x)
     # (None, 56, 56, 64)
-    x = layers.Conv2D(192, kernel_size=3, padding="SAME", activation="relu", name="conv2d_2")(x)
+    x = layers.Conv2D(64, kernel_size=1, activation="relu", name="conv2d_1")(x)
+    # (None, 56, 56, 64)
+    x = layers.Conv2D(192, kernel_size=3, padding="SAME", activation="relu", name="conv2d_3")(x)
     # (None, 56, 56, 192)
     x = layers.MaxPool2D(pool_size=3, strides=2, padding="SAME", name="maxpool_2")(x)
 

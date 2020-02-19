@@ -29,7 +29,8 @@ except Exception as e:
 
 model = GoogLeNet(class_num=5, aux_logits=False)
 model.summary()
-model.load_weights("./save_weights/myGoogleNet_14.h5", by_name=True)
+# model.load_weights("./save_weights/myGoogLenet.h5", by_name=True)  # h5 format
+model.load_weights("./save_weights/myGoogLeNet.ckpt")  # ckpt format
 result = model.predict(img)
 predict_class = np.argmax(result)
 print(class_indict[str(predict_class)])

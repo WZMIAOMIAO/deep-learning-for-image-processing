@@ -11,6 +11,10 @@ image_path = data_root + "/data_set/flower_data/"  # flower data set path
 train_dir = image_path + "train"
 validation_dir = image_path + "val"
 
+# create direction for saving weights
+if not os.path.exists("save_weights"):
+    os.makedirs("save_weights")
+
 im_height = 224
 im_width = 224
 batch_size = 32

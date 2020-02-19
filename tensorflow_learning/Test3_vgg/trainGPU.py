@@ -23,6 +23,10 @@ image_path = data_root + "/data_set/flower_data/"  # flower data set path
 train_dir = image_path + "train"
 validation_dir = image_path + "val"
 
+# create direction for saving weights
+if not os.path.exists("save_weights"):
+    os.makedirs("save_weights")
+
 im_height = 224
 im_width = 224
 batch_size = 32
@@ -32,6 +36,13 @@ epochs = 10
 data_class = [cla for cla in os.listdir(train_dir) if ".txt" not in cla]
 class_num = len(data_class)
 class_dict = dict((value, index) for index, value in enumerate(data_class))
+
+# reverse value and key of dict
+inverse_dict = dict((val, key) for key, val in class_dict.items())
+# write dict into json file
+json_str = json.dumps(inverse_dict, indent=4)
+with open('class_indices.json', 'w') as json_file:
+    json_file.write(json_str)
 
 # load train images list
 train_image_list = glob.glob(train_dir+"/*/*.jpg")
