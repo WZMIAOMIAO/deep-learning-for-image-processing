@@ -13,8 +13,8 @@ img = Image.open("../tulip.jpg")
 img = img.resize((im_width, im_height))
 plt.imshow(img)
 
-# scaling pixel value to (0-1)
-img = np.array(img) / 255.
+# scaling pixel value and normalize
+img = ((np.array(img) / 255.) - 0.5) / 0.5
 
 # Add the image to a batch where it's the only member.
 img = (np.expand_dims(img, 0))
