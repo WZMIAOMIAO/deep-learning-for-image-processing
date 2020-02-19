@@ -7,7 +7,7 @@ def GoogLeNet(im_height=224, im_width=224, class_num=1000, aux_logits=False):
     # (None, 224, 224, 3)
     x = layers.Conv2D(64, kernel_size=7, strides=2, padding="SAME", activation="relu", name="conv2d_1")(input_image)
     # (None, 112, 112, 64)
-    x = layers.MaxPool2D(pool_size=2, strides=2, name="maxpool_1")(x)
+    x = layers.MaxPool2D(pool_size=3, strides=2, padding="SAME", name="maxpool_1")(x)
     # (None, 56, 56, 64)
     x = layers.Conv2D(64, kernel_size=1, activation="relu", name="conv2d_2")(x)
     # (None, 56, 56, 64)
@@ -46,7 +46,7 @@ def GoogLeNet(im_height=224, im_width=224, class_num=1000, aux_logits=False):
     # (None, 7, 7, 832)
     x = Inception(384, 192, 384, 48, 128, 128, name="inception_5b")(x)
     # (None, 7, 7, 1024)
-    x = layers.AvgPool2D(pool_size=7, name="avgpool_1")(x)
+    x = layers.AvgPool2D(pool_size=7, strides=1, name="avgpool_1")(x)
 
     # (None, 1, 1, 1024)
     x = layers.Flatten(name="output_flatten")(x)

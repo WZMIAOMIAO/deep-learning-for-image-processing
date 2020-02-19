@@ -17,7 +17,7 @@ if not os.path.exists("save_weights"):
 im_height = 224
 im_width = 224
 batch_size = 32
-epochs = 15
+epochs = 30
 
 # data generator with data augmentation
 train_image_generator = ImageDataGenerator(rescale=((1. / 255) - 0.5) / 0.5,
@@ -66,7 +66,7 @@ test_accuracy = tf.keras.metrics.CategoricalAccuracy(name='test_accuracy')
 @tf.function
 def train_step(images, labels):
     with tf.GradientTape() as tape:
-        aux1, aux2, output = model(images)
+        aux1, aux2, output = model(images, training=True)
         loss1 = loss_object(labels, aux1)
         loss2 = loss_object(labels, aux2)
         loss3 = loss_object(labels, output)
@@ -80,7 +80,7 @@ def train_step(images, labels):
 
 @tf.function
 def test_step(images, labels):
-    _, _, output = model(images)
+    _, _, output = model(images, training=False)
     t_loss = loss_object(labels, output)
 
     test_loss(t_loss)
@@ -94,14 +94,10 @@ for epoch in range(1, epochs+1):
     test_loss.reset_states()         # clear history info
     test_accuracy.reset_states()     # clear history info
 
-    # train
-    model.trainable = True
     for step in range(total_train // batch_size):
         images, labels = next(train_data_gen)
         train_step(images, labels)
 
-    # validate
-    model.trainable = False
     for step in range(total_val // batch_size):
         test_images, test_labels = next(val_data_gen)
         test_step(test_images, test_labels)

@@ -30,7 +30,7 @@ if not os.path.exists("save_weights"):
 im_height = 224
 im_width = 224
 batch_size = 32
-epochs = 10
+epochs = 30
 
 # class dict
 data_class = [cla for cla in os.listdir(train_dir) if ".txt" not in cla]
