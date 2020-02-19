@@ -17,9 +17,6 @@ def GoogLeNet(im_height=224, im_width=224, class_num=1000, aux_logits=False):
 
     # (None, 28, 28, 192)
     x = Inception(64, 96, 128, 16, 32, 32, name="inception_3a")(x)
-    if aux_logits:
-        aux1 = InceptionAux(class_num, name="aux_1")(x)
-
     # (None, 28, 28, 256)
     x = Inception(128, 128, 192, 32, 96, 64, name="inception_3b")(x)
 
@@ -27,6 +24,9 @@ def GoogLeNet(im_height=224, im_width=224, class_num=1000, aux_logits=False):
     x = layers.MaxPool2D(pool_size=3, strides=2, padding="SAME", name="maxpool_3")(x)
     # (None, 14, 14, 480)
     x = Inception(192, 96, 208, 16, 48, 64, name="inception_4a")(x)
+    if aux_logits:
+        aux1 = InceptionAux(class_num, name="aux_1")(x)
+
     # (None, 14, 14, 512)
     x = Inception(160, 112, 224, 24, 64, 64, name="inception_4b")(x)
     # (None, 14, 14, 512)
