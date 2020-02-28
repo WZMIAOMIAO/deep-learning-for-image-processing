@@ -1,4 +1,3 @@
-import torchvision
 import torch.nn as nn
 import torch
 
@@ -9,11 +8,11 @@ class BasicBlock(nn.Module):
     def __init__(self, in_channel, out_channel, stride=1, downsample=None):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=in_channel, out_channels=out_channel,
-                               kernel_size=3, stride=stride, padding=1)
+                               kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(out_channel)
         self.relu = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channels=out_channel, out_channels=out_channel,
-                               kernel_size=3, stride=1, padding=1)
+                               kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channel)
         self.downsample = downsample
 
@@ -82,11 +81,10 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.include_top = include_top
         self.in_channel = 64
-        self.norm_layer = nn.BatchNorm2d
 
         self.conv1 = nn.Conv2d(3, self.in_channel, kernel_size=7, stride=2,
                                padding=3, bias=False)
-        self.bn1 = self.norm_layer(self.in_channel)
+        self.bn1 = nn.BatchNorm2d(self.in_channel)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, blocks_num[0])
@@ -97,12 +95,16 @@ class ResNet(nn.Module):
             self.avgpool = nn.AdaptiveAvgPool2d((1, 1))  # output size = (1, 1)
             self.fc = nn.Linear(512 * block.expansion, num_classes)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+
     def _make_layer(self, block, channel, block_num, stride=1):
         downsample = None
         if stride != 1 or self.in_channel != channel * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(self.in_channel, channel * block.expansion, kernel_size=1, stride=stride, bias=False),
-                self.norm_layer(channel * block.expansion))
+                nn.BatchNorm2d(channel * block.expansion))
 
         layers = []
         layers.append(block(self.in_channel, channel, downsample=downsample, stride=stride))
@@ -138,4 +140,3 @@ def resnet34(num_classes=1000, include_top=True):
 
 def resnet101(num_classes=1000, include_top=True):
     return ResNet(Bottleneck, [3, 4, 23, 3], num_classes=num_classes, include_top=include_top)
-

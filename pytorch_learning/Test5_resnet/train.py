@@ -6,14 +6,17 @@ import matplotlib.pyplot as plt
 import os
 import torch.optim as optim
 from model import resnet34, resnet101
-import torchvision.models as mo
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 data_transform = {
     "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                  transforms.RandomHorizontalFlip(),
                                  transforms.ToTensor(),
                                  transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
-    "val": transforms.Compose([transforms.Resize((224, 224)),
+    "val": transforms.Compose([transforms.Resize(256),
+                               transforms.CenterCrop(224),
                                transforms.ToTensor(),
                                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
@@ -25,9 +28,9 @@ train_dataset = datasets.ImageFolder(root=image_path+"train",
                                      transform=data_transform["train"])
 train_num = len(train_dataset)
 
-# ['daisy', 'dandelion', 'roses', 'sunflower', 'tulips']
-flower_list = train_dataset.classes
-cla_dict = dict((key, val) for key, val in enumerate(flower_list))
+# {'daisy':0, 'dandelion':1, 'roses':2, 'sunflower':3, 'tulips':4}
+flower_list = train_dataset.class_to_idx
+cla_dict = dict((val, key) for key, val in flower_list.items())
 # write dict into json file
 json_str = json.dumps(cla_dict, indent=4)
 with open('class_indices.json', 'w') as json_file:
@@ -45,9 +48,10 @@ validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                               batch_size=batch_size, shuffle=False,
                                               num_workers=0)
 
-net = resnet101()
+net = resnet34()
+net.to(device)
 # load pretrain weights
-model_weight_path = "./resnet101.pth"
+model_weight_path = "./resnet34-pre.pth"
 missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path), strict=False)
 # for param in net.parameters():
 #     param.requires_grad = False
@@ -58,9 +62,8 @@ net.fc = nn.Linear(inchannel, 5)
 loss_function = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
-
 best_acc = 0.0
-save_path = './resNet101_{}.pth'
+save_path = './resNet34.pth'
 for epoch in range(5):
     # train
     net.train()
@@ -68,8 +71,8 @@ for epoch in range(5):
     for step, data in enumerate(train_loader, start=0):
         images, labels = data
         optimizer.zero_grad()
-        logits = net(images)
-        loss = loss_function(logits, labels)
+        logits = net(images.to(device))
+        loss = loss_function(logits, labels.to(device))
         loss.backward()
         optimizer.step()
 
@@ -88,14 +91,14 @@ for epoch in range(5):
     with torch.no_grad():
         for data_test in validate_loader:
             test_images, test_labels = data_test
-            outputs = net(test_images)  # eval model only have last output layer
+            outputs = net(test_images.to(device))  # eval model only have last output layer
             # loss = loss_function(outputs, test_labels)
             predict_y = torch.max(outputs, dim=1)[1]
-            acc += (predict_y == test_labels).sum().item()
+            acc += (predict_y == test_labels.to(device)).sum().item()
         accurate_test = acc / val_num
         if accurate_test > best_acc:
             best_acc = accurate_test
-            torch.save(net.state_dict(), save_path.format(epoch))
+            torch.save(net.state_dict(), save_path)
         print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
               (epoch + 1, running_loss / step, accurate_test))
 
