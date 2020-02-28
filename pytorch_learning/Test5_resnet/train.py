@@ -64,7 +64,7 @@ optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
 best_acc = 0.0
 save_path = './resNet34.pth'
-for epoch in range(5):
+for epoch in range(3):
     # train
     net.train()
     running_loss = 0.0
