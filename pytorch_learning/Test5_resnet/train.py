@@ -7,6 +7,7 @@ import os
 import torch.optim as optim
 from model import resnet34, resnet101
 
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
@@ -49,7 +50,6 @@ validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                               num_workers=0)
 
 net = resnet34()
-net.to(device)
 # load pretrain weights
 model_weight_path = "./resnet34-pre.pth"
 missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path), strict=False)
@@ -58,6 +58,7 @@ missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path
 # change fc layer structure
 inchannel = net.fc.in_features
 net.fc = nn.Linear(inchannel, 5)
+net.to(device)
 
 loss_function = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.0001)
