@@ -9,7 +9,7 @@ def rename_var(ckpt_path, new_ckpt_path):
             if var_name in except_list:
                 continue
             var = tf.train.load_variable(ckpt_path, var_name)
-            new_var_name = var_name.replace('resnet_v1_101/', '')
+            new_var_name = var_name.replace('resnet_v1_50/', "")
             new_var_name = new_var_name.replace("bottleneck_v1/", "")
             new_var_name = new_var_name.replace("shortcut/weights", "shortcut/conv1/kernel")
             new_var_name = new_var_name.replace("weights", "kernel")
@@ -26,8 +26,8 @@ def rename_var(ckpt_path, new_ckpt_path):
         saver.save(sess, save_path=new_ckpt_path, write_meta_graph=False, write_state=False)
 
 
-except_list = ['global_step', 'resnet_v1_101/mean_rgb', 'resnet_v1_101/logits/biases', 'resnet_v1_101/logits/weights']
-ckpt_path = './resnet_v1_101.ckpt'
+except_list = ['global_step', 'resnet_v1_50/mean_rgb', 'resnet_v1_50/logits/biases', 'resnet_v1_50/logits/weights']
+ckpt_path = './resnet_v1_50.ckpt'
 new_ckpt_path = './pretrain_weights.ckpt'
 new_var_list = []
 rename_var(ckpt_path, new_ckpt_path)

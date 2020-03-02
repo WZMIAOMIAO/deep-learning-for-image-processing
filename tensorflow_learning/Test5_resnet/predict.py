@@ -1,4 +1,4 @@
-from model import resnet101
+from model import resnet50
 from PIL import Image
 import numpy as np
 import json
@@ -32,18 +32,19 @@ except Exception as e:
     print(e)
     exit(-1)
 
-feature = resnet101(num_classes=5, include_top=False)
+feature = resnet50(num_classes=5, include_top=False)
 feature.trainable = False
 model = tf.keras.Sequential([feature,
                              tf.keras.layers.GlobalAvgPool2D(),
-                             tf.keras.layers.Dropout(rate=0.2),
+                             tf.keras.layers.Dropout(rate=0.5),
                              tf.keras.layers.Dense(1024),
-                             tf.keras.layers.Dropout(rate=0.2),
-                             tf.keras.layers.Dense(5)])
+                             tf.keras.layers.Dropout(rate=0.5),
+                             tf.keras.layers.Dense(5),
+                             tf.keras.layers.Softmax()])
 # model.build((None, 224, 224, 3))  # when using subclass model
-model.load_weights('./save_weights/resNet_1.h5', by_name=True)
+model.load_weights('./save_weights/resNet_50.ckpt')
 result = model.predict(img)
-prediction = tf.keras.backend.softmax(result)
+prediction = np.squeeze(result)
 predict_class = np.argmax(result)
-print(class_indict[str(predict_class)])
+print(class_indict[str(predict_class)], prediction[predict_class])
 plt.show()

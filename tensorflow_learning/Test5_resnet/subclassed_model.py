@@ -1,6 +1,41 @@
 from tensorflow.keras import layers, Model, Sequential
 
 
+class BasicBlock(layers.Layer):
+    expansion = 1
+
+    def __init__(self, out_channel, strides=1, downsample=None, **kwargs):
+        super(BasicBlock, self).__init__(**kwargs)
+        self.conv1 = layers.Conv2D(out_channel, kernel_size=3, strides=strides,
+                                   padding="SAME", use_bias=False)
+        self.bn1 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
+        # -----------------------------------------
+        self.conv2 = layers.Conv2D(out_channel, kernel_size=3, strides=1,
+                                   padding="SAME", use_bias=False)
+        self.bn2 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
+        # -----------------------------------------
+        self.downsample = downsample
+        self.relu = layers.ReLU()
+        self.add = layers.Add()
+
+    def call(self, inputs, training=False, **kwargs):
+        identity = inputs
+        if self.downsample is not None:
+            identity = self.downsample(inputs)
+
+        x = self.conv1(inputs)
+        x = self.bn1(x, training=training)
+        x = self.relu(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x, training=training)
+
+        x = self.add([identity, x])
+        x = self.relu(x)
+
+        return x
+
+
 class Bottleneck(layers.Layer):
     expansion = 4
 
@@ -20,21 +55,21 @@ class Bottleneck(layers.Layer):
         self.downsample = downsample
         self.add = layers.Add()
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs, training=False, **kwargs):
         identity = inputs
         if self.downsample is not None:
             identity = self.downsample(inputs)
 
         x = self.conv1(inputs)
-        x = self.bn1(x)
+        x = self.bn1(x, training=training)
         x = self.relu(x)
 
         x = self.conv2(x)
-        x = self.bn2(x)
+        x = self.bn2(x, training=training)
         x = self.relu(x)
 
         x = self.conv3(x)
-        x = self.bn3(x)
+        x = self.bn3(x, training=training)
 
         x = self.add([x, identity])
         x = self.relu(x)
@@ -43,7 +78,7 @@ class Bottleneck(layers.Layer):
 
 
 class ResNet(Model):
-    def __init__(self, blocks_num: list, block=Bottleneck, num_classes=1000, include_top=True, **kwargs):
+    def __init__(self, block, blocks_num, num_classes=1000, include_top=True, **kwargs):
         super(ResNet, self).__init__(**kwargs)
         self.include_top = include_top
         self.conv1 = layers.Conv2D(filters=64, kernel_size=7, strides=2, padding="SAME",
@@ -62,16 +97,16 @@ class ResNet(Model):
             self.fc = layers.Dense(num_classes, name="logits")
             self.softmax = layers.Softmax()
 
-    def call(self, inputs):
+    def call(self, inputs, training=False, **kwargs):
         x = self.conv1(inputs)
-        x = self.bn1(x)
+        x = self.bn1(x, training=training)
         x = self.relu1(x)
         x = self.maxpool1(x)
 
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.block3(x)
-        x = self.block4(x)
+        x = self.block1(x, training=training)
+        x = self.block2(x, training=training)
+        x = self.block3(x, training=training)
+        x = self.block4(x, training=training)
 
         if self.include_top:
             x = self.avgpool(x)
@@ -98,10 +133,16 @@ class ResNet(Model):
         return Sequential(layers_list, name=name)
 
 
+def resnet34(num_classes=1000, include_top=True):
+    block = BasicBlock
+    block_num = [3, 4, 6, 3]
+    return ResNet(block, block_num, num_classes, include_top)
+
+
 def resnet101(num_classes=1000, include_top=True):
     block = Bottleneck
     blocks_num = [3, 4, 23, 3]
-    return ResNet(blocks_num, block, num_classes, include_top=include_top)
+    return ResNet(block, blocks_num, num_classes, include_top)
 
 
 

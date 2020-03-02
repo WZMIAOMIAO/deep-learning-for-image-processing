@@ -1,6 +1,6 @@
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
-from model import resnet101
+from model import resnet50
 import tensorflow as tf
 import json
 import os
@@ -61,7 +61,7 @@ val_data_gen = validation_image_generator.flow_from_directory(directory=validati
 # img, _ = next(train_data_gen)
 total_val = val_data_gen.n
 
-feature = resnet101(num_classes=5, include_top=False)
+feature = resnet50(num_classes=5, include_top=False)
 # feature.build((None, 224, 224, 3))  # when using subclass model
 feature.load_weights('pretrain_weights.ckpt')
 feature.trainable = False
@@ -69,16 +69,17 @@ feature.summary()
 
 model = tf.keras.Sequential([feature,
                              tf.keras.layers.GlobalAvgPool2D(),
-                             tf.keras.layers.Dropout(rate=0.2),
+                             tf.keras.layers.Dropout(rate=0.5),
                              tf.keras.layers.Dense(1024),
-                             tf.keras.layers.Dropout(rate=0.2),
-                             tf.keras.layers.Dense(5)])
-# model.build((None, 224, 224, 3))
+                             tf.keras.layers.Dropout(rate=0.5),
+                             tf.keras.layers.Dense(5),
+                             tf.keras.layers.Softmax()])
+model.build((None, 224, 224, 3))
 model.summary()
 
 # using keras low level api for training
-loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002)
 
 train_loss = tf.keras.metrics.Mean(name='train_loss')
 train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
@@ -141,4 +142,4 @@ for epoch in range(1, epochs + 1):
                           test_accuracy.result() * 100))
     if test_loss.result() < best_test_loss:
         best_test_loss = test_loss.result()
-        model.save_weights("./save_weights/resNet_{}.ckpt".format(epoch), save_format="tf")
+        model.save_weights("./save_weights/resNet_50.ckpt", save_format="tf")

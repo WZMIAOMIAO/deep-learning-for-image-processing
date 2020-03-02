@@ -1,2 +1,0 @@
-model_checkpoint_path: "resNet_5.ckpt"
-all_model_checkpoint_paths: "resNet_5.ckpt"

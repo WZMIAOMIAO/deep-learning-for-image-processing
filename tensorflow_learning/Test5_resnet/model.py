@@ -4,33 +4,33 @@ from tensorflow.keras import layers, Model, Sequential
 class BasicBlock(layers.Layer):
     expansion = 1
 
-    def __init__(self, out_channel, strides=1, downsample=None):
-        super(BasicBlock, self).__init__()
+    def __init__(self, out_channel, strides=1, downsample=None, **kwargs):
+        super(BasicBlock, self).__init__(**kwargs)
         self.conv1 = layers.Conv2D(out_channel, kernel_size=3, strides=strides,
                                    padding="SAME", use_bias=False)
-        self.bn1 = layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5)
+        self.bn1 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
         # -----------------------------------------
         self.conv2 = layers.Conv2D(out_channel, kernel_size=3, strides=1,
                                    padding="SAME", use_bias=False)
-        self.bn2 = layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5)
+        self.bn2 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
         # -----------------------------------------
         self.downsample = downsample
         self.relu = layers.ReLU()
         self.add = layers.Add()
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs, training=False, **kwargs):
         identity = inputs
         if self.downsample is not None:
             identity = self.downsample(inputs)
 
         x = self.conv1(inputs)
-        x = self.bn1(x)
+        x = self.bn1(x, training=training)
         x = self.relu(x)
 
         x = self.conv2(x)
-        x = self.bn2(x)
+        x = self.bn2(x, training=training)
 
-        x = self.add([x, identity])
+        x = self.add([identity, x])
         x = self.relu(x)
 
         return x
@@ -42,34 +42,34 @@ class Bottleneck(layers.Layer):
     def __init__(self, out_channel, strides=1, downsample=None, **kwargs):
         super(Bottleneck, self).__init__(**kwargs)
         self.conv1 = layers.Conv2D(out_channel, kernel_size=1, use_bias=False, name="conv1")
-        self.bn1 = layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5, name="conv1/BatchNorm")
+        self.bn1 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv1/BatchNorm")
         # -----------------------------------------
         self.conv2 = layers.Conv2D(out_channel, kernel_size=3, use_bias=False,
                                    strides=strides, padding="SAME", name="conv2")
-        self.bn2 = layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5, name="conv2/BatchNorm")
+        self.bn2 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv2/BatchNorm")
         # -----------------------------------------
         self.conv3 = layers.Conv2D(out_channel * self.expansion, kernel_size=1, use_bias=False, name="conv3")
-        self.bn3 = layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5, name="conv3/BatchNorm")
+        self.bn3 = layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv3/BatchNorm")
         # -----------------------------------------
         self.relu = layers.ReLU()
         self.downsample = downsample
         self.add = layers.Add()
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs, training=False, **kwargs):
         identity = inputs
         if self.downsample is not None:
             identity = self.downsample(inputs)
 
         x = self.conv1(inputs)
-        x = self.bn1(x)
+        x = self.bn1(x, training=training)
         x = self.relu(x)
 
         x = self.conv2(x)
-        x = self.bn2(x)
+        x = self.bn2(x, training=training)
         x = self.relu(x)
 
         x = self.conv3(x)
-        x = self.bn3(x)
+        x = self.bn3(x, training=training)
 
         x = self.add([x, identity])
         x = self.relu(x)
@@ -101,7 +101,7 @@ def _resnet(block, blocks_num, im_width=224, im_height=224, num_classes=1000, in
     input_image = layers.Input(shape=(im_height, im_width, 3), dtype="float32")
     x = layers.Conv2D(filters=64, kernel_size=7, strides=2,
                       padding="SAME", use_bias=False, name="conv1")(input_image)
-    x = layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5, name="conv1/BatchNorm")(x)
+    x = layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv1/BatchNorm")(x)
     x = layers.ReLU()(x)
     x = layers.MaxPool2D(pool_size=3, strides=2, padding="SAME")(x)
 
@@ -126,5 +126,10 @@ def resnet34(im_width=224, im_height=224, num_classes=1000):
     return _resnet(BasicBlock, [3, 4, 6, 3], im_width, im_height, num_classes)
 
 
+def resnet50(im_width=224, im_height=224, num_classes=1000, include_top=True):
+    return _resnet(Bottleneck, [3, 4, 6, 3], im_width, im_height, num_classes, include_top)
+
+
 def resnet101(im_width=224, im_height=224, num_classes=1000, include_top=True):
     return _resnet(Bottleneck, [3, 4, 23, 3], im_width, im_height, num_classes, include_top)
+
