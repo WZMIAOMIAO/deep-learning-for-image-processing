@@ -10,11 +10,12 @@
 
 ## 教程目录（后期会根据学习内容增加）
 * 图像分类
-    * LeNet
-    * AlexNet
-    * VggNet
-    * GoogLeNet
-    * ResNet
+    * LeNet（已完成）
+    * AlexNet（已完成）
+    * VggNet（已完成）
+    * GoogLeNet（已完成）
+    * ResNet（已完成）
+    * MobileNet（进行中）
 * 目标识别检测
     * Faster RCNN
     * SSD

@@ -18,7 +18,7 @@ class BasicBlock(layers.Layer):
         self.relu = layers.ReLU()
         self.add = layers.Add()
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(self, inputs, training=False):
         identity = inputs
         if self.downsample is not None:
             identity = self.downsample(inputs)
@@ -55,7 +55,7 @@ class Bottleneck(layers.Layer):
         self.downsample = downsample
         self.add = layers.Add()
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(self, inputs, training=False):
         identity = inputs
         if self.downsample is not None:
             identity = self.downsample(inputs)
