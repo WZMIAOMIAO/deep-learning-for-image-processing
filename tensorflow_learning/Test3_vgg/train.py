@@ -53,7 +53,7 @@ model = vgg("vgg16", 224, 224, 5)
 model.summary()
 
 # using keras high level api for training
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
               metrics=["accuracy"])
 
