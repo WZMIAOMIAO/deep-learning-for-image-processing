@@ -17,9 +17,9 @@ def rename_var(ckpt_path, new_ckpt_path):
             re_var = tf.Variable(var, name=new_var_name)
             new_var_list.append(re_var)
 
-        re_var = tf.Variable(tf.random.truncated_normal([2048, 5]), name="logits/kernel")
+        re_var = tf.Variable(tf.keras.initializers.he_uniform()([2048, 5]), name="logits/kernel")
         new_var_list.append(re_var)
-        re_var = tf.Variable(tf.random.truncated_normal([5]), name="logits/bias")
+        re_var = tf.Variable(tf.keras.initializers.he_uniform()([5]), name="logits/bias")
         new_var_list.append(re_var)
         saver = tf.compat.v1.train.Saver(new_var_list)
         sess.run(tf.compat.v1.global_variables_initializer())
