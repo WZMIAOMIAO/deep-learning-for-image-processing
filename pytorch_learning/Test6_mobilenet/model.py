@@ -32,7 +32,7 @@ class InvertedResidual(nn.Module):
     def __init__(self, in_channel, out_channel, stride, expand_ratio):
         super(InvertedResidual, self).__init__()
         hidden_channel = in_channel * expand_ratio
-        self.use_shotcut = stride == 1 and in_channel == out_channel
+        self.use_shortcut = stride == 1 and in_channel == out_channel
 
         layers = []
         if expand_ratio != 1:
@@ -49,7 +49,7 @@ class InvertedResidual(nn.Module):
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x):
-        if self.use_shotcut:
+        if self.use_shortcut:
             return x + self.conv(x)
         else:
             return self.conv(x)
