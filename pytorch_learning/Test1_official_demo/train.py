@@ -10,7 +10,7 @@ transform = transforms.Compose(
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 # 50000张训练图片
-trainset = torchvision.datasets.CIFAR10(root='./data', train=False,
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=36,
                                           shuffle=False, num_workers=0)
@@ -18,7 +18,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=36,
 # 10000张测试图片
 testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=False, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+testloader = torch.utils.data.DataLoader(testset, batch_size=5000,
                                          shuffle=False, num_workers=0)
 test_data_iter = iter(testloader)
 test_image, test_label = test_data_iter.next()
