@@ -15,7 +15,7 @@
     * VggNet（已完成）
     * GoogLeNet（已完成）
     * ResNet（已完成）
-    * MobileNet（进行中）
+    * MobileNet（已完成）
 * 目标识别检测
     * Faster RCNN
     * SSD
