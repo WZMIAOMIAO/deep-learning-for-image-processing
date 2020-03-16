@@ -19,7 +19,7 @@
 * 目标识别检测
     * Faster RCNN
     * SSD
-    * LOYO v3
+    * YOLO v3
 * 目标分割
 
 

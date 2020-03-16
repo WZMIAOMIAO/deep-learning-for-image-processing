@@ -96,12 +96,12 @@ for epoch in range(3):
             # loss = loss_function(outputs, test_labels)
             predict_y = torch.max(outputs, dim=1)[1]
             acc += (predict_y == test_labels.to(device)).sum().item()
-        accurate_test = acc / val_num
-        if accurate_test > best_acc:
-            best_acc = accurate_test
+        val_accurate = acc / val_num
+        if val_accurate > best_acc:
+            best_acc = val_accurate
             torch.save(net.state_dict(), save_path)
         print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
-              (epoch + 1, running_loss / step, accurate_test))
+              (epoch + 1, running_loss / step, val_accurate))
 
 print('Finished Training')
 
