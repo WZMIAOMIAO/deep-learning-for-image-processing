@@ -13,7 +13,7 @@ for layer in model.layers:
         # [kernel_height, kernel_width, kernel_channel, kernel_number]
         weight_t = weight.numpy()
         # read a kernel information
-        # k = weight_t[:, :, 0, :]
+        # k = weight_t[:, :, :, 0]
 
         # calculate mean, std, min, max
         weight_mean = weight_t.mean()
