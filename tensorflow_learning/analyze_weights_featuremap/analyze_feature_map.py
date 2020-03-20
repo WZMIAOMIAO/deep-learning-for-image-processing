@@ -19,12 +19,12 @@ img = np.array(img) / 255.
 img = (np.expand_dims(img, 0))
 
 
-# model = AlexNet_v1(class_num=5)  # functional api
-model = AlexNet_v2(class_num=5)  # subclass api
-model.build((None, 224, 224, 3))
+model = AlexNet_v1(class_num=5)  # functional api
+# model = AlexNet_v2(class_num=5)  # subclass api
+# model.build((None, 224, 224, 3))
 # If `by_name` is False weights are loaded based on the network's topology.
-# model.load_weights("./myAlex.h5")
-model.load_weights("./submodel.h5")
+model.load_weights("./myAlex.h5")
+# model.load_weights("./submodel.h5")
 # for layer in model.layers:
 #     print(layer.name)
 model.summary()
