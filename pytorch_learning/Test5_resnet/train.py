@@ -90,12 +90,12 @@ for epoch in range(3):
     net.eval()
     acc = 0.0  # accumulate accurate number / epoch
     with torch.no_grad():
-        for data_test in validate_loader:
-            test_images, test_labels = data_test
-            outputs = net(test_images.to(device))  # eval model only have last output layer
+        for val_data in validate_loader:
+            val_images, val_labels = val_data
+            outputs = net(val_images.to(device))  # eval model only have last output layer
             # loss = loss_function(outputs, test_labels)
             predict_y = torch.max(outputs, dim=1)[1]
-            acc += (predict_y == test_labels.to(device)).sum().item()
+            acc += (predict_y == val_labels.to(device)).sum().item()
         val_accurate = acc / val_num
         if val_accurate > best_acc:
             best_acc = val_accurate
