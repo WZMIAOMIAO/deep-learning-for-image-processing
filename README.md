@@ -17,7 +17,7 @@
     * ResNet（已完成）
     * MobileNet（已完成）
 * 目标识别检测
-    * Faster RCNN
+    * Faster RCNN（进行中）
     * SSD
     * YOLO v3
 * 目标分割

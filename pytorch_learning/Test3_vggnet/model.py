@@ -3,7 +3,7 @@ import torch
 
 
 class VGG(nn.Module):
-    def __init__(self, features, class_num=1000, init_weights=False):
+    def __init__(self, features, num_classes=1000, init_weights=False):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
@@ -13,7 +13,7 @@ class VGG(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(2048, 2048),
             nn.ReLU(True),
-            nn.Linear(2048, class_num)
+            nn.Linear(2048, num_classes)
         )
         if init_weights:
             self._initialize_weights()
