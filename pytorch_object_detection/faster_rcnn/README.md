@@ -18,4 +18,7 @@
 * ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
 * ├── pascal_voc_classes.json: pascal_voc标签文件
 
+## 预训练权重下载地址：
+* MobileNetV2 backbone: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
+* ResNet50+FPN backbone: https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
  
