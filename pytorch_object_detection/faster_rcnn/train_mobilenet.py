@@ -11,8 +11,7 @@ import os
 
 
 def create_model(num_classes):
-    backbone = MobileNetV2(norm_layer=misc.FrozenBatchNorm2d,
-                           weights_path="./backbone/mobilenet_v2.pth").features
+    backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
     backbone.out_channels = 1280
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
@@ -49,7 +48,7 @@ def main():
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
-                                                    batch_size=2,
+                                                    batch_size=8,
                                                     shuffle=True,
                                                     num_workers=0,
                                                     collate_fn=utils.collate_fn)
@@ -57,7 +56,7 @@ def main():
     # load validation data set
     val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], False)
     val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=2,
+                                                      batch_size=1,
                                                       shuffle=False,
                                                       num_workers=0,
                                                       collate_fn=utils.collate_fn)
@@ -106,7 +105,7 @@ def main():
 
     # define optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.0025,
+    optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
@@ -114,7 +113,7 @@ def main():
                                                    gamma=0.33)
     num_epochs = 20
     for epoch in range(num_epochs):
-        # train for one epoch, printing every 10 iterations
+        # train for one epoch, printing every 50 iterations
         utils.train_one_epoch(model, optimizer, train_data_loader,
                               device, epoch, print_freq=50, warmup=True)
         # update the learning rate

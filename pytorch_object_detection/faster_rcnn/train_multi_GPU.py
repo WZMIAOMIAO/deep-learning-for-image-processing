@@ -5,7 +5,7 @@ import os
 import datetime
 from my_dataset import VOC2012DataSet
 import transforms
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 from backbone.resnet50_fpn_model import resnet50_fpn_backbone
 from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
 import torch.multiprocessing as mp

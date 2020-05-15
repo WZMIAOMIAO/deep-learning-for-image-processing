@@ -5,7 +5,6 @@ from backbone.resnet50_fpn_model import resnet50_fpn_backbone
 from my_dataset import VOC2012DataSet
 from train_utils import train_eval_utils as utils
 import os
-import errno
 
 
 def create_model(num_classes):
@@ -41,7 +40,7 @@ def main(parser_data):
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
-                                                    batch_size=2,
+                                                    batch_size=4,
                                                     shuffle=True,
                                                     num_workers=0,
                                                     collate_fn=utils.collate_fn)
@@ -62,7 +61,7 @@ def main(parser_data):
 
     # define optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.0025,
+    optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,

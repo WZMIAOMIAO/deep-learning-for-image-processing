@@ -303,9 +303,9 @@ class BackboneWithFPN(nn.Sequential):
 
 def resnet50_fpn_backbone():
     # FrozenBatchNorm2d的功能与BatchNorm2d类似，但参数无法更新
+    # norm_layer=misc.FrozenBatchNorm2d
     resnet_backbone = ResNet(Bottleneck, [3, 4, 6, 3],
-                             include_top=False,
-                             norm_layer=misc.FrozenBatchNorm2d)
+                             include_top=False)
 
     # freeze layers
     # 冻结layer1及其之前的所有底层权重（基础通用特征）
