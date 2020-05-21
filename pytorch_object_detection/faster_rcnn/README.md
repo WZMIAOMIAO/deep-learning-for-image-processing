@@ -3,7 +3,7 @@
 * Python3.6或者3.7
 * Pytorch1.5(注意：是1.5)
 * pycocotools(Linux: pip install pycocotools;   
-  Windows:pip install pycocotools-win(如果报错，需要Microsoft Visual C++ 14))
+  Windows:pip install pycocotools-windows(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
 
