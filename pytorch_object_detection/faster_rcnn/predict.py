@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 def create_model(num_classes):
     # mobileNetv2+faster_RCNN
-    # backbone = MobileNetV2(norm_layer=misc.FrozenBatchNorm2d).features
+    # backbone = MobileNetV2().features
     # backbone.out_channels = 1280
     #
     # anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),

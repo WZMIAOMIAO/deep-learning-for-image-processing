@@ -16,6 +16,7 @@
     * GoogLeNet（已完成）
     * ResNet（已完成）
     * MobileNet（已完成）
+    * ShuffleNet
 * 目标识别检测
     * Faster RCNN（进行中）
     * SSD
@@ -27,8 +28,8 @@
 * Anaconda3（建议使用）
 * python3.6
 * pycharm 2019.3 (IDE)
-* pytorch 1.3 (pip package)
-* torchvision 0.4.2 (pip package)
+* pytorch 1.5 (pip package)
+* torchvision 0.6.0 (pip package)
 * tensorflow 2.1 (pip package)
 
 [你可能遇到的问题](./summary_problem.md)     
