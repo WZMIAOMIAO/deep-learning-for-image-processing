@@ -3,5 +3,5 @@
 （1）准备好需要使用的pb冻结文件，pbtxt标签文件，测试用的图片  
 （2）修改info.config文件中的相关信息  
 
-![Example image](https://github.gree.com/180662/tensorflowob/raw/master/object_detection/readPbFile/example1.jpg)     
-![Example image](https://github.gree.com/180662/tensorflowob/raw/master/object_detection/readPbFile/example2.jpg)
+![Example image](https://tensorflowob/raw/master/object_detection/readPbFile/example1.jpg)     
+![Example image](https://tensorflowob/raw/master/object_detection/readPbFile/example2.jpg)
