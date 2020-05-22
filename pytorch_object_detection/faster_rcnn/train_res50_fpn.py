@@ -10,7 +10,7 @@ import os
 def create_model(num_classes):
     backbone = resnet50_fpn_backbone()
     model = FasterRCNN(backbone=backbone, num_classes=91)
-    # 载入预训练模型权重
+    载入预训练模型权重
     weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
