@@ -3,7 +3,6 @@ from torch.jit.annotations import List, Tuple
 from torch import Tensor
 
 
-@torch.jit.script
 class ImageList(object):
     """
     Structure that holds a list of images (of possibly
