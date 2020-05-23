@@ -306,7 +306,7 @@ class FasterRCNN(FasterRCNNBase):
         #  Multi-scale RoIAlign pooling
         if box_roi_pool is None:
             box_roi_pool = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行预测
+                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi pooling
                 output_size=[7, 7],
                 sampling_ratio=2)
 
