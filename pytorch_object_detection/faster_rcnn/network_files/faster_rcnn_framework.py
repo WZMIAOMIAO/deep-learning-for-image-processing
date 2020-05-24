@@ -247,13 +247,13 @@ class FasterRCNN(FasterRCNNBase):
                  rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,  # rpn中在nms处理后保留的proposal数
                  rpn_nms_thresh=0.7,  # rpn中进行nms处理时使用的iou阈值
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,  # rpn计算损失时，采集正负样本设置的阈值
-                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,  # rpn计算损失时采样的样本数，以及正负样本比例
+                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,  # rpn计算损失时采样的样本数，以及正样本占总样本的比例
                  # Box parameters
                  box_roi_pool=None, box_head=None, box_predictor=None,
                  # 移除低目标概率      fast rcnn中进行nms处理的阈值   对预测结果根据score排序取前100个目标
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
                  box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,   # fast rcnn计算误差时，采集正负样本设置的阈值
-                 box_batch_size_per_image=512, box_positive_fraction=0.25,  # fast rcnn计算误差时采样的样本数，以及正负样本比例
+                 box_batch_size_per_image=512, box_positive_fraction=0.25,  # fast rcnn计算误差时采样的样本数，以及正样本占所有样本的比例
                  bbox_reg_weights=None):
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
@@ -306,11 +306,11 @@ class FasterRCNN(FasterRCNNBase):
         #  Multi-scale RoIAlign pooling
         if box_roi_pool is None:
             box_roi_pool = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行预测
+                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi pooling
                 output_size=[7, 7],
                 sampling_ratio=2)
 
-        # fast RCNN中roi pooling后的两个全连接层部分
+        # fast RCNN中roi pooling后的展平处理两个全连接层部分
         if box_head is None:
             resolution = box_roi_pool.output_size[0]  # 默认等于7
             representation_size = 1024
