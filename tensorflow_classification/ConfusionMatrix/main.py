@@ -78,7 +78,6 @@ class ConfusionMatrix(object):
 if __name__ == '__main__':
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
     image_path = data_root + "/data_set/flower_data/"  # flower data set path
-    train_dir = image_path + "train"
     validation_dir = image_path + "val"
 
     im_height = 224
