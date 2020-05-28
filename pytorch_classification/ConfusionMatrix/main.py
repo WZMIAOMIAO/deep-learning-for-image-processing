@@ -6,6 +6,7 @@ import os
 from model import MobileNetV2
 import numpy as np
 import matplotlib.pyplot as plt
+from prettytable import PrettyTable
 
 
 class ConfusionMatrix(object):
@@ -22,13 +23,30 @@ class ConfusionMatrix(object):
         for p, t in zip(preds, labels):
             self.matrix[t, p] += 1
 
-    def plot(self, normalize=False):
+    def summary(self):
+        # calculate accuracy
+        sum_TP = 0
+        for i in range(self.num_classes):
+            sum_TP += self.matrix[i, i]
+        acc = sum_TP / np.sum(self.matrix)
+        print("the model accuracy is ", acc)
+
+        # precision, recall, specificity
+        table = PrettyTable()
+        table.field_names = ["", "Precision", "Recall", "Specificity"]
+        for i in range(self.num_classes):
+            TP = self.matrix[i, i]
+            FP = np.sum(self.matrix[:, i]) - TP
+            FN = np.sum(self.matrix[i, :]) - TP
+            TN = np.sum(self.matrix) - TP - FP - FN
+            Precision = round(TP / (TP + FP), 3)
+            Recall = round(TP / (TP + FN), 3)
+            Specificity = round(TN / (TN + FP), 3)
+            table.add_row([self.labels[i], Precision, Recall, Specificity])
+        print(table)
+
+    def plot(self):
         matrix = self.matrix
-        plot_title = 'Confusion matrix'
-        if normalize:
-            plot_title = 'Normalized Confusion matrix'
-            # 去除axis=1纬度，即求每行元素的和
-            matrix = matrix / matrix.sum(axis=1)[:, np.newaxis]
         print(matrix)
         plt.imshow(matrix, cmap=plt.cm.Blues)
 
@@ -38,16 +56,16 @@ class ConfusionMatrix(object):
         plt.yticks(range(self.num_classes), self.labels)
         # 显示colorbar
         plt.colorbar()
-        plt.xlabel('Predicted Labels')
-        plt.ylabel('True Labels')
-        plt.title(plot_title)
+        plt.xlabel('True Labels')
+        plt.ylabel('Predicted Labels')
+        plt.title('Confusion matrix')
 
         # 在图中标注数量/概率信息
         thresh = matrix.max() / 2
         for x in range(self.num_classes):
             for y in range(self.num_classes):
                 # 注意这里的matrix[y, x]不是matrix[x, y]
-                info = round(matrix[y, x], 2) if normalize else int(matrix[y, x])
+                info = int(matrix[y, x])
                 plt.text(x, y, info,
                          verticalalignment='center',
                          horizontalalignment='center',
@@ -100,5 +118,5 @@ if __name__ == '__main__':
             outputs = torch.argmax(outputs, dim=1)
             confusion.update(outputs.numpy(), val_labels.numpy())
     confusion.plot()
-    confusion.plot(True)
+    confusion.summary()
 
