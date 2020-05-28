@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from torchvision import transforms, datasets
 import json
 import os
@@ -13,6 +12,7 @@ class ConfusionMatrix(object):
     """
     注意，如果显示的图像不全，是matplotlib版本问题
     本例程使用matplotlib-3.2.1(windows and ubuntu)绘制正常
+    需要额外安装prettytable库
     """
     def __init__(self, num_classes: int, labels: list):
         self.matrix = np.zeros((num_classes, num_classes))
@@ -36,8 +36,8 @@ class ConfusionMatrix(object):
         table.field_names = ["", "Precision", "Recall", "Specificity"]
         for i in range(self.num_classes):
             TP = self.matrix[i, i]
-            FP = np.sum(self.matrix[:, i]) - TP
-            FN = np.sum(self.matrix[i, :]) - TP
+            FP = np.sum(self.matrix[i, :]) - TP
+            FN = np.sum(self.matrix[:, i]) - TP
             TN = np.sum(self.matrix) - TP - FP - FN
             Precision = round(TP / (TP + FP), 3)
             Recall = round(TP / (TP + FN), 3)
