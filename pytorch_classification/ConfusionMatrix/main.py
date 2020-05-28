@@ -21,7 +21,7 @@ class ConfusionMatrix(object):
 
     def update(self, preds, labels):
         for p, t in zip(preds, labels):
-            self.matrix[t, p] += 1
+            self.matrix[p, t] += 1
 
     def summary(self):
         # calculate accuracy
