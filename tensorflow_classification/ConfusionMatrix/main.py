@@ -1,11 +1,11 @@
-import torch
-import torch.nn as nn
-from torchvision import transforms, datasets
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+from model import MobileNetV2
+import tensorflow as tf
 import json
 import os
-from model import MobileNetV2
+import math
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class ConfusionMatrix(object):
@@ -57,29 +57,38 @@ class ConfusionMatrix(object):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(device)
-
-    data_transform = transforms.Compose([transforms.Resize(256),
-                                         transforms.CenterCrop(224),
-                                         transforms.ToTensor(),
-                                         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
     image_path = data_root + "/data_set/flower_data/"  # flower data set path
+    train_dir = image_path + "train"
+    validation_dir = image_path + "val"
 
-    validate_dataset = datasets.ImageFolder(root=image_path + "val",
-                                            transform=data_transform)
-
+    im_height = 224
+    im_width = 224
     batch_size = 16
-    validate_loader = torch.utils.data.DataLoader(validate_dataset,
-                                                  batch_size=batch_size, shuffle=False,
-                                                  num_workers=2)
-    net = MobileNetV2(num_classes=5)
-    # load pretrain weights
-    model_weight_path = "./MobileNetV2.pth"
-    net.load_state_dict(torch.load(model_weight_path, map_location=device))
-    net.to(device)
+
+
+    def pre_function(img):
+        # img = im.open('test.jpg')
+        # img = np.array(img).astype(np.float32)
+        img = img / 255.
+        img = (img - 0.5) * 2.0
+        return img
+
+
+    # data generator with data augmentation
+    validation_image_generator = ImageDataGenerator(preprocessing_function=pre_function)
+
+    val_data_gen = validation_image_generator.flow_from_directory(directory=validation_dir,
+                                                                  batch_size=batch_size,
+                                                                  shuffle=False,
+                                                                  target_size=(im_height, im_width),
+                                                                  class_mode='categorical')
+    # img, _ = next(train_data_gen)
+    total_val = val_data_gen.n
+
+    model = MobileNetV2(num_classes=5)
+    # feature.build((None, 224, 224, 3))  # when using subclass model
+    model.load_weights('myMobileNet.ckpt')
 
     # read class_indict
     try:
@@ -91,14 +100,15 @@ if __name__ == '__main__':
 
     labels = [label for _, label in class_indict.items()]
     confusion = ConfusionMatrix(num_classes=5, labels=labels)
-    net.eval()
-    with torch.no_grad():
-        for val_data in validate_loader:
-            val_images, val_labels = val_data
-            outputs = net(val_images.to(device))
-            outputs = torch.softmax(outputs, dim=1)
-            outputs = torch.argmax(outputs, dim=1)
-            confusion.update(outputs.numpy(), val_labels.numpy())
+
+    # validate
+    for step in range(math.ceil(total_val / batch_size)):
+        val_images, val_labels = next(val_data_gen)
+        print(len(val_labels))
+        results = model.predict_on_batch(val_images)
+        results = tf.keras.layers.Softmax()(results).numpy()
+        results = np.argmax(results, axis=-1)
+        labels = np.argmax(val_labels, axis=-1)
+        confusion.update(results, labels)
     confusion.plot()
     confusion.plot(True)
-
