@@ -116,7 +116,7 @@ if __name__ == '__main__':
             outputs = net(val_images.to(device))
             outputs = torch.softmax(outputs, dim=1)
             outputs = torch.argmax(outputs, dim=1)
-            confusion.update(outputs.numpy(), val_labels.numpy())
+            confusion.update(outputs.to("cpu").numpy(), val_labels.to("cpu").numpy())
     confusion.plot()
     confusion.summary()
 
