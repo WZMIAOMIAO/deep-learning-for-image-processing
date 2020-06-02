@@ -68,7 +68,7 @@ class SSDCropping(object):
         # Ensure always return cropped image
         while True:
             mode = random.choice(self.sample_options)
-            if mode is None:
+            if mode is None:  # 不做任何处理
                 return image, target
 
             htot, wtot = self.image_size
@@ -77,8 +77,8 @@ class SSDCropping(object):
             min_iou = float('-inf') if min_iou is None else min_iou
             max_iou = float('+inf') if max_iou is None else max_iou
 
-            # Implementation use 50 iteration to find possible candidate
-            for _ in range(50):
+            # Implementation use 10 iteration to find possible candidate
+            for _ in range(10):
                 # 0.3*0.3 approx. 0.1
                 w = random.uniform(0.3, 1.0)
                 h = random.uniform(0.3, 1.0)
@@ -86,6 +86,7 @@ class SSDCropping(object):
                 if w/h < 0.5 or w/h > 2:  # 保证宽高比例在0.5-2之间
                     continue
 
+                # left 0 ~ wtot - w, top 0 ~ htot - h
                 left = random.uniform(0, 1.0 - w)
                 top = random.uniform(0, 1.0 - h)
 
@@ -126,7 +127,22 @@ class SSDCropping(object):
                 labels = labels[masks]
 
                 left_idx = int(left * wtot)
-                
+                top_idx = int(top * htot)
+                right_idx = int(right * wtot)
+                bottom_idx = int(bottom * htot)
+                image = image.crop((left_idx, top_idx, right_idx, bottom_idx))
+
+                # 调整裁剪后的bboxes坐标信息
+                bboxes[:, 0] = (bboxes[:, 0] - left) / w
+                bboxes[:, 1] = (bboxes[:, 1] - top) / h
+                bboxes[:, 2] = (bboxes[:, 2] - left) / w
+                bboxes[:, 3] = (bboxes[:, 3] - top) / h
+
+                # 更新crop后的gt box坐标信息以及标签信息
+                target['boxes'] = bboxes
+                target['labels'] = labels
+
+                return image, target
 
 
 class Normalization(object):
