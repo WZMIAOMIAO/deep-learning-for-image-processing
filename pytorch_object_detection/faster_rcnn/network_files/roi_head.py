@@ -310,7 +310,7 @@ class RoIHeads(torch.nn.Module):
             labels = labels.reshape(-1)
 
             # remove low scoring boxes
-            # 移除低概率目标，self.scores_thresh=0.5
+            # 移除低概率目标，self.scores_thresh=0.05
             inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 

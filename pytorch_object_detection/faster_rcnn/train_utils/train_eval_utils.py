@@ -73,7 +73,10 @@ def evaluate(model, data_loader, device):
         image = list(img.to(device) for img in image)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        torch.cuda.synchronize(device)
+        # 当使用CPU时，跳过GPU相关指令
+        if device != torch.device("cpu"):
+            torch.cuda.synchronize(device)
+
         model_time = time.time()
         outputs = model(image)
 
