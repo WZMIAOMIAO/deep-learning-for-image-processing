@@ -73,7 +73,7 @@ class Encoder(object):
         self.scale_xy = dboxes.scale_xy
         self.scale_wh = dboxes.scale_wh
 
-    def encode(self, bboxes_in, labels_in, critera=0.5):
+    def encode(self, bboxes_in, labels_in, criteria=0.5):
         """
         encode:
             input  : bboxes_in (Tensor nboxes x 4), labels_in (Tensor nboxes)
@@ -95,12 +95,12 @@ class Encoder(object):
 
         # filter IoU > 0.5
         # 寻找与bbox_in iou大于0.5的default box
-        masks = best_dbox_ious > critera
+        masks = best_dbox_ious > criteria
         # [8732,]
         labels_out = torch.zeros(self.nboxes, dtype=torch.long)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
         bboxes_out = self.dboxes.clone()
-        bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
+        # bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
         # Transform format to xywh format
         bboxes_out[:, 0] = 0.5 * (bboxes_out[:, 0] + bboxes_out[:, 2])    # x
         bboxes_out[:, 1] = 0.5 * (bboxes_out[:, 1] + bboxes_out[:, 3])    # y
@@ -202,7 +202,7 @@ class Encoder(object):
                 iou_sorted = calc_iou_tensor(bboxes_sorted, bboxes_idx).squeeze()
 
                 # we only need iou < criteria
-                # 丢弃与第一名iou > 0.5的所有目标(包括自己本身)
+                # 丢弃与第一名iou > criteria的所有目标(包括自己本身)
                 score_idx_sorted = score_idx_sorted[iou_sorted < criteria]
                 # 保存第一名的索引信息
                 candidates.append(idx)
@@ -264,7 +264,7 @@ class DefaultBoxes(object):
                     cx, cy = (j + 0.5) / fk[idx], (i + 0.5) / fk[idx]
                     self.default_boxes.append((cx, cy, w, h))
 
-            self.dboxes = torch.tensor(self.default_boxes)
+            self.dboxes = torch.tensor(self.default_boxes, dtype=torch.float32)
             self.dboxes.clamp_(min=0, max=1)  # 将坐标（x, y, w, h）都限制在0-1之间
 
             # For IoU calculation
@@ -274,7 +274,7 @@ class DefaultBoxes(object):
             self.dboxes_ltrb[:, 0] = self.dboxes[:, 0] - 0.5 * self.dboxes[:, 2]
             self.dboxes_ltrb[:, 1] = self.dboxes[:, 1] - 0.5 * self.dboxes[:, 3]
             self.dboxes_ltrb[:, 2] = self.dboxes[:, 0] + 0.5 * self.dboxes[:, 2]
-            self.dboxes_ltrb[:, 2] = self.dboxes[:, 1] + 0.5 * self.dboxes[:, 3]
+            self.dboxes_ltrb[:, 3] = self.dboxes[:, 1] + 0.5 * self.dboxes[:, 3]
 
     @property
     def scale_xy(self):
@@ -303,3 +303,6 @@ def dboxes300_coco():
     dboxes = DefaultBoxes(figsize, feat_size, steps, scales, aspect_ratios)
     return dboxes
 
+#
+# def collate_fn(batch):
+#     return tuple(zip(*batch))

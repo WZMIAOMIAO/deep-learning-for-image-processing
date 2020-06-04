@@ -1,6 +1,7 @@
 from src.res50_backbone import resnet50
 from torch import nn
 import torch
+from src.utils import dboxes300_coco, Encoder
 
 
 class Backbone(nn.Module):
@@ -52,6 +53,10 @@ class SSD300(nn.Module):
         self.confidence_extractors = nn.ModuleList(confidence_extractors)
         self._init_weights()
 
+        default_box = dboxes300_coco()
+        self.compute_loss = Loss(default_box)
+        self.encoder = Encoder(default_box)
+
     def _build_additional_features(self, input_size):
         """
         为backbone(resnet50)添加额外的一系列卷积层，得到相应的一系列特征提取器
@@ -88,12 +93,15 @@ class SSD300(nn.Module):
         for f, l, c in zip(features, loc_extractor, conf_extractor):
             locs.append(l(f).view(f.size(0), 4, -1))
             confs.append(c(f).view(f.size(0), self.num_classes, -1))
+            # locs.append(l(f).view(f.size(0), -1, 4))
+            # confs.append(c(f).view(f.size(0), -1, self.num_classes))
 
         locs, confs = torch.cat(locs, 2).contiguous(), torch.cat(confs, 2).contiguous()
+        # locs, confs = torch.cat(locs, 1).contiguous(), torch.cat(confs, 1).contiguous()
         return locs, confs
 
-    def forward(self, x):
-        x = self.feature_extractor(x)
+    def forward(self, image, targets):
+        x = self.feature_extractor(image)
 
         # Feature Map 38x38x1024, 19x19x512, 10x10x512, 5x5x256, 3x3x256, 1x1x256
         detection_features = [x]
@@ -106,7 +114,19 @@ class SSD300(nn.Module):
 
         # For SSD 300, shall return nbatch x 8732 x {nlabels, nlocs} results
         # 38x38x4 + 19x19x6 + 10x10x6 + 5x5x6 + 3x3x4 + 1x1x4 = 8732
-        return locs, confs
+
+        if self.training:
+            # bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
+            bboxes_out = targets['boxes']
+            bboxes_out = bboxes_out.transpose(1, 2)
+            labels_out = targets['labels']
+            # ploc, plabel, gloc, glabel
+            loss = self.compute_loss(locs, confs, bboxes_out, labels_out)
+            return {"total_losses": loss}
+
+        # 将预测回归参数叠加到default box上得到最终预测box，并执行非极大值抑制虑除重叠框
+        results = self.encoder.decode_batch(locs, confs)
+        return results
 
 
 class Loss(nn.Module):
@@ -122,7 +142,8 @@ class Loss(nn.Module):
         self.scale_wh = 1.0 / dboxes.scale_wh
 
         self.location_loss = nn.SmoothL1Loss(reduction='none')
-        self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsequeeze(dim=0), requires_grad=False)
+        self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0), requires_grad=False)
+        # self.dboxes = nn.Parameter(dboxes(order="xywh").unsqueeze(dim=0), requires_grad=False)
 
         # Two factor are from following links
         # http://jany.st/post/2017-11-05-single-shot-detector-ssd-from-scratch-in-tensorflow.html
@@ -135,9 +156,12 @@ class Loss(nn.Module):
         :param loc:
         :return:
         """
-        gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, ]
-        gwh = self.scale_wh * (loc[:, 2:, :] - self.dboxes[:, :2, :]).log()
+        gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, :]
+        gwh = self.scale_wh * (loc[:, 2:, :] / self.dboxes[:, 2:, :]).log()
+        # gxy = self.scale_xy * (loc[:, :, :2] - self.dboxes[:, :, :2]) / self.dboxes[:, :, 2:]
+        # gwh = self.scale_wh * (loc[:, :, 2:] / self.dboxes[:, :, 2:]).log()
         return torch.cat((gxy, gwh), dim=1).contiguous()
+        # return torch.cat((gxy, gwh), dim=2).contiguous()
 
     def forward(self, ploc, plabel, gloc, glabel):
         """
