@@ -23,6 +23,7 @@ def plot_loss_and_lr(train_loss, learning_rate):
 
         fig.subplots_adjust(right=0.8)  # 防止出现保存图片显示不全的情况
         fig.savefig('./loss_and_lr.png')
+        plt.close()
         print("successful save loss curve! ")
     except Exception as e:
         print(e)
@@ -38,6 +39,7 @@ def plot_map(mAP):
         plt.xlim(0, len(mAP))
         plt.legend(loc='best')
         plt.savefig('./mAP.png')
+        plt.close()
         print("successful save mAP curve!")
     except Exception as e:
         print(e)
