@@ -5,9 +5,11 @@ __pycache__
 flower_data
 *.h5
 *.pth
+*.pt
 *.jpg
 *.ckpt.*
 *.ckpt
 *.config
 checkpoint
 data
+VOCdevkit

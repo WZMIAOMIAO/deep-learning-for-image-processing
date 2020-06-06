@@ -19,7 +19,7 @@ class Compose(object):
 class ToTensor(object):
     """将PIL图像转为Tensor"""
     def __call__(self, image, target):
-        image = F.to_tensor(image)
+        image = F.to_tensor(image).contiguous()
         return image, target
 
 
@@ -31,7 +31,7 @@ class RandomHorizontalFlip(object):
     def __call__(self, image, target):
         if random.random() < self.prob:
             # height, width = image.shape[-2:]
-            image = image.flip(-1) # 水平翻转图片
+            image = image.flip(-1)  # 水平翻转图片
             bbox = target["boxes"]
             # bbox: xmin, ymin, xmax, ymax
             # bbox[:, [0, 2]] = width - bbox[:, [2, 0]]  # 翻转对应bbox坐标信息
@@ -79,8 +79,8 @@ class SSDCropping(object):
             min_iou = float('-inf') if min_iou is None else min_iou
             max_iou = float('+inf') if max_iou is None else max_iou
 
-            # Implementation use 10 iteration to find possible candidate
-            for _ in range(10):
+            # Implementation use 5 iteration to find possible candidate
+            for _ in range(5):
                 # 0.3*0.3 approx. 0.1
                 w = random.uniform(0.3, 1.0)
                 h = random.uniform(0.3, 1.0)
@@ -128,6 +128,7 @@ class SSDCropping(object):
                 labels = target['labels']
                 labels = labels[masks]
 
+                # 裁剪patch
                 left_idx = int(left * wtot)
                 top_idx = int(top * htot)
                 right_idx = int(right * wtot)

@@ -10,10 +10,10 @@ from collections import defaultdict, deque
 import torch.distributed as dist
 from train_utils.coco_utils import get_coco_api_from_dataset
 from train_utils.coco_eval import CocoEvaluator
-from src.utils import Encoder, dboxes300_coco
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, warmup=False):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
+                    train_loss=None, train_lr=None, warmup=False):
     model.train()
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -42,8 +42,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
                    "image_id": torch.as_tensor(img_id)}
 
         images = images.to(device)
-        targets = {k: v.to(device) for k, v in targets.items()}
 
+        targets = {k: v.to(device) for k, v in targets.items()}
         losses_dict = model(images, targets)
 
         # reduce losses over all GPUs for logging purpose
@@ -51,6 +51,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
         losses = loss_dict_reduced["total_losses"]
 
         loss_value = losses.item()
+        if isinstance(train_loss, list):
+            # 记录训练损失
+            train_loss.append(loss_value)
 
         if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
             print("Loss is {}, stopping training".format(loss_value))
@@ -66,11 +69,14 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
 
         # metric_logger.update(loss=losses, **loss_dict_reduced)
         metric_logger.update(**loss_dict_reduced)
-        metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+        now_lr = optimizer.param_groups[0]["lr"]
+        metric_logger.update(lr=now_lr)
+        if isinstance(train_lr, list):
+            train_lr.append(now_lr)
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device):
+def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -79,39 +85,42 @@ def evaluate(model, data_loader, device):
     metric_logger = MetricLogger(delimiter="  ")
     header = "Test: "
 
-    coco = get_coco_api_from_dataset(data_loader.dataset)
+    if data_set is None:
+        data_set = get_coco_api_from_dataset(data_loader.dataset)
     iou_types = _get_iou_types(model)
-    coco_evaluator = CocoEvaluator(coco, iou_types)
+    coco_evaluator = CocoEvaluator(data_set, iou_types)
 
     for images, targets in metric_logger.log_every(data_loader, 100, header):
-        images = torch.stack(images, dim=0)
+        with torch.no_grad():
+            images = torch.stack(images, dim=0)
 
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-        images = images.to(device)
-        # targets = {k: v.to(device) for k, v in targets.items()}
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+            images = images.to(device)
+            # targets = {k: v.to(device) for k, v in targets.items()}
 
-        if device != torch.device("cpu"):
-            torch.cuda.synchronize(device)
+            if device != torch.device("cpu"):
+                torch.cuda.synchronize(device)
 
-        model_time = time.time()
-        #  list((bboxes_out, labels_out, scores_out), ...)
-        results = model(images, targets)
+            model_time = time.time()
+            #  list((bboxes_out, labels_out, scores_out), ...)
+            results = model(images, targets)
 
-        outputs = []
-        for bboxes_out, labels_out, scores_out in results:
-            info = {"boxes": bboxes_out.to(cpu_device),
-                    "labels": labels_out.to(cpu_device),
-                    "scores": scores_out.to(cpu_device)}
-            outputs.append(info)
+            outputs = []
+            for index, (bboxes_out, labels_out, scores_out) in enumerate(results):
+                info = {"boxes": bboxes_out.to(cpu_device),
+                        "labels": labels_out.to(cpu_device),
+                        "scores": scores_out.to(cpu_device),
+                        "height_width": targets[index]["height_width"]}
+                outputs.append(info)
 
-        # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        model_time = time.time() - model_time
+            # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            model_time = time.time() - model_time
 
-        res = dict()
-        for index in range(len(outputs)):
-            info = {targets[index]["image_id"].item(): outputs[index]}
-            res.update(info)
-        # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+            res = dict()
+            for index in range(len(outputs)):
+                info = {targets[index]["image_id"].item(): outputs[index]}
+                res.update(info)
+            # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
 
         evaluator_time = time.time()
         coco_evaluator.update(res)
@@ -127,7 +136,13 @@ def evaluate(model, data_loader, device):
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)
-    return coco_evaluator
+
+    print_txt = coco_evaluator.coco_eval[iou_types[0]].stats
+    coco_mAP = print_txt[0]
+    voc_mAP = print_txt[1]
+    if isinstance(mAP_list, list):
+        mAP_list.append(voc_mAP)
+    # return coco_evaluator
 
 
 def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):

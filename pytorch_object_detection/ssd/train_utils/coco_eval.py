@@ -75,8 +75,15 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
+            # xmin, ymin, xmax, ymax
             boxes = prediction["boxes"]
-            boxes = convert_to_xywh(boxes).tolist()
+            # 将box的相对坐标信息（0-1）转为绝对值坐标
+            height_width = prediction["height_width"]
+            # height_width = [300, 300]
+            boxes[:, [0, 2]] = boxes[:, [0, 2]] * height_width[1]
+            boxes[:, [1, 3]] = boxes[:, [1, 3]] * height_width[0]
+            boxes = convert_to_xywh(boxes)
+            boxes = boxes.tolist()
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
 

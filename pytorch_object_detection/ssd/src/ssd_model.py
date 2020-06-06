@@ -49,8 +49,8 @@ class SSD300(nn.Module):
             location_extractors.append(nn.Conv2d(oc, nd * 4, kernel_size=3, padding=1))
             confidence_extractors.append(nn.Conv2d(oc, nd * self.num_classes, kernel_size=3, padding=1))
 
-        self.location_extractors = nn.ModuleList(location_extractors)
-        self.confidence_extractors = nn.ModuleList(confidence_extractors)
+        self.loc = nn.ModuleList(location_extractors)
+        self.conf = nn.ModuleList(confidence_extractors)
         self._init_weights()
 
         default_box = dboxes300_coco()
@@ -80,7 +80,7 @@ class SSD300(nn.Module):
         self.additional_blocks = nn.ModuleList(additional_blocks)
 
     def _init_weights(self):
-        layers = [*self.additional_blocks, *self.location_extractors, *self.confidence_extractors]
+        layers = [*self.additional_blocks, *self.loc, *self.conf]
         for layer in layers:
             for param in layer.parameters():
                 if param.dim() > 1:
@@ -91,13 +91,11 @@ class SSD300(nn.Module):
         locs = []
         confs = []
         for f, l, c in zip(features, loc_extractor, conf_extractor):
+            # [batch, n*4, feat_size, feat_size] -> [batch, 4, -1]
             locs.append(l(f).view(f.size(0), 4, -1))
             confs.append(c(f).view(f.size(0), self.num_classes, -1))
-            # locs.append(l(f).view(f.size(0), -1, 4))
-            # confs.append(c(f).view(f.size(0), -1, self.num_classes))
 
         locs, confs = torch.cat(locs, 2).contiguous(), torch.cat(confs, 2).contiguous()
-        # locs, confs = torch.cat(locs, 1).contiguous(), torch.cat(confs, 1).contiguous()
         return locs, confs
 
     def forward(self, image, targets):
@@ -110,7 +108,7 @@ class SSD300(nn.Module):
             detection_features.append(x)
 
         # Feature Map 38x38x4, 19x19x6, 10x10x6, 5x5x6, 3x3x4, 1x1x4
-        locs, confs = self.bbox_view(detection_features, self.location_extractors, self.confidence_extractors)
+        locs, confs = self.bbox_view(detection_features, self.loc, self.conf)
 
         # For SSD 300, shall return nbatch x 8732 x {nlabels, nlocs} results
         # 38x38x4 + 19x19x6 + 10x10x6 + 5x5x6 + 3x3x4 + 1x1x4 = 8732
@@ -118,8 +116,11 @@ class SSD300(nn.Module):
         if self.training:
             # bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
             bboxes_out = targets['boxes']
-            bboxes_out = bboxes_out.transpose(1, 2)
+            bboxes_out = bboxes_out.transpose(1, 2).contiguous()
+            # print(bboxes_out.is_contiguous())
             labels_out = targets['labels']
+            # print(labels_out.is_contiguous())
+
             # ploc, plabel, gloc, glabel
             loss = self.compute_loss(locs, confs, bboxes_out, labels_out)
             return {"total_losses": loss}
@@ -142,12 +143,14 @@ class Loss(nn.Module):
         self.scale_wh = 1.0 / dboxes.scale_wh
 
         self.location_loss = nn.SmoothL1Loss(reduction='none')
-        self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0), requires_grad=False)
-        # self.dboxes = nn.Parameter(dboxes(order="xywh").unsqueeze(dim=0), requires_grad=False)
+        # self.location_loss = nn.SmoothL1Loss(reduce=False)
+        self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0),
+                                   requires_grad=False)
 
         # Two factor are from following links
         # http://jany.st/post/2017-11-05-single-shot-detector-ssd-from-scratch-in-tensorflow.html
         self.confidence_loss = nn.CrossEntropyLoss(reduction='none')
+        # self.confidence_loss = nn.CrossEntropyLoss(reduce=False)
 
     def _location_vec(self, loc):
         """
@@ -158,10 +161,7 @@ class Loss(nn.Module):
         """
         gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, :]
         gwh = self.scale_wh * (loc[:, 2:, :] / self.dboxes[:, 2:, :]).log()
-        # gxy = self.scale_xy * (loc[:, :, :2] - self.dboxes[:, :, :2]) / self.dboxes[:, :, 2:]
-        # gwh = self.scale_wh * (loc[:, :, 2:] / self.dboxes[:, :, 2:]).log()
         return torch.cat((gxy, gwh), dim=1).contiguous()
-        # return torch.cat((gxy, gwh), dim=2).contiguous()
 
     def forward(self, ploc, plabel, gloc, glabel):
         """

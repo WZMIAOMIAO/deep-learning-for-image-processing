@@ -4,44 +4,90 @@ from math import sqrt
 import itertools
 import torch
 import torch.nn.functional as F
+from torch.jit.annotations import Tuple
+from torch import Tensor
 
 
 # This function is from https://github.com/kuangliu/pytorch-ssd.
-def calc_iou_tensor(box1, box2):
-    """ Calculation of IoU based on two boxes tensor,
-        Reference to https://github.com/kuangliu/pytorch-src
-        input:
-            box1 (N, 4)  format [xmin, ymin, xmax, ymax]
-            box2 (M, 4)  format [xmin, ymin, xmax, ymax]
-        output:
-            IoU (N, M)
+# def calc_iou_tensor(box1, box2):
+#     """ Calculation of IoU based on two boxes tensor,
+#         Reference to https://github.com/kuangliu/pytorch-src
+#         input:
+#             box1 (N, 4)  format [xmin, ymin, xmax, ymax]
+#             box2 (M, 4)  format [xmin, ymin, xmax, ymax]
+#         output:
+#             IoU (N, M)
+#     """
+#     N = box1.size(0)
+#     M = box2.size(0)
+#
+#     # (N, 4) -> (N, 1, 4) -> (N, M, 4)
+#     be1 = box1.unsqueeze(1).expand(-1, M, -1)  # -1 means not changing the size of that dimension
+#     # (M, 4) -> (1, M, 4) -> (N, M, 4)
+#     be2 = box2.unsqueeze(0).expand(N, -1, -1)
+#
+#     # Left Top and Right Bottom
+#     lt = torch.max(be1[:, :, :2], be2[:, :, :2])
+#     rb = torch.min(be1[:, :, 2:], be2[:, :, 2:])
+#
+#     # compute intersection area
+#     delta = rb - lt  # width and height
+#     delta[delta < 0] = 0
+#     # width * height
+#     intersect = delta[:, :, 0] * delta[:, :, 1]
+#
+#     # compute bel1 area
+#     delta1 = be1[:, :, 2:] - be1[:, :, :2]
+#     area1 = delta1[:, :, 0] * delta1[:, :, 1]
+#     # compute bel2 area
+#     delta2 = be2[:, :, 2:] - be2[:, :, :2]
+#     area2 = delta2[:, :, 0] * delta2[:, :, 1]
+#
+#     iou = intersect / (area1 + area2 - intersect)
+#     return iou
+
+
+def box_area(boxes):
     """
-    N = box1.size(0)
-    M = box2.size(0)
+    Computes the area of a set of bounding boxes, which are specified by its
+    (x1, y1, x2, y2) coordinates.
 
-    # (N, 4) -> (N, 1, 4) -> (N, M, 4)
-    be1 = box1.unsqueeze(1).expand(-1, M, -1)  # -1 means not changing the size of that dimension
-    # (M, 4) -> (1, M, 4) -> (N, M, 4)
-    be2 = box2.unsqueeze(0).expand(N, -1, -1)
+    Arguments:
+        boxes (Tensor[N, 4]): boxes for which the area will be computed. They
+            are expected to be in (x1, y1, x2, y2) format
 
-    # Left Top and Right Bottom
-    lt = torch.max(be1[:, :, :2], be2[:, :, :2])
-    rb = torch.min(be1[:, :, 2:], be2[:, :, 2:])
+    Returns:
+        area (Tensor[N]): area for each box
+    """
+    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
-    # compute intersection area
-    delta = rb - lt  # width and height
-    delta[delta < 0] = 0
-    # width * height
-    intersect = delta[:, :, 0] * delta[:, :, 1]
 
-    # compute bel1 area
-    delta1 = be1[:, :, 2:] - be1[:, :, :2]
-    area1 = delta1[:, :, 0] * delta1[:, :, 1]
-    # compute bel2 area
-    delta2 = be2[:, :, 2:] - be2[:, :, :2]
-    area2 = delta2[:, :, 0] * delta2[:, :, 1]
+def calc_iou_tensor(boxes1, boxes2):
+    """
+    Return intersection-over-union (Jaccard index) of boxes.
 
-    iou = intersect / (area1 + area2 - intersect)
+    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+
+    Arguments:
+        boxes1 (Tensor[N, 4])
+        boxes2 (Tensor[M, 4])
+
+    Returns:
+        iou (Tensor[N, M]): the NxM matrix containing the pairwise
+            IoU values for every element in boxes1 and boxes2
+    """
+    area1 = box_area(boxes1)
+    area2 = box_area(boxes2)
+
+    #  When the shapes do not match,
+    #  the shape of the returned output tensor follows the broadcasting rules
+    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # left-top [N,M,2]
+    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # right-bottom [N,M,2]
+
+    wh = (rb - lt).clamp(min=0)  # [N,M,2]
+    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+
+    iou = inter / (area1[:, None] + area2 - inter)
     return iou
 
 
@@ -90,22 +136,28 @@ class Encoder(object):
         # 将每个bboxes_in匹配到的最佳default box设置为正样本（对应论文中Matching strategy的第一条）
         best_dbox_ious.index_fill_(0, best_bbox_idx, 2.0)
 
+        # 将相应default box的匹配最大IoU bboxes_in信息替换成best_bbox_idx
         idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64)
         best_dbox_idx[best_bbox_idx[idx]] = idx
 
         # filter IoU > 0.5
-        # 寻找与bbox_in iou大于0.5的default box
+        # 寻找与bbox_in iou大于0.5的default box,对应论文中Matching strategy的第二条(这里包括了第一条匹配到的信息)
         masks = best_dbox_ious > criteria
         # [8732,]
-        labels_out = torch.zeros(self.nboxes, dtype=torch.long)
+        labels_out = torch.zeros(self.nboxes, dtype=torch.int64)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
         bboxes_out = self.dboxes.clone()
-        # bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
+        # 将default box匹配到正样本的地方设置成对应正样本box信息
+        bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
         # Transform format to xywh format
-        bboxes_out[:, 0] = 0.5 * (bboxes_out[:, 0] + bboxes_out[:, 2])    # x
-        bboxes_out[:, 1] = 0.5 * (bboxes_out[:, 1] + bboxes_out[:, 3])    # y
-        bboxes_out[:, 2] = bboxes_out[:, 2] - bboxes_out[:, 0]            # w
-        bboxes_out[:, 3] = bboxes_out[:, 3] - bboxes_out[:, 1]            # h
+        x = 0.5 * (bboxes_out[:, 0] + bboxes_out[:, 2])  # x
+        y = 0.5 * (bboxes_out[:, 1] + bboxes_out[:, 3])  # y
+        w = bboxes_out[:, 2] - bboxes_out[:, 0]  # w
+        h = bboxes_out[:, 3] - bboxes_out[:, 1]  # h
+        bboxes_out[:, 0] = x
+        bboxes_out[:, 1] = y
+        bboxes_out[:, 2] = w
+        bboxes_out[:, 3] = h
         return bboxes_out, labels_out
 
     def scale_back_batch(self, bboxes_in, scores_in):
@@ -127,6 +179,7 @@ class Encoder(object):
         # Returns a view of the original tensor with its dimensions permuted.
         bboxes_in = bboxes_in.permute(0, 2, 1)
         scores_in = scores_in.permute(0, 2, 1)
+        # print(bboxes_in.is_contiguous())
 
         bboxes_in[:, :, :2] = self.scale_xy * bboxes_in[:, :, :2]   # 预测的x, y回归参数
         bboxes_in[:, :, 2:] = self.scale_wh * bboxes_in[:, :, 2:]   # 预测的w, h回归参数
@@ -136,10 +189,15 @@ class Encoder(object):
         bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp() * self.dboxes_xywh[:, :, 2:]
 
         # transform format to ltrb
-        bboxes_in[:, :, 0] = bboxes_in[:, :, 0] - 0.5 * bboxes_in[:, :, 2]
-        bboxes_in[:, :, 1] = bboxes_in[:, :, 1] - 0.5 * bboxes_in[:, :, 3]
-        bboxes_in[:, :, 2] = bboxes_in[:, :, 0] + 0.5 * bboxes_in[:, :, 2]
-        bboxes_in[:, :, 3] = bboxes_in[:, :, 1] + 0.5 * bboxes_in[:, :, 3]
+        l = bboxes_in[:, :, 0] - 0.5 * bboxes_in[:, :, 2]
+        t = bboxes_in[:, :, 1] - 0.5 * bboxes_in[:, :, 3]
+        r = bboxes_in[:, :, 0] + 0.5 * bboxes_in[:, :, 2]
+        b = bboxes_in[:, :, 1] + 0.5 * bboxes_in[:, :, 3]
+
+        bboxes_in[:, :, 0] = l  # xmin
+        bboxes_in[:, :, 1] = t  # ymin
+        bboxes_in[:, :, 2] = r  # xmax
+        bboxes_in[:, :, 3] = b  # ymax
 
         return bboxes_in, F.softmax(scores_in, dim=-1)
 
@@ -152,8 +210,62 @@ class Encoder(object):
         for bbox, prob in zip(bboxes.split(1, 0), probs.split(1, 0)):
             bbox = bbox.squeeze(0)
             prob = prob.squeeze(0)
-            outputs.append(self.decode_single(bbox, prob, criteria, max_output))
+            outputs.append(self.decode_single_new(bbox, prob, criteria, max_output))
         return outputs
+
+    def decode_single_new(self, bboxes_in, scores_in, criteria, num_output=200):
+        """
+        decode:
+            input  : bboxes_in (Tensor 8732 x 4), scores_in (Tensor 8732 x nitems)
+            output : bboxes_out (Tensor nboxes x 4), labels_out (Tensor nboxes)
+            criteria : IoU threshold of bboexes
+            max_output : maximum number of output bboxes
+        """
+        device = bboxes_in.device
+        num_classes = scores_in.shape[-1]
+
+        # 对越界的bbox进行裁剪
+        bboxes_in = bboxes_in.clamp(min=0, max=1)
+
+        # [8732, 4] -> [8732, 21, 4]
+        bboxes_in = bboxes_in.repeat(1, num_classes).reshape(scores_in.shape[0], -1, 4)
+
+        # create labels for each prediction
+        labels = torch.arange(num_classes, device=device)
+        labels = labels.view(1, -1).expand_as(scores_in)
+
+        # remove prediction with the background label
+        # 移除归为背景类别的概率信息
+        bboxes_in = bboxes_in[:, 1:, :]
+        scores_in = scores_in[:, 1:]
+        labels = labels[:, 1:]
+
+        # batch everything, by making every class prediction be a separate instance
+        bboxes_in = bboxes_in.reshape(-1, 4)
+        scores_in = scores_in.reshape(-1)
+        labels = labels.reshape(-1)
+
+        # remove low scoring boxes
+        # 移除低概率目标，self.scores_thresh=0.05
+        inds = torch.nonzero(scores_in > 0.05, as_tuple=False).squeeze(1)
+        bboxes_in, scores_in, labels = bboxes_in[inds], scores_in[inds], labels[inds]
+
+        # remove empty boxes
+        ws, hs = bboxes_in[:, 2] - bboxes_in[:, 0], bboxes_in[:, 3] - bboxes_in[:, 1]
+        keep = (ws >= 0.1 / 300) & (hs >= 0.1 / 300)
+        keep = keep.nonzero(as_tuple=False).squeeze(1)
+        bboxes_in, scores_in, labels = bboxes_in[keep], scores_in[keep], labels[keep]
+
+        # non-maximum suppression
+        keep = batched_nms(bboxes_in, scores_in, labels, iou_threshold=criteria)
+
+        # keep only topk scoring predictions
+        keep = keep[:num_output]
+        bboxes_out = bboxes_in[keep, :]
+        scores_out = scores_in[keep]
+        labels_out = labels[keep]
+
+        return bboxes_out, labels_out, scores_out
 
     # perform non-maximum suppression
     def decode_single(self, bboxes_in, scores_in, criteria, max_output, max_num=200):
@@ -212,11 +324,11 @@ class Encoder(object):
             scores_out.append(score[candidates])       # score信息
             labels_out.extend([i] * len(candidates))   # 标签信息
 
-        if not bboxes_out:  # 如果为空的话，返回空tensor
-            return [torch.tensor([]) for _ in range(3)]
+        if not bboxes_out:  # 如果为空的话，返回空tensor，注意boxes对应的空tensor size，防止验证时出错
+            return [torch.empty(size=(0, 4)), torch.empty(size=(0,), dtype=torch.int64), torch.empty(size=(0,))]
 
-        bboxes_out = torch.cat(bboxes_out, dim=0)
-        scores_out = torch.cat(scores_out, dim=0)
+        bboxes_out = torch.cat(bboxes_out, dim=0).contiguous()
+        scores_out = torch.cat(scores_out, dim=0).contiguous()
         labels_out = torch.tensor(labels_out, dtype=torch.long)
 
         # 对所有目标的概率进行排序（无论是什么类别）,取前max_num个目标
@@ -245,11 +357,11 @@ class DefaultBoxes(object):
         # size of feature and number of feature
         # 遍历每层特征层，计算default box
         for idx, sfeat in enumerate(self.feat_size):
-            sk1 = scales[idx] / fig_size
-            sk2 = scales[idx + 1] / fig_size
+            sk1 = scales[idx] / fig_size  # scale转为相对值[0-1]
+            sk2 = scales[idx + 1] / fig_size  # scale转为相对值[0-1]
             sk3 = sqrt(sk1 * sk2)
             # 先添加两个1:1比例的default box宽和高
-            all_sizes = [(sk1, sk2), (sk3, sk3)]
+            all_sizes = [(sk1, sk1), (sk3, sk3)]
 
             # 再将剩下不同比例的default box宽和高添加到all_sizes中
             for alpha in aspect_ratios[idx]:
@@ -260,11 +372,11 @@ class DefaultBoxes(object):
             # 计算当前特征层对应原图上的所有default box
             for w, h in all_sizes:
                 for i, j in itertools.product(range(sfeat), repeat=2):  # i -> 行（y）， j -> 列（x）
-                    # 计算每个default box的在cell中的中心坐标（范围是在0-1之间）
+                    # 计算每个default box的中心坐标（范围是在0-1之间）
                     cx, cy = (j + 0.5) / fk[idx], (i + 0.5) / fk[idx]
                     self.default_boxes.append((cx, cy, w, h))
 
-            self.dboxes = torch.tensor(self.default_boxes, dtype=torch.float32)
+            self.dboxes = torch.tensor(self.default_boxes, dtype=torch.float32)  # 这里不转类型会报错
             self.dboxes.clamp_(min=0, max=1)  # 将坐标（x, y, w, h）都限制在0-1之间
 
             # For IoU calculation
@@ -303,6 +415,81 @@ def dboxes300_coco():
     dboxes = DefaultBoxes(figsize, feat_size, steps, scales, aspect_ratios)
     return dboxes
 
-#
-# def collate_fn(batch):
-#     return tuple(zip(*batch))
+
+def nms(boxes, scores, iou_threshold):
+    # type: (Tensor, Tensor, float) -> Tensor
+    """
+    Performs non-maximum suppression (NMS) on the boxes according
+    to their intersection-over-union (IoU).
+
+    NMS iteratively removes lower scoring boxes which have an
+    IoU greater than iou_threshold with another (higher scoring)
+    box.
+
+    Parameters
+    ----------
+    boxes : Tensor[N, 4])
+        boxes to perform NMS on. They
+        are expected to be in (x1, y1, x2, y2) format
+    scores : Tensor[N]
+        scores for each one of the boxes
+    iou_threshold : float
+        discards all overlapping
+        boxes with IoU < iou_threshold
+
+    Returns
+    -------
+    keep : Tensor
+        int64 tensor with the indices
+        of the elements that have been kept
+        by NMS, sorted in decreasing order of scores
+    """
+    return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
+
+
+def batched_nms(boxes, scores, idxs, iou_threshold):
+    # type: (Tensor, Tensor, Tensor, float) -> Tensor
+    """
+    Performs non-maximum suppression in a batched fashion.
+
+    Each index value correspond to a category, and NMS
+    will not be applied between elements of different categories.
+
+    Parameters
+    ----------
+    boxes : Tensor[N, 4]
+        boxes where NMS will be performed. They
+        are expected to be in (x1, y1, x2, y2) format
+    scores : Tensor[N]
+        scores for each one of the boxes
+    idxs : Tensor[N]
+        indices of the categories for each one of the boxes.
+    iou_threshold : float
+        discards all overlapping boxes
+        with IoU < iou_threshold
+
+    Returns
+    -------
+    keep : Tensor
+        int64 tensor with the indices of
+        the elements that have been kept by NMS, sorted
+        in decreasing order of scores
+    """
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+
+    # strategy: in order to perform NMS independently per class.
+    # we add an offset to all the boxes. The offset is dependent
+    # only on the class idx, and is large enough so that boxes
+    # from different classes do not overlap
+    # 获取所有boxes中最大的坐标值（xmin, ymin, xmax, ymax）
+    max_coordinate = boxes.max()
+
+    # to(): Performs Tensor dtype and/or device conversion
+    # 为每一个类别生成一个很大的偏移量
+    # 这里的to只是让生成tensor的dytpe和device与boxes保持一致
+    offsets = idxs.to(boxes) * (max_coordinate + 1)
+    # boxes加上对应层的偏移量后，保证不同类别之间boxes不会有重合的现象
+    boxes_for_nms = boxes + offsets[:, None]
+    keep = nms(boxes_for_nms, scores, iou_threshold)
+    return keep
