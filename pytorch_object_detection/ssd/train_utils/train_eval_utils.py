@@ -91,36 +91,35 @@ def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
     coco_evaluator = CocoEvaluator(data_set, iou_types)
 
     for images, targets in metric_logger.log_every(data_loader, 100, header):
-        with torch.no_grad():
-            images = torch.stack(images, dim=0)
+        images = torch.stack(images, dim=0)
 
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-            images = images.to(device)
-            # targets = {k: v.to(device) for k, v in targets.items()}
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        images = images.to(device)
+        # targets = {k: v.to(device) for k, v in targets.items()}
 
-            if device != torch.device("cpu"):
-                torch.cuda.synchronize(device)
+        if device != torch.device("cpu"):
+            torch.cuda.synchronize(device)
 
-            model_time = time.time()
-            #  list((bboxes_out, labels_out, scores_out), ...)
-            results = model(images, targets)
+        model_time = time.time()
+        #  list((bboxes_out, labels_out, scores_out), ...)
+        results = model(images, targets)
 
-            outputs = []
-            for index, (bboxes_out, labels_out, scores_out) in enumerate(results):
-                info = {"boxes": bboxes_out.to(cpu_device),
-                        "labels": labels_out.to(cpu_device),
-                        "scores": scores_out.to(cpu_device),
-                        "height_width": targets[index]["height_width"]}
-                outputs.append(info)
+        outputs = []
+        for index, (bboxes_out, labels_out, scores_out) in enumerate(results):
+            info = {"boxes": bboxes_out.to(cpu_device),
+                    "labels": labels_out.to(cpu_device),
+                    "scores": scores_out.to(cpu_device),
+                    "height_width": targets[index]["height_width"]}
+            outputs.append(info)
 
-            # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-            model_time = time.time() - model_time
+        # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        model_time = time.time() - model_time
 
-            res = dict()
-            for index in range(len(outputs)):
-                info = {targets[index]["image_id"].item(): outputs[index]}
-                res.update(info)
-            # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+        res = dict()
+        for index in range(len(outputs)):
+            info = {targets[index]["image_id"].item(): outputs[index]}
+            res.update(info)
+        # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
 
         evaluator_time = time.time()
         coco_evaluator.update(res)

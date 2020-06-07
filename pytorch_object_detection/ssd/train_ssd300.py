@@ -7,14 +7,14 @@ import train_utils.train_eval_utils as utils
 from train_utils.coco_utils import get_coco_api_from_dataset
 
 
-def create_model(num_classes=21):
+def create_model(num_classes=21, device=torch.device('cpu')):
     # https://download.pytorch.org/models/resnet50-19c8e357.pth
     pre_train_path = "./src/resnet50.pth"
     backbone = Backbone(pretrain_path=pre_train_path)
     model = SSD300(backbone=backbone, num_classes=num_classes)
 
     pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
-    pre_model_dict = torch.load(pre_ssd_path, map_location=torch.device('cpu'))
+    pre_model_dict = torch.load(pre_ssd_path, map_location=device)
     pre_weights_dict = pre_model_dict["model"]
 
     # 删除类别预测器权重，注意，回归预测器的权重可以重用，因为不涉及num_classes
@@ -69,7 +69,7 @@ def main():
                                                   num_workers=0,
                                                   collate_fn=utils.collate_fn)
 
-    model = create_model(num_classes=21)
+    model = create_model(num_classes=21, device=device)
     model.to(device)
 
     # define optimizer
