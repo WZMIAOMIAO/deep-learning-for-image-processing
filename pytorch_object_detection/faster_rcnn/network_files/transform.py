@@ -61,8 +61,8 @@ class GeneralizedRCNNTransform(nn.Module):
         # image shape is [channel, height, width]
         h, w = image.shape[-2:]
         im_shape = torch.tensor(image.shape[-2:])
-        min_size = float(torch.min(im_shape))  # 获取长宽中的最小值
-        max_size = float(torch.max(im_shape))  # 获取长宽中的最大值
+        min_size = float(torch.min(im_shape))  # 获取高宽中的最小值
+        max_size = float(torch.max(im_shape))  # 获取高宽中的最大值
         if self.training:
             size = float(self.torch_choice(self.min_size))  # 指定输入图片的最小边长,注意是self.min_size不是min_size
         else:
@@ -75,7 +75,7 @@ class GeneralizedRCNNTransform(nn.Module):
             scale_factor = self.max_size / max_size  # 将缩放比例设为指定最大边长和图片最大边长之比
 
         # interpolate利用插值的方法缩放图片
-        # image[None]操作是在最前面添加batch维度[C, H, W] -> [N, C, H, W]
+        # image[None]操作是在最前面添加batch维度[C, H, W] -> [1, C, H, W]
         # bilinear只支持4D Tensor
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
