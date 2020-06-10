@@ -12,7 +12,8 @@ from train_utils.coco_utils import get_coco_api_from_dataset
 from train_utils.coco_eval import CocoEvaluator
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, warmup=False):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
+                    train_loss=None, train_lr=None, warmup=False):
     model.train()
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -26,18 +27,33 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
         lr_scheduler = warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
-        images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        # batch inputs information
+        images = torch.stack(images, dim=0)
 
-        loss_dict = model(images, targets)
+        boxes = []
+        labels = []
+        img_id = []
+        for t in targets:
+            boxes.append(t['boxes'])
+            labels.append(t['labels'])
+            img_id.append(t["image_id"])
+        targets = {"boxes": torch.stack(boxes, dim=0),
+                   "labels": torch.stack(labels, dim=0),
+                   "image_id": torch.as_tensor(img_id)}
 
-        losses = sum(loss for loss in loss_dict.values())
+        images = images.to(device)
+
+        targets = {k: v.to(device) for k, v in targets.items()}
+        losses_dict = model(images, targets)
 
         # reduce losses over all GPUs for logging purpose
-        loss_dict_reduced = reduce_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        loss_dict_reduced = reduce_dict(losses_dict)
+        losses = loss_dict_reduced["total_losses"]
 
-        loss_value = losses_reduced.item()
+        loss_value = losses.item()
+        if isinstance(train_loss, list):
+            # 记录训练损失
+            train_loss.append(loss_value)
 
         if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
             print("Loss is {}, stopping training".format(loss_value))
@@ -51,12 +67,16 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
         if lr_scheduler is not None:  # 第一轮使用warmup训练方式
             lr_scheduler.step()
 
-        metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
-        metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+        # metric_logger.update(loss=losses, **loss_dict_reduced)
+        metric_logger.update(**loss_dict_reduced)
+        now_lr = optimizer.param_groups[0]["lr"]
+        metric_logger.update(lr=now_lr)
+        if isinstance(train_lr, list):
+            train_lr.append(now_lr)
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device):
+def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -65,25 +85,41 @@ def evaluate(model, data_loader, device):
     metric_logger = MetricLogger(delimiter="  ")
     header = "Test: "
 
-    coco = get_coco_api_from_dataset(data_loader.dataset)
+    if data_set is None:
+        data_set = get_coco_api_from_dataset(data_loader.dataset)
     iou_types = _get_iou_types(model)
-    coco_evaluator = CocoEvaluator(coco, iou_types)
+    coco_evaluator = CocoEvaluator(data_set, iou_types)
 
-    for image, targets in metric_logger.log_every(data_loader, 100, header):
-        image = list(img.to(device) for img in image)
+    for images, targets in metric_logger.log_every(data_loader, 100, header):
+        images = torch.stack(images, dim=0)
+
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        images = images.to(device)
+        # targets = {k: v.to(device) for k, v in targets.items()}
 
-        # 当使用CPU时，跳过GPU相关指令
         if device != torch.device("cpu"):
             torch.cuda.synchronize(device)
 
         model_time = time.time()
-        outputs = model(image)
+        #  list((bboxes_out, labels_out, scores_out), ...)
+        results = model(images, targets)
 
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        outputs = []
+        for index, (bboxes_out, labels_out, scores_out) in enumerate(results):
+            info = {"boxes": bboxes_out.to(cpu_device),
+                    "labels": labels_out.to(cpu_device),
+                    "scores": scores_out.to(cpu_device),
+                    "height_width": targets[index]["height_width"]}
+            outputs.append(info)
+
+        # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
-        res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+        res = dict()
+        for index in range(len(outputs)):
+            info = {targets[index]["image_id"].item(): outputs[index]}
+            res.update(info)
+        # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
 
         evaluator_time = time.time()
         coco_evaluator.update(res)
@@ -99,11 +135,16 @@ def evaluate(model, data_loader, device):
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)
-    return coco_evaluator
+
+    print_txt = coco_evaluator.coco_eval[iou_types[0]].stats
+    coco_mAP = print_txt[0]
+    voc_mAP = print_txt[1]
+    if isinstance(mAP_list, list):
+        mAP_list.append(voc_mAP)
+    # return coco_evaluator
 
 
 def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):
-
     def f(x):
         """根据step数返回一个学习率倍率因子"""
         if x >= warmup_iters:  # 当迭代数大于给定的warmup_iters时，倍率因子为1
@@ -119,6 +160,7 @@ class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
     """
+
     def __init__(self, window_size=20, fmt=None):
         if fmt is None:
             fmt = "{median:.4f} ({global_avg:.4f})"
@@ -276,7 +318,21 @@ class MetricLogger(object):
 
 
 def collate_fn(batch):
-    return tuple(zip(*batch))
+    images, targets = tuple(zip(*batch))
+    # images = torch.stack(images, dim=0)
+    #
+    # boxes = []
+    # labels = []
+    # img_id = []
+    # for t in targets:
+    #     boxes.append(t['boxes'])
+    #     labels.append(t['labels'])
+    #     img_id.append(t["image_id"])
+    # targets = {"boxes": torch.stack(boxes, dim=0),
+    #            "labels": torch.stack(labels, dim=0),
+    #            "image_id": torch.as_tensor(img_id)}
+
+    return images, targets
 
 
 def mkdir(path):

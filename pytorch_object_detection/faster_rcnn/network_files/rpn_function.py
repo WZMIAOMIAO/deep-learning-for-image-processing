@@ -10,7 +10,7 @@ from torch import Tensor
 
 @torch.jit.unused
 def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
-    # type: (Tensor, int) -> Tuple[int, int]
+    # type: (Tensor, int) -> Tuple[int, Tensor]
     from torch.onnx import operators
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
     # TODO : remove cast to IntTensor/num_anchors.dtype when
@@ -258,6 +258,7 @@ def permute_and_flatten(layer, N, A, C, H, W):
     # view和reshape功能是一样的，先展平所有元素在按照给定shape排列
     # view函数只能用于内存中连续存储的tensor，permute等操作会使tensor在内存中变得不再连续，此时就不能再调用view函数
     # reshape则不需要依赖目标tensor是否在内存中是连续的
+    # [batch_size, anchors_num_per_position * (C or 4), height, width]
     layer = layer.view(N, -1, C,  H, W)
     # 调换tensor维度
     layer = layer.permute(0, 3, 4, 1, 2)  # [N, H, W, -1, C]
@@ -280,6 +281,7 @@ def concat_box_prediction_layers(box_cls, box_regression):
     box_cls_flattened = []
     box_regression_flattened = []
 
+    # 遍历每个预测特征层
     for box_cls_per_level, box_regression_per_level in zip(box_cls, box_regression):
         # [batch_size, anchors_num_per_position * classes_num, height, width]
         # 注意，当计算RPN中的proposal时，classes_num=1,只区分目标和背景

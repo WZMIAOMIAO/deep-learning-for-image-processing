@@ -16,10 +16,10 @@
     * GoogLeNet（已完成）
     * ResNet（已完成）
     * MobileNet（已完成）
-    * ShuffleNet
+    * ShuffleNet (准备中)
 * 目标识别检测
     * Faster RCNN（进行中）
-    * SSD
+    * SSD (准备中)
     * YOLO v3
 * 目标分割
 
