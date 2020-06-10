@@ -10,7 +10,7 @@ from torch import Tensor
 
 @torch.jit.unused
 def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
-    # type: (Tensor, int) -> Tuple[int, int]
+    # type: (Tensor, int) -> Tuple[int, Tensor]
     from torch.onnx import operators
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
     # TODO : remove cast to IntTensor/num_anchors.dtype when
