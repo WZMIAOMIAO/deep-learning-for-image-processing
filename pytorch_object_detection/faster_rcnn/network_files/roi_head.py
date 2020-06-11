@@ -1,8 +1,9 @@
 import torch
+import torchvision
 import torch.nn.functional as F
 from network_files import boxes as box_ops, det_utils
+from torch import nn, Tensor
 from torch.jit.annotations import Optional, List, Dict, Tuple
-from torch import Tensor
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -208,11 +209,12 @@ class RoIHeads(torch.nn.Module):
 
         # 检查target数据是否为空
         self.check_targets(targets)
+        assert targets is not None
         dtype = proposals[0].dtype
         device = proposals[0].device
 
         gt_boxes = [t["boxes"].to(dtype) for t in targets]
-        gt_labels = [t["labels"].to(dtype) for t in targets]
+        gt_labels = [t["labels"] for t in targets]
 
         # append ground-truth bboxes to proposal
         # 将gt_boxes拼接到proposal后面

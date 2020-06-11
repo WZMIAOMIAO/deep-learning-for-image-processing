@@ -37,7 +37,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return (image - mean[:, None, None]) / std[:, None, None]
 
     def torch_choice(self, l):
-        # type: (List[int]) -> int
+        # type: (List[int])
         """
         Implements `random.choice` via torch ops so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
@@ -47,7 +47,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return l[index]
 
     def resize(self, image, target):
-        # type: (Tensor, Optional[Dict[str, Tensor]]) -> (Tensor, Optional[Dict[str, Tensor]])
+        # type: (Tensor, Optional[Dict[str, Tensor]])
         """
         将图片缩放到指定的大小范围内，并对应缩放bboxes信息
         Args:
@@ -124,7 +124,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return maxes
 
     def batch_images(self, images, size_divisible=32):
-        # type: (List[Tensor], int) -> Tensor
+        # type: (List[Tensor], int)
         """
         将一批图像打包成一个batch返回（注意batch中每个tensor的shape是相同的）
         Args:
@@ -164,7 +164,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return batched_imgs
 
     def postprocess(self, result, image_shapes, original_image_sizes):
-        # type: (List[Dict[str, Tensor]], List[Tuple[int, int]], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
+        # type: (List[Dict[str, Tensor]], List[Tuple[int, int]], List[Tuple[int, int]])
         """
         对网络的预测结果进行后处理（主要将bboxes还原到原图像尺度上）
         Args:
@@ -194,6 +194,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return format_string
 
     def forward(self, images, targets=None):
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
         images = [img for img in images]
         for i in range(len(images)):
             image = images[i]

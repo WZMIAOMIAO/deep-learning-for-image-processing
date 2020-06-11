@@ -6,11 +6,12 @@ from network_files import boxes as box_ops
 from network_files import det_utils
 from torch.jit.annotations import List, Optional, Dict, Tuple
 from torch import Tensor
+from network_files.image_list import ImageList
 
 
 @torch.jit.unused
 def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
-    # type: (Tensor, int) -> Tuple[int, Tensor]
+    # type: (Tensor, int) -> Tuple[int, int]
     from torch.onnx import operators
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
     # TODO : remove cast to IntTensor/num_anchors.dtype when

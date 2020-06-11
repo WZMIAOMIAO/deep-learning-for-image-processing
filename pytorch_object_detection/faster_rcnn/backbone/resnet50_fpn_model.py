@@ -1,8 +1,11 @@
 from torchvision.ops import misc
 import torch.nn as nn
 import torch
+from torch import Tensor
 from collections import OrderedDict
 import torch.nn.functional as F
+
+from torch.jit.annotations import Tuple, List, Dict
 
 
 class Bottleneck(nn.Module):
@@ -134,6 +137,9 @@ class IntermediateLayerGetter(nn.ModuleDict):
             the key of the dict, and the value of the dict is the name
             of the returned activation (which the user can specify).
     """
+    __annotations__ = {
+        "return_layers": Dict[str, str],
+    }
 
     def __init__(self, model, return_layers):
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
@@ -210,7 +216,46 @@ class FeaturePyramidNetwork(nn.Module):
 
         self.extra_blocks = extra_blocks
 
+    def get_result_from_inner_blocks(self, x, idx):
+        # type: (Tensor, int)
+        """
+        This is equivalent to self.inner_blocks[idx](x),
+        but torchscript doesn't support this yet
+        """
+        num_blocks = 0
+        for m in self.inner_blocks:
+            num_blocks += 1
+        if idx < 0:
+            idx += num_blocks
+        i = 0
+        out = x
+        for module in self.inner_blocks:
+            if i == idx:
+                out = module(x)
+            i += 1
+        return out
+
+    def get_result_from_layer_blocks(self, x, idx):
+        # type: (Tensor, int)
+        """
+        This is equivalent to self.layer_blocks[idx](x),
+        but torchscript doesn't support this yet
+        """
+        num_blocks = 0
+        for m in self.layer_blocks:
+            num_blocks += 1
+        if idx < 0:
+            idx += num_blocks
+        i = 0
+        out = x
+        for module in self.layer_blocks:
+            if i == idx:
+                out = module(x)
+            i += 1
+        return out
+
     def forward(self, x):
+        # type: (Dict[str, Tensor])
         """
         Computes the FPN for a set of feature maps.
 
@@ -235,16 +280,23 @@ class FeaturePyramidNetwork(nn.Module):
 
         # 倒序遍历resenet输出特征层，以及对应inner_block和layer_block
         # layer3 -> layer2 -> layer1 （layer4已经处理过了）
-        for feature, inner_block, layer_block in zip(
-                x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
-        ):
-            if not inner_block:
-                continue
-            inner_lateral = inner_block(feature)
+        # for feature, inner_block, layer_block in zip(
+        #         x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
+        # ):
+        #     if not inner_block:
+        #         continue
+        #     inner_lateral = inner_block(feature)
+        #     feat_shape = inner_lateral.shape[-2:]
+        #     inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
+        #     last_inner = inner_lateral + inner_top_down
+        #     results.insert(0, layer_block(last_inner))
+
+        for idx in range(len(x) - 2, -1, -1):
+            inner_lateral = self.get_result_from_inner_blocks(x[idx], idx)
             feat_shape = inner_lateral.shape[-2:]
             inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
             last_inner = inner_lateral + inner_top_down
-            results.insert(0, layer_block(last_inner))
+            results.insert(0, self.get_result_from_layer_blocks(last_inner, idx))
 
         # 在layer4对应的预测特征层基础上生成预测特征矩阵5
         if self.extra_blocks is not None:
@@ -262,12 +314,13 @@ class LastLevelMaxPool(torch.nn.Module):
     """
 
     def forward(self, x, names):
+        # type: (List[Tensor], List[str])
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names
 
 
-class BackboneWithFPN(nn.Sequential):
+class BackboneWithFPN(nn.Module):
     """
     Adds a FPN on top of a model.
 
@@ -290,15 +343,21 @@ class BackboneWithFPN(nn.Sequential):
     """
 
     def __init__(self, backbone, return_layers, in_channels_list, out_channels):
-        body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        fpn = FeaturePyramidNetwork(
+        super(BackboneWithFPN, self).__init__()
+        self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+        self.fpn = FeaturePyramidNetwork(
             in_channels_list=in_channels_list,
             out_channels=out_channels,
             extra_blocks=LastLevelMaxPool(),
-        )
-        super(BackboneWithFPN, self).__init__(OrderedDict(
-            [("body", body), ("fpn", fpn)]))
+            )
+        # super(BackboneWithFPN, self).__init__(OrderedDict(
+        #     [("body", body), ("fpn", fpn)]))
         self.out_channels = out_channels
+
+    def forward(self, x):
+        x = self.body(x)
+        x = self.fpn(x)
+        return x
 
 
 def resnet50_fpn_backbone():
