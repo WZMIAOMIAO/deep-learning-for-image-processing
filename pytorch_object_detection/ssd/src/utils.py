@@ -4,8 +4,8 @@ from math import sqrt
 import itertools
 import torch
 import torch.nn.functional as F
-from torch.jit.annotations import Tuple
-from torch import Tensor
+from torch.jit.annotations import Tuple, List
+from torch import nn, Tensor
 
 
 # This function is from https://github.com/kuangliu/pytorch-ssd.
@@ -493,3 +493,118 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
     boxes_for_nms = boxes + offsets[:, None]
     keep = nms(boxes_for_nms, scores, iou_threshold)
     return keep
+
+
+class PostProcess(nn.Module):
+    def __init__(self, dboxes):
+        super(PostProcess, self).__init__()
+        self.dboxes_xywh = nn.Parameter(dboxes(order='xywh').unsqueeze(dim=0),
+                                        requires_grad=False)
+        self.scale_xy = dboxes.scale_xy
+        self.scale_wh = dboxes.scale_wh
+
+        self.criteria = 0.5
+        self.max_output = 100
+
+    def scale_back_batch(self, bboxes_in, scores_in):
+        # type: (Tensor, Tensor)
+        """
+            将box格式从xywh转换回ltrb, 将预测目标score通过softmax处理
+            Do scale and transform from xywh to ltrb
+            suppose input N x 4 x num_bbox | N x label_num x num_bbox
+
+            bboxes_in: 是网络预测的xywh回归参数
+            scores_in: 是预测的每个default box的各目标概率
+        """
+
+        # Returns a view of the original tensor with its dimensions permuted.
+        bboxes_in = bboxes_in.permute(0, 2, 1)
+        scores_in = scores_in.permute(0, 2, 1)
+        # print(bboxes_in.is_contiguous())
+
+        bboxes_in[:, :, :2] = self.scale_xy * bboxes_in[:, :, :2]   # 预测的x, y回归参数
+        bboxes_in[:, :, 2:] = self.scale_wh * bboxes_in[:, :, 2:]   # 预测的w, h回归参数
+
+        # 将预测的回归参数叠加到default box上得到最终的预测边界框
+        bboxes_in[:, :, :2] = bboxes_in[:, :, :2] * self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
+        bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp() * self.dboxes_xywh[:, :, 2:]
+
+        # transform format to ltrb
+        l = bboxes_in[:, :, 0] - 0.5 * bboxes_in[:, :, 2]
+        t = bboxes_in[:, :, 1] - 0.5 * bboxes_in[:, :, 3]
+        r = bboxes_in[:, :, 0] + 0.5 * bboxes_in[:, :, 2]
+        b = bboxes_in[:, :, 1] + 0.5 * bboxes_in[:, :, 3]
+
+        bboxes_in[:, :, 0] = l  # xmin
+        bboxes_in[:, :, 1] = t  # ymin
+        bboxes_in[:, :, 2] = r  # xmax
+        bboxes_in[:, :, 3] = b  # ymax
+
+        return bboxes_in, F.softmax(scores_in, dim=-1)
+
+    def decode_single_new(self, bboxes_in, scores_in, criteria, num_output):
+        # type: (Tensor, Tensor, float, int)
+        """
+        decode:
+            input  : bboxes_in (Tensor 8732 x 4), scores_in (Tensor 8732 x nitems)
+            output : bboxes_out (Tensor nboxes x 4), labels_out (Tensor nboxes)
+            criteria : IoU threshold of bboexes
+            max_output : maximum number of output bboxes
+        """
+        device = bboxes_in.device
+        num_classes = scores_in.shape[-1]
+
+        # 对越界的bbox进行裁剪
+        bboxes_in = bboxes_in.clamp(min=0, max=1)
+
+        # [8732, 4] -> [8732, 21, 4]
+        bboxes_in = bboxes_in.repeat(1, num_classes).reshape(scores_in.shape[0], -1, 4)
+
+        # create labels for each prediction
+        labels = torch.arange(num_classes, device=device)
+        labels = labels.view(1, -1).expand_as(scores_in)
+
+        # remove prediction with the background label
+        # 移除归为背景类别的概率信息
+        bboxes_in = bboxes_in[:, 1:, :]
+        scores_in = scores_in[:, 1:]
+        labels = labels[:, 1:]
+
+        # batch everything, by making every class prediction be a separate instance
+        bboxes_in = bboxes_in.reshape(-1, 4)
+        scores_in = scores_in.reshape(-1)
+        labels = labels.reshape(-1)
+
+        # remove low scoring boxes
+        # 移除低概率目标，self.scores_thresh=0.05
+        inds = torch.nonzero(scores_in > 0.05).squeeze(1)
+        bboxes_in, scores_in, labels = bboxes_in[inds], scores_in[inds], labels[inds]
+
+        # remove empty boxes
+        ws, hs = bboxes_in[:, 2] - bboxes_in[:, 0], bboxes_in[:, 3] - bboxes_in[:, 1]
+        keep = (ws >= 0.1 / 300) & (hs >= 0.1 / 300)
+        keep = keep.nonzero().squeeze(1)
+        bboxes_in, scores_in, labels = bboxes_in[keep], scores_in[keep], labels[keep]
+
+        # non-maximum suppression
+        keep = batched_nms(bboxes_in, scores_in, labels, iou_threshold=criteria)
+
+        # keep only topk scoring predictions
+        keep = keep[:num_output]
+        bboxes_out = bboxes_in[keep, :]
+        scores_out = scores_in[keep]
+        labels_out = labels[keep]
+
+        return bboxes_out, labels_out, scores_out
+
+    def forward(self, bboxes_in, scores_in):
+        # 将box格式从xywh转换回ltrb（方便后面非极大值抑制时求iou）, 将预测目标score通过softmax处理
+        bboxes, probs = self.scale_back_batch(bboxes_in, scores_in)
+
+        outputs = torch.jit.annotate(List[Tuple[Tensor, Tensor, Tensor]], [])
+        # 遍历一个batch中的每张image数据
+        for bbox, prob in zip(bboxes.split(1, 0), probs.split(1, 0)):
+            bbox = bbox.squeeze(0)
+            prob = prob.squeeze(0)
+            outputs.append(self.decode_single_new(bbox, prob, self.criteria, self.max_output))
+        return outputs

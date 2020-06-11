@@ -1,7 +1,8 @@
 from src.res50_backbone import resnet50
-from torch import nn
+from torch import nn, Tensor
 import torch
-from src.utils import dboxes300_coco, Encoder
+from torch.jit.annotations import Optional, List, Dict, Tuple, Module
+from src.utils import dboxes300_coco, Encoder, PostProcess
 
 
 class Backbone(nn.Module):
@@ -56,6 +57,7 @@ class SSD300(nn.Module):
         default_box = dboxes300_coco()
         self.compute_loss = Loss(default_box)
         self.encoder = Encoder(default_box)
+        self.postprocess = PostProcess(default_box)
 
     def _build_additional_features(self, input_size):
         """
@@ -102,7 +104,8 @@ class SSD300(nn.Module):
         x = self.feature_extractor(image)
 
         # Feature Map 38x38x1024, 19x19x512, 10x10x512, 5x5x256, 3x3x256, 1x1x256
-        detection_features = [x]
+        detection_features = torch.jit.annotate(List[Tensor], [])  # [x]
+        detection_features.append(x)
         for layer in self.additional_blocks:
             x = layer(x)
             detection_features.append(x)
@@ -126,7 +129,8 @@ class SSD300(nn.Module):
             return {"total_losses": loss}
 
         # 将预测回归参数叠加到default box上得到最终预测box，并执行非极大值抑制虑除重叠框
-        results = self.encoder.decode_batch(locs, confs)
+        # results = self.encoder.decode_batch(locs, confs)
+        results = self.postprocess(locs, confs)
         return results
 
 
@@ -153,6 +157,7 @@ class Loss(nn.Module):
         # self.confidence_loss = nn.CrossEntropyLoss(reduce=False)
 
     def _location_vec(self, loc):
+        # type: (Tensor)
         """
         Generate Location Vectors
         计算ground truth相对anchors的回归参数
@@ -164,6 +169,7 @@ class Loss(nn.Module):
         return torch.cat((gxy, gwh), dim=1).contiguous()
 
     def forward(self, ploc, plabel, gloc, glabel):
+        # type: (Tensor, Tensor, Tensor, Tensor)
         """
             ploc, plabel: Nx4x8732, Nxlabel_numx8732
                 predicted location and labels
@@ -173,47 +179,43 @@ class Loss(nn.Module):
         """
         # 获取正样本的mask  Tensor: [N, 8732]
         mask = glabel > 0
+        # mask1 = torch.nonzero(glabel)
         # 计算一个batch中的每张图片的正样本个数 Tensor: [N]
         pos_num = mask.sum(dim=1)
 
-        # 计算gt的location回归参数
+        # 计算gt的location回归参数 Tensor: [N, 4, 8732]
         vec_gd = self._location_vec(gloc)
 
         # sum on four coordinates, and mask
         # 计算定位损失(只有正样本)
-        loc_loss = self.location_loss(ploc, vec_gd).sum(dim=1)
-        loc_loss = (mask.float() * loc_loss).sum(dim=1)
+        loc_loss = self.location_loss(ploc, vec_gd).sum(dim=1)  # Tensor: [N, 8732]
+        loc_loss = (mask.float() * loc_loss).sum(dim=1)  # Tenosr: [N]
 
-        # hard negative mining
+        # hard negative mining Tenosr: [N, 8732]
         con = self.confidence_loss(plabel, glabel)
 
         # positive mask will never selected
         # 获取负样本
         con_neg = con.clone()
-        con_neg[mask] = 0
-        # 按照location_loss降序排列
+        con_neg[mask] = torch.tensor(0.0)
+        # 按照confidence_loss降序排列 con_idx(Tensor: [N, 8732])
         _, con_idx = con_neg.sort(dim=1, descending=True)
-        _, con_rank = con_idx.sort(dim=1)  # ????
+        _, con_rank = con_idx.sort(dim=1)  # 这个步骤比较巧妙
 
         # number of negative three times positive
         # 用于损失计算的负样本数是正样本的3倍（在原论文Hard negative mining部分），
         # 但不能超过总样本数8732
         neg_num = torch.clamp(3 * pos_num, max=mask.size(1)).unsqueeze(-1)
-        neg_mask = con_rank < neg_num
+        neg_mask = con_rank < neg_num  # Tensor [N, 8732]
 
         # confidence最终loss使用选取的正样本loss+选取的负样本loss
-        con_loss = (con * (mask.float() + neg_mask.float())).sum(dim=1)
+        con_loss = (con * (mask.float() + neg_mask.float())).sum(dim=1)  # Tensor [N]
 
         # avoid no object detected
+        # 避免出现图像中没有GTBOX的情况
         total_loss = loc_loss + con_loss
-        num_mask = (pos_num > 0).float()
-        pos_num = pos_num.float().clamp(min=1e-6)
-        ret = (total_loss * num_mask / pos_num).mean(dim=0)
+        num_mask = (pos_num > 0).float()  # 统计一个batch中的每张图像中是否存在GTBOX
+        pos_num = pos_num.float().clamp(min=1e-6)  # 防止出现分母为零的情况
+        ret = (total_loss * num_mask / pos_num).mean(dim=0)  # 只计算存在GTBOX的图像损失
         return ret
-
-
-
-
-
-
 
