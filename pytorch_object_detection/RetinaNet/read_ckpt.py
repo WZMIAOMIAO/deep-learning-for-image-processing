@@ -9,10 +9,12 @@ def rename_var(ckpt_path, new_ckpt_path):
     with tf.Graph().as_default(), tf.compat.v1.Session().as_default() as sess:
         var_list = tf.train.list_variables(ckpt_path)
         resnet50 = var_list[:265]
+        fpn = var_list[265: 291]
+        predictor = var_list[291:]
 
         for var_name_o, shape in resnet50:
             var_name = var_name_o
-            var_name = var_name.replace("FeatureExtractor/resnet_v1_50/", "")
+            var_name = var_name.replace("FeatureExtractor/resnet_v1_50/", "feature_extractor.body.")
             var_name = var_name.replace("/bottleneck_v1", "")
             var_name = var_name.replace("/", ".")
             var_name = var_name.replace("block", "layer")
@@ -50,7 +52,7 @@ def rename_var(ckpt_path, new_ckpt_path):
                 torch_tensor = torch.tensor(np.transpose(var, (3, 2, 0, 1)).astype(np.float32))
                 new_weights_dict.update({var_name: torch_tensor})
 
-            # # 将tensorflow中的BN参数转换到pytorch中
+            # 将tensorflow中的BN参数转换到pytorch中
             if "bn" in var_name:
                 var = tf.train.load_variable(ckpt_path, var_name_o)
                 torch_tensor = torch.tensor(var.astype(np.float32))
@@ -68,19 +70,53 @@ def rename_var(ckpt_path, new_ckpt_path):
                     torch_tensor = torch.tensor(var.astype(np.float32))
                     new_weights_dict.update({var_name: torch_tensor})
 
-            print(var_name)
+            # print(var_name)
         # torch.save(new_weights_dict, "./re500.pth")
-        fpn = var_list[265:]
-        for var_name, shape in fpn:
-            print(var_name)
-            if var_name in except_list:
-                continue
-            # var = tf.train.load_variable(ckpt_path, var_name)
-            new_var_name = var_name.replace('resnet_v1_50/', "")
-            new_var_name = new_var_name.replace("bottleneck_v1/", "")
-            new_var_name = new_var_name.replace("shortcut/weights", "shortcut/conv1/kernel")
-            new_var_name = new_var_name.replace("weights", "kernel")
-            new_var_name = new_var_name.replace("biases", "bias")
+
+        for var_name_o, shape in fpn:
+            var_name = var_name_o
+            var_name = var_name.replace("FeatureExtractor/resnet_v1_50/", "feature_extractor.")
+            var_name = var_name.replace("/", ".")
+
+            if "projection" in var_name:
+                index = var_name.find("projection")
+                num = int(var_name[index + 11]) - 1
+                var_name = var_name.replace("projection_" + str(num + 1) + ".biases",
+                                            "projection_blocks." + str(num) + ".bias")
+                var_name = var_name.replace("projection_" + str(num + 1) + ".weights",
+                                            "projection_blocks." + str(num) + ".weight")
+            if "smoothing" in var_name:
+                index = var_name.find("smoothing")
+                num = int(var_name[index + 10]) - 1
+                var_name = var_name.replace("smoothing_" + str(num + 1) + ".weights",
+                                            "smoothing_blocks." + str(num) + "." + str(num) + ".weight")
+                var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.beta",
+                                            "smoothing_blocks." + str(num) + "." + "1" + ".bias")
+                var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.gamma",
+                                            "smoothing_blocks." + str(num) + "." + "1" + ".weight")
+                var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.moving_mean",
+                                            "smoothing_blocks." + str(num) + "." + "1" + ".running_mean")
+                var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.moving_variance",
+                                            "smoothing_blocks." + str(num) + "." + "1" + ".running_variance")
+
+            if "bottom_up_block" in var_name:
+                index = var_name.find("bottom_up_block")
+                num = int(var_name[index + 15])
+                var_name = var_name.replace("bottom_up_block" + str(num) + ".weights",
+                                            "extra_blocks." + "bottom_up_block" + str(num) + ".0" + ".weight")
+                var_name = var_name.replace("bottom_up_block" + str(num) + ".BatchNorm.beta",
+                                            "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".bias")
+                var_name = var_name.replace("bottom_up_block" + str(num) + ".BatchNorm.gamma",
+                                            "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".weight")
+                var_name = var_name.replace("bottom_up_block" + str(num) + ".BatchNorm.moving_mean",
+                                            "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".running_mean")
+                var_name = var_name.replace("bottom_up_block" + str(num) + ".BatchNorm.moving_variance",
+                                            "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".running_variance")
+
+            #print(var_name)
+
+        for var_name_o in predictor:
+            pass
 
 
 

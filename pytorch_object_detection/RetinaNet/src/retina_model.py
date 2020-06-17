@@ -1,7 +1,7 @@
 from torch import nn, Tensor
 import torch
 from torch.jit.annotations import Optional, List, Dict, Tuple, Module
-from src.utils import dboxes300_coco, Encoder, PostProcess
+from src.utils import dboxes640_coco, Encoder, PostProcess
 from src.loss import Loss
 
 
@@ -17,9 +17,9 @@ class RetinaNet640(nn.Module):
         self.num_classes = num_classes
         # out_channels = [1024, 512, 512, 256, 256, 256] for resnet50
         self.predictor = Predictor(num_features=5, in_channels=256, num_layers_before_predictor=4,
-                                   num_classes=num_classes, num_boxes=4)
+                                   num_classes=num_classes, num_boxes=9)
 
-        default_box = dboxes300_coco()
+        default_box = dboxes640_coco()
         self.compute_loss = Loss(default_box)
         self.encoder = Encoder(default_box)
         self.postprocess = PostProcess(default_box)
@@ -29,11 +29,11 @@ class RetinaNet640(nn.Module):
 
         pre_box, pre_class = self.predictor(x)
 
-        # For SSD 300, shall return nbatch x 8732 x {nlabels, nlocs} results
-        # 38x38x4 + 19x19x6 + 10x10x6 + 5x5x6 + 3x3x4 + 1x1x4 = 8732
+        # For RetinaNet, shall return nbatch x 76725 x {nlabels, nlocs} results
+        # 80x80x9 + 40x40x9 + 20x20x9 + 10x10x9 + 5x5x9 = 76725
 
         if self.training:
-            # bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
+            # bboxes_out (Tensor 76725 x 4), labels_out (Tensor 76725)
             bboxes_out = targets['boxes']
             bboxes_out = bboxes_out.transpose(1, 2).contiguous()
             # print(bboxes_out.is_contiguous())

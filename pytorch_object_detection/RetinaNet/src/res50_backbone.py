@@ -179,7 +179,7 @@ class FeaturePyramidNetwork(nn.Module):
             a new list of feature maps and their corresponding names
     """
 
-    def __init__(self, in_channels_list, out_channels, extra_blocks=None):
+    def __init__(self, in_channels_list, out_channels=256, extra_blocks=None):
         super(FeaturePyramidNetwork, self).__init__()
         # 用来调整resnet输出特征矩阵(layer2,3,4)的channel（kernel_size=1）
         self.projection_blocks = nn.ModuleList()
@@ -190,7 +190,9 @@ class FeaturePyramidNetwork(nn.Module):
             self.projection_blocks.append(projection_block)
 
             if in_channels in [512, 1024]:  # 只有layer2和layer3才有smoothing_block
-                smoothing_block = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+                smoothing_block = nn.Sequential(nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
+                                                nn.BatchNorm2d(out_channels),
+                                                nn.ReLU6(inplace=True))
                 self.smoothing_blocks.append(smoothing_block)
 
         # initialize parameters now to avoid modifying the initialization of top_blocks

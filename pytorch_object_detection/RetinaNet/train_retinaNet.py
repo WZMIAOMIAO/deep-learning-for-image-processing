@@ -11,6 +11,7 @@ from src.res50_backbone import resnet50_fpn_backbone
 def create_model(num_classes=21, device=torch.device('cpu')):
     backbone = resnet50_fpn_backbone()
     model = RetinaNet640(backbone=backbone, num_classes=num_classes)
+    test_dict = model.state_dict()
 
     # pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
     # pre_model_dict = torch.load(pre_ssd_path, map_location=device)

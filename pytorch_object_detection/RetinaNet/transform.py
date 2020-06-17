@@ -1,7 +1,7 @@
 import random
 import torchvision.transforms as t
 from torchvision.transforms import functional as F
-from src.utils import dboxes300_coco, calc_iou_tensor, Encoder
+from src.utils import dboxes640_coco, calc_iou_tensor, Encoder
 import torch
 
 
@@ -64,7 +64,7 @@ class SSDCropping(object):
             # no IoU requirements
             (None, None),
         )
-        self.dboxes = dboxes300_coco()
+        self.dboxes = dboxes640_coco()
 
     def __call__(self, image, target):
         # Ensure always return cropped image
@@ -184,13 +184,13 @@ class Normalization(object):
 
 class AssignGTtoDefaultBox(object):
     def __init__(self):
-        self.default_box = dboxes300_coco()
+        self.default_box = dboxes640_coco()
         self.encoder = Encoder(self.default_box)
 
     def __call__(self, image, target):
         boxes = target['boxes']
         labels = target["labels"]
-        # bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
+        # bboxes_out (Tensor 76725 x 4), labels_out (Tensor 76725)
         bboxes_out, labels_out = self.encoder.encode(boxes, labels)
         target['boxes'] = bboxes_out
         target['labels'] = labels_out

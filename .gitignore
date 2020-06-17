@@ -10,6 +10,7 @@ flower_data
 *.ckpt.*
 *.ckpt
 *.config
+*.gz
 checkpoint
 data
 VOCdevkit
