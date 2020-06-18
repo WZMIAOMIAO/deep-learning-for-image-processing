@@ -74,6 +74,7 @@ def rename_var(ckpt_path, new_ckpt_path):
         # torch.save(new_weights_dict, "./re500.pth")
 
         for var_name_o, shape in fpn:
+
             var_name = var_name_o
             var_name = var_name.replace("FeatureExtractor/resnet_v1_50/", "feature_extractor.")
             var_name = var_name.replace("/", ".")
@@ -85,11 +86,22 @@ def rename_var(ckpt_path, new_ckpt_path):
                                             "projection_blocks." + str(num) + ".bias")
                 var_name = var_name.replace("projection_" + str(num + 1) + ".weights",
                                             "projection_blocks." + str(num) + ".weight")
+
+                var = tf.train.load_variable(ckpt_path, var_name_o)
+                if "weight" in var_name:
+                    # 卷积参数weight
+                    torch_tensor = torch.tensor(np.transpose(var, (3, 2, 0, 1)).astype(np.float32))
+                    new_weights_dict.update({var_name: torch_tensor})
+                if "bias" in var_name:
+                    # 卷积核参数bias
+                    torch_tensor = torch.tensor(var.astype(np.float32))
+                    new_weights_dict.update({var_name: torch_tensor})
+
             if "smoothing" in var_name:
                 index = var_name.find("smoothing")
                 num = int(var_name[index + 10]) - 1
                 var_name = var_name.replace("smoothing_" + str(num + 1) + ".weights",
-                                            "smoothing_blocks." + str(num) + "." + str(num) + ".weight")
+                                            "smoothing_blocks." + str(num) + "." + "0" + ".weight")
                 var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.beta",
                                             "smoothing_blocks." + str(num) + "." + "1" + ".bias")
                 var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.gamma",
@@ -97,7 +109,16 @@ def rename_var(ckpt_path, new_ckpt_path):
                 var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.moving_mean",
                                             "smoothing_blocks." + str(num) + "." + "1" + ".running_mean")
                 var_name = var_name.replace("smoothing_" + str(num + 1) + ".BatchNorm.moving_variance",
-                                            "smoothing_blocks." + str(num) + "." + "1" + ".running_variance")
+                                            "smoothing_blocks." + str(num) + "." + "1" + ".running_var")
+
+                var = tf.train.load_variable(ckpt_path, var_name_o)
+                if "0.weight" in var_name:
+                    # 卷积参数weight
+                    torch_tensor = torch.tensor(np.transpose(var, (3, 2, 0, 1)).astype(np.float32))
+                    new_weights_dict.update({var_name: torch_tensor})
+                else:  # 否则对应bn参数
+                    torch_tensor = torch.tensor(var.astype(np.float32))
+                    new_weights_dict.update({var_name: torch_tensor})
 
             if "bottom_up_block" in var_name:
                 index = var_name.find("bottom_up_block")
@@ -111,13 +132,81 @@ def rename_var(ckpt_path, new_ckpt_path):
                 var_name = var_name.replace("bottom_up_block" + str(num) + ".BatchNorm.moving_mean",
                                             "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".running_mean")
                 var_name = var_name.replace("bottom_up_block" + str(num) + ".BatchNorm.moving_variance",
-                                            "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".running_variance")
+                                            "extra_blocks." + "bottom_up_block" + str(num) + ".1" + ".running_var")
 
-            #print(var_name)
+                var = tf.train.load_variable(ckpt_path, var_name_o)
+                if "0.weight" in var_name:
+                    # 卷积参数weight
+                    torch_tensor = torch.tensor(np.transpose(var, (3, 2, 0, 1)).astype(np.float32))
+                    new_weights_dict.update({var_name: torch_tensor})
+                else:  # 否则对应bn参数
+                    torch_tensor = torch.tensor(var.astype(np.float32))
+                    new_weights_dict.update({var_name: torch_tensor})
 
-        for var_name_o in predictor:
-            pass
+            # print(var_name)
 
+        for var_name_o, shape in predictor:
+            if var_name_o in except_list:
+                continue
+            var_name = var_name_o
+            var_name = var_name.replace("WeightSharedConvolutionalBoxPredictor", "predictor")
+            var_name = var_name.replace("/", ".")
+
+            if "conv2d" in var_name and "BatchNorm" not in var_name:
+                var_name = var_name.replace("BoxPredictionTower", "shared_box_tower_conv")
+                var_name = var_name.replace("ClassPredictionTower", "shared_class_tower_conv")
+                index = var_name.find("conv2d")
+                num = int(var_name[index + 7])
+                var_name = var_name.replace(var_name[index:], str(num) + ".weight")
+
+            if "conv2d" in var_name and "BatchNorm" in var_name:
+                var_name = var_name.replace("BoxPredictionTower", "unshared_box_tower_bn")
+                var_name = var_name.replace("ClassPredictionTower", "unshared_class_tower_bn")
+                index1 = var_name.find("conv2d")
+                index2 = var_name.find("feature")
+                conv_num = int(var_name[index1 + 7])
+                feature_num = int(var_name[index2 + 8])
+                if "beta" in var_name:
+                    var_name = var_name.replace(var_name[index1:],
+                                                str(feature_num) + "." + str(conv_num) + ".bias")
+                if "gamma" in var_name:
+                    var_name = var_name.replace(var_name[index1:],
+                                                str(feature_num) + "." + str(conv_num) + ".weight")
+                if "moving_mean" in var_name:
+                    var_name = var_name.replace(var_name[index1:],
+                                                str(feature_num) + "." + str(conv_num) + ".running_mean")
+
+                if "moving_variance" in var_name:
+                    var_name = var_name.replace(var_name[index1:],
+                                                str(feature_num) + "." + str(conv_num) + ".running_var")
+
+            if "BoxPredictor" in var_name:
+                var_name = var_name.replace("BoxPredictor", "box_predictor")
+                if "biases" in var_name:
+                    var_name = var_name.replace("biases", "bias")
+
+                if "weights" in var_name:
+                    var_name = var_name.replace("weights", "weight")
+
+            if "ClassPredictor" in var_name:
+                var_name = var_name.replace("ClassPredictor", "class_predictor")
+                if "biases" in var_name:
+                    var_name = var_name.replace("biases", "bias")
+
+                if "weights" in var_name:
+                    var_name = var_name.replace("weights", "weight")
+
+            var = tf.train.load_variable(ckpt_path, var_name_o)
+            if "conv" in var_name or "predictor.weight" in var_name:
+                # 卷积参数weight
+                torch_tensor = torch.tensor(np.transpose(var, (3, 2, 0, 1)).astype(np.float32))
+                new_weights_dict.update({var_name: torch_tensor})
+            else:  # 否则对应bn参数以及卷积bias
+                torch_tensor = torch.tensor(var.astype(np.float32))
+                new_weights_dict.update({var_name: torch_tensor})
+
+            # print(var_name)
+        torch.save(new_weights_dict, "./res50_fpn_ssd640.pth")
 
 
 # except_list = ['global_step', 'resnet_v1_50/mean_rgb', 'resnet_v1_50/logits/biases', 'resnet_v1_50/logits/weights']

@@ -17,7 +17,7 @@ class RetinaNet640(nn.Module):
         self.num_classes = num_classes
         # out_channels = [1024, 512, 512, 256, 256, 256] for resnet50
         self.predictor = Predictor(num_features=5, in_channels=256, num_layers_before_predictor=4,
-                                   num_classes=num_classes, num_boxes=9)
+                                   num_classes=num_classes, num_boxes=6)
 
         default_box = dboxes640_coco()
         self.compute_loss = Loss(default_box)
@@ -52,7 +52,7 @@ class RetinaNet640(nn.Module):
 
 class Predictor(nn.Module):
     def __init__(self, num_features=5, in_channels=256,
-                 num_layers_before_predictor=4, num_classes=21, num_boxes=3):
+                 num_layers_before_predictor=4, num_classes=21, num_boxes=6):
         super(Predictor, self).__init__()
 
         self.num_features = num_features

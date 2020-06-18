@@ -137,8 +137,9 @@ class DefaultBoxes(object):
             scale_base = scales[idx] / fig_size  # scale转为相对值[0-1]
             scale_list = []
             scale_list.append(scale_base)  # scale1
-            scale_list.append(scale_base * (2 ** (1 / 3)))  # scale2
-            scale_list.append(scale_base * (2 ** (2 / 3)))  # scale3
+            # scale_list.append(scale_base * (2 ** (1 / 3)))  # scale2
+            # scale_list.append(scale_base * (2 ** (2 / 3)))  # scale3
+            scale_list.append(scale_base * (2 ** (1 / 2)))  # scale2
 
             all_sizes = []
 
