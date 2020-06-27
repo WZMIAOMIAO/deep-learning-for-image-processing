@@ -271,9 +271,9 @@ class FeaturePyramidNetwork(nn.Module):
             # 将上一层的特征矩阵上采样到当前层大小
             inner_top_down = F.interpolate(last_projection, size=feat_shape, mode="nearest")
             # add
-            last_projection_t = projection_lateral + inner_top_down
-            last_projection = self.get_result_from_smoothing_blocks(last_projection_t, idx)
-            results.insert(0, last_projection)
+            last_projection = projection_lateral + inner_top_down
+            last_projection_smoothing = self.get_result_from_smoothing_blocks(last_projection, idx)
+            results.insert(0, last_projection_smoothing)
 
         # 在layer4对应的预测特征层基础上生成预测特征矩阵P6和P7
         if self.extra_blocks is not None:

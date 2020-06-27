@@ -162,8 +162,8 @@ def rename_var(ckpt_path, new_ckpt_path):
             if "conv2d" in var_name and "BatchNorm" in var_name:
                 var_name = var_name.replace("BoxPredictionTower", "unshared_box_tower_bn")
                 var_name = var_name.replace("ClassPredictionTower", "unshared_class_tower_bn")
-                index1 = var_name.find("conv2d")
-                index2 = var_name.find("feature")
+                index1 = var_name.find("conv2d")   # [0, 1, 2, 3]
+                index2 = var_name.find("feature")  # [0, 1, 2, 3, 4]
                 conv_num = int(var_name[index1 + 7])
                 feature_num = int(var_name[index2 + 8])
                 if "beta" in var_name:

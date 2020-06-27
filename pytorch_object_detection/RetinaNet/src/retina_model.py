@@ -24,7 +24,7 @@ class RetinaNet640(nn.Module):
         self.encoder = Encoder(default_box)
         self.postprocess = PostProcess(default_box)
 
-    def forward(self, image, targets):
+    def forward(self, image, targets=None):
         x = self.feature_extractor(image)
 
         pre_box, pre_class = self.predictor(x)
@@ -33,6 +33,8 @@ class RetinaNet640(nn.Module):
         # 80x80x9 + 40x40x9 + 20x20x9 + 10x10x9 + 5x5x9 = 76725
 
         if self.training:
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             # bboxes_out (Tensor 76725 x 4), labels_out (Tensor 76725)
             bboxes_out = targets['boxes']
             bboxes_out = bboxes_out.transpose(1, 2).contiguous()
@@ -117,7 +119,7 @@ class Predictor(nn.Module):
             batch = feature.size(0)
 
             # 通过predictor tower层
-            for j in range(self.num_layers_before_predictor):
+            for j in range(self.num_layers_before_predictor):  # [0, 1, 2, 3]
                 box_output = self.shared_box_tower_conv[j](box_output)              # conv2d_j: conv2d
                 box_output = self.unshared_box_tower_bn[i][j](box_output)           # conv2d_j: bn
                 box_output = self.unshared_box_tower_relu6[i][j](box_output)        # conv2d_j: RELU6
