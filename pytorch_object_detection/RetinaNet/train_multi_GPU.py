@@ -4,27 +4,32 @@ import time
 import os
 import datetime
 from my_dataset import VOC2012DataSet
-import transforms
 from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
-from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
+from src.retina_model import RetinaNet640
+from src.res50_backbone import resnet50_fpn_backbone
+import transform
 import torch.multiprocessing as mp
 
 
-def create_model(num_classes):
+def create_model(num_classes, device=torch.device('cpu')):
     backbone = resnet50_fpn_backbone()
-    model = FasterRCNN(backbone=backbone, num_classes=91)
-    # 载入预训练模型权重
-    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
-    missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
+    model = RetinaNet640(backbone=backbone, num_classes=num_classes)
+
+    pre_ssd_path = "./res50_fpn_ssd640.pth"
+    pre_weights_dict = torch.load(pre_ssd_path)
+
+    # 删除类别预测器权重，注意，回归预测器的权重可以重用，因为不涉及num_classes
+    del_conf_loc_dict = {}
+    for k, v in pre_weights_dict.items():
+        split_key = k.split(".")
+        if "class_predictor" in split_key:
+            continue
+        del_conf_loc_dict.update({k: v})
+
+    missing_keys, unexpected_keys = model.load_state_dict(del_conf_loc_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
         print("missing_keys: ", missing_keys)
         print("unexpected_keys: ", unexpected_keys)
-
-    # get number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
     return model
 
@@ -41,9 +46,16 @@ def main(args):
     print("Loading data")
 
     data_transform = {
-        "train": transforms.Compose([transforms.ToTensor(),
-                                     transforms.RandomHorizontalFlip(0.5)]),
-        "val": transforms.Compose([transforms.ToTensor()])
+        "train": transform.Compose([transform.SSDCropping(),
+                                    transform.Resize(),
+                                    # transform.ColorJitter(),
+                                    transform.ToTensor(),
+                                    transform.RandomHorizontalFlip(),
+                                    transform.Normalization(),
+                                    transform.AssignGTtoDefaultBox()]),
+        "val": transform.Compose([transform.Resize(),
+                                  transform.ToTensor(),
+                                  transform.Normalization()])
     }
 
     VOC_root = args.data_path
@@ -74,7 +86,7 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     data_loader_test = torch.utils.data.DataLoader(
-        val_data_set, batch_size=1,
+        val_data_set, batch_size=4,
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
@@ -144,7 +156,7 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 每块GPU上的batch_size
-    parser.add_argument('-b', '--batch-size', default=2, type=int,
+    parser.add_argument('-b', '--batch-size', default=8, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
     # 指定接着从哪个epoch数开始训练
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
@@ -154,8 +166,8 @@ if __name__ == "__main__":
     # 数据加载以及预处理的线程数
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.02 / 8 * num_GPU
-    parser.add_argument('--lr', default=0.02, type=float,
+    # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.005 / 8 * num_GPU
+    parser.add_argument('--lr', default=0.005, type=float,
                         help='initial learning rate, 0.02 is the default value for training '
                         'on 8 gpus and 2 images_per_gpu')
     # SGD的momentum参数
@@ -166,11 +178,11 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     # 针对torch.optim.lr_scheduler.StepLR的参数
-    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
+    parser.add_argument('--lr-step-size', default=5, type=int, help='decrease lr every step-size epochs')
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
     parser.add_argument('--lr-steps', default=[7, 12], nargs='+', type=int, help='decrease lr every step-size epochs')
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
+    parser.add_argument('--lr-gamma', default=0.3, type=float, help='decrease lr by a factor of lr-gamma')
     # 训练过程打印信息的频率
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     # 文件保存地址

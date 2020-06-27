@@ -3,6 +3,7 @@ import torchvision.transforms as t
 from torchvision.transforms import functional as F
 from src.utils import dboxes640_coco, calc_iou_tensor, Encoder
 import torch
+import numpy as np
 
 
 class Compose(object):
@@ -17,10 +18,13 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """将PIL图像转为Tensor"""
+    """将PIL图像转为Tensor，注意没有缩放到0-1之间"""
     def __call__(self, image, target):
-        image = F.to_tensor(image).contiguous()
-        return image, target
+        img = torch.ByteTensor(torch.ByteStorage.from_buffer(image.tobytes()))
+        # put it from HWC to CHW format
+        img = img.view(image.size[1], image.size[0], len(image.getbands()))
+        img = img.permute((2, 0, 1)).contiguous()
+        return img.float(), target
 
 
 class RandomHorizontalFlip(object):
@@ -170,15 +174,11 @@ class ColorJitter(object):
 
 class Normalization(object):
     """对图像标准化处理,该方法应放在ToTensor后"""
-    def __init__(self, mean=None, std=None):
-        if mean is None:
-            mean = [0.485, 0.456, 0.406]
-        if std is None:
-            std = [0.229, 0.224, 0.225]
-        self.normalize = t.Normalize(mean=mean, std=std)
+    def __init__(self):
+        self.mean = torch.as_tensor([123.68, 116.779, 103.939])
 
     def __call__(self, image, target):
-        image = self.normalize(image)
+        image = image.sub(self.mean[:, None, None])
         return image, target
 
 

@@ -26,6 +26,8 @@ def convert_to_coco_api(ds):
         # 将box的相对坐标信息（0-1）转为绝对值坐标
         bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * img_dict["width"]
         bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * img_dict["height"]
+        # bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * 640
+        # bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * 640
         bboxes = bboxes.tolist()
         labels = targets['labels'].tolist()
         # 注意这里的boxes area也要进行转换，否则导致(small, medium, large)计算错误

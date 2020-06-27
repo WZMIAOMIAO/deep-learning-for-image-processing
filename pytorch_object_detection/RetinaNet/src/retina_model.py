@@ -61,7 +61,7 @@ class Predictor(nn.Module):
         self.shared_box_tower_conv = nn.ModuleList()
         self.shared_class_tower_conv = nn.ModuleList()
         # 构建共享的predictor tower权重
-        for i in range(num_layers_before_predictor):
+        for i in range(num_layers_before_predictor):  # [0, 1, 2, 3]
             self.shared_box_tower_conv.append(nn.Conv2d(in_channels, in_channels, 3, 1, 1, bias=False))
             self.shared_class_tower_conv.append(nn.Conv2d(in_channels, in_channels, 3, 1, 1, bias=False))
 
@@ -71,13 +71,13 @@ class Predictor(nn.Module):
         self.unshared_box_tower_relu6 = nn.ModuleList()
         self.unshared_class_tower_relu6 = nn.ModuleList()
         # 每个预测特征层的bn和activation都不共享
-        for i in range(num_features):
+        for i in range(num_features):  # [0, 1, 2, 3, 4]
             box_bn_every_layer = nn.ModuleList()
             box_relu6_every_layer = nn.ModuleList()
             class_bn_every_layer = nn.ModuleList()
             class_relu6_every_layer = nn.ModuleList()
 
-            for j in range(num_layers_before_predictor):
+            for j in range(num_layers_before_predictor):  # [0, 1, 2, 3]
                 box_bn_every_layer.append(nn.BatchNorm2d(in_channels))
                 box_relu6_every_layer.append(nn.ReLU6(inplace=True))
 
@@ -96,17 +96,21 @@ class Predictor(nn.Module):
 
     def _init_weights(self):
         layers = [*self.shared_box_tower_conv, *self.shared_class_tower_conv,
-                  self.box_predictor, self.class_predictor]
+                  self.box_predictor]
         for layer in layers:
             if isinstance(layer, nn.Conv2d):
                 nn.init.xavier_uniform_(layer.weight)
                 if layer.bias is not None:
                     nn.init.constant_(layer.bias, 0)
 
+        # 参考tf初始化方法
+        nn.init.normal_(self.class_predictor.weight, mean=0.0, std=0.01)
+        nn.init.constant_(self.class_predictor.bias, -4.6)
+
     def forward(self, features):
         class_outputs = torch.jit.annotate(List[Tensor], [])
         box_outputs = torch.jit.annotate(List[Tensor], [])
-        for i in range(self.num_features):
+        for i in range(self.num_features):  # [0, 1, 2, 3, 4]
             feature = features[i]
             box_output = feature
             class_output = feature

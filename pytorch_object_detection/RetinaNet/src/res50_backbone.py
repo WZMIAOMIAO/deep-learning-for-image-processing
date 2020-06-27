@@ -185,7 +185,7 @@ class FeaturePyramidNetwork(nn.Module):
         self.projection_blocks = nn.ModuleList()
         # 对调整后的特征矩阵使用3x3的卷积核来得到对应的预测特征矩阵
         self.smoothing_blocks = nn.ModuleList()
-        for in_channels in in_channels_list:
+        for in_channels in in_channels_list:  # [512, 1024, 2048]
             projection_block = nn.Conv2d(in_channels, out_channels, 1)
             self.projection_blocks.append(projection_block)
 
@@ -271,8 +271,8 @@ class FeaturePyramidNetwork(nn.Module):
             # 将上一层的特征矩阵上采样到当前层大小
             inner_top_down = F.interpolate(last_projection, size=feat_shape, mode="nearest")
             # add
-            last_projection = projection_lateral + inner_top_down
-            last_projection = self.get_result_from_smoothing_blocks(last_projection, idx)
+            last_projection_t = projection_lateral + inner_top_down
+            last_projection = self.get_result_from_smoothing_blocks(last_projection_t, idx)
             results.insert(0, last_projection)
 
         # 在layer4对应的预测特征层基础上生成预测特征矩阵P6和P7
@@ -311,7 +311,7 @@ class BackboneWithFPN(nn.Module):
         super(BackboneWithFPN, self).__init__()
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.fpn = FeaturePyramidNetwork(
-            in_channels_list=in_channels_list,
+            in_channels_list=in_channels_list,   # [512, 1024, 2048]
             out_channels=out_channels,
             extra_blocks=LastLevelMaxPool(in_channels=out_channels),
             )

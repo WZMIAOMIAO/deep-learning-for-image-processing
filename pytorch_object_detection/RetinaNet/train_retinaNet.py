@@ -1,10 +1,10 @@
-from src.retina_model import RetinaNet640
 import torch
 import transform
 from my_dataset import VOC2012DataSet
 import os
 import train_utils.train_eval_utils as utils
 from train_utils.coco_utils import get_coco_api_from_dataset
+from src.retina_model import RetinaNet640
 from src.res50_backbone import resnet50_fpn_backbone
 
 
@@ -41,7 +41,7 @@ def main():
     data_transform = {
         "train": transform.Compose([transform.SSDCropping(),
                                     transform.Resize(),
-                                    transform.ColorJitter(),
+                                    # transform.ColorJitter(),
                                     transform.ToTensor(),
                                     transform.RandomHorizontalFlip(),
                                     transform.Normalization(),
@@ -69,6 +69,13 @@ def main():
 
     model = create_model(num_classes=21, device=device)
     model.to(device)
+
+    # for param in model.feature_extractor.parameters():
+    #     param.requires_grad = False
+    #
+    # for name, param in model.predictor.named_parameters():
+    #     if name != 'class_predictor':
+    #         param.requires_grad = False
 
     # define optimizer
     params = [p for p in model.parameters() if p.requires_grad]
@@ -104,7 +111,7 @@ def main():
             'optimizer': optimizer.state_dict(),
             'lr_scheduler': lr_scheduler.state_dict(),
             'epoch': epoch}
-        torch.save(save_files, "./save_weights/ssd300-{}.pth".format(epoch))
+        torch.save(save_files, "./save_weights/retinaNet640-{}.pth".format(epoch))
 
     # plot loss and lr curve
     if len(train_loss) != 0 and len(learning_rate) != 0:

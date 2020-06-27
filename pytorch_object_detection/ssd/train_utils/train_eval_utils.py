@@ -45,19 +45,20 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
 
         targets = {k: v.to(device) for k, v in targets.items()}
         losses_dict = model(images, targets)
+        losses = losses_dict["total_losses"]
 
         # reduce losses over all GPUs for logging purpose
-        loss_dict_reduced = reduce_dict(losses_dict)
-        losses = loss_dict_reduced["total_losses"]
+        losses_dict_reduced = reduce_dict(losses_dict)
+        losses_reduce = losses_dict_reduced["total_losses"]
 
-        loss_value = losses.item()
+        loss_value = losses_reduce.item()
         if isinstance(train_loss, list):
             # 记录训练损失
             train_loss.append(loss_value)
 
         if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
             print("Loss is {}, stopping training".format(loss_value))
-            print(loss_dict_reduced)
+            print(losses_dict_reduced)
             sys.exit(1)
 
         optimizer.zero_grad()
@@ -68,7 +69,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
             lr_scheduler.step()
 
         # metric_logger.update(loss=losses, **loss_dict_reduced)
-        metric_logger.update(**loss_dict_reduced)
+        metric_logger.update(**losses_dict_reduced)
         now_lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(lr=now_lr)
         if isinstance(train_lr, list):

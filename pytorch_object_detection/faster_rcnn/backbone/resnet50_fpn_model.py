@@ -120,16 +120,13 @@ class ResNet(nn.Module):
 class IntermediateLayerGetter(nn.ModuleDict):
     """
     Module wrapper that returns intermediate layers from a model
-
     It has a strong assumption that the modules have been registered
     into the model in the same order as they are used.
     This means that one should **not** reuse the same nn.Module
     twice in the forward if you want this to work.
-
     Additionally, it is only able to query submodules that are directly
     assigned to the model. So if `model` is passed, `model.feature1` can
     be returned, but not `model.feature1.layer2`.
-
     Arguments:
         model (nn.Module): model on which we will extract the features
         return_layers (Dict[name, new_name]): a dict containing the names
@@ -177,13 +174,10 @@ class FeaturePyramidNetwork(nn.Module):
     """
     Module that adds a FPN from on top of a set of feature maps. This is based on
     `"Feature Pyramid Network for Object Detection" <https://arxiv.org/abs/1612.03144>`_.
-
     The feature maps are currently supposed to be in increasing depth
     order.
-
     The input to the model is expected to be an OrderedDict[Tensor], containing
     the feature maps on top of which the FPN will be added.
-
     Arguments:
         in_channels_list (list[int]): number of channels for each feature map that
             is passed to the module
@@ -258,10 +252,8 @@ class FeaturePyramidNetwork(nn.Module):
         # type: (Dict[str, Tensor])
         """
         Computes the FPN for a set of feature maps.
-
         Arguments:
             x (OrderedDict[Tensor]): feature maps for each feature level.
-
         Returns:
             results (OrderedDict[Tensor]): feature maps after FPN layers.
                 They are ordered from highest resolution first.
@@ -323,11 +315,9 @@ class LastLevelMaxPool(torch.nn.Module):
 class BackboneWithFPN(nn.Module):
     """
     Adds a FPN on top of a model.
-
     Internally, it uses torchvision.models._utils.IntermediateLayerGetter to
     extract a submodel that returns the feature maps specified in return_layers.
     The same limitations of IntermediatLayerGetter apply here.
-
     Arguments:
         backbone (nn.Module)
         return_layers (Dict[name, new_name]): a dict containing the names
@@ -337,7 +327,6 @@ class BackboneWithFPN(nn.Module):
         in_channels_list (List[int]): number of channels for each feature map
             that is returned, in the order they are present in the OrderedDict
         out_channels (int): number of channels in the FPN.
-
     Attributes:
         out_channels (int): the number of channels in the FPN
     """
