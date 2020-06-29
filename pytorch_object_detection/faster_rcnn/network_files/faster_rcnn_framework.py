@@ -71,7 +71,7 @@ class FasterRCNNBase(nn.Module):
                     raise ValueError("Expected target boxes to be of type "
                                      "Tensor, got {:}.".format(type(boxes)))
 
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2  # 防止输入的是个一维向量

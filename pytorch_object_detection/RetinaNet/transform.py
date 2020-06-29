@@ -1,8 +1,9 @@
 import random
 import torchvision.transforms as t
 from torchvision.transforms import functional as F
-from src.utils import dboxes300_coco, calc_iou_tensor, Encoder
+from src.utils import dboxes640_coco, calc_iou_tensor, Encoder
 import torch
+import numpy as np
 
 
 class Compose(object):
@@ -17,10 +18,13 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """将PIL图像转为Tensor"""
+    """将PIL图像转为Tensor，注意没有缩放到0-1之间"""
     def __call__(self, image, target):
-        image = F.to_tensor(image).contiguous()
-        return image, target
+        img = torch.ByteTensor(torch.ByteStorage.from_buffer(image.tobytes()))
+        # put it from HWC to CHW format
+        img = img.view(image.size[1], image.size[0], len(image.getbands()))
+        img = img.permute((2, 0, 1)).contiguous()
+        return img.float(), target
 
 
 class RandomHorizontalFlip(object):
@@ -64,7 +68,7 @@ class SSDCropping(object):
             # no IoU requirements
             (None, None),
         )
-        self.dboxes = dboxes300_coco()
+        self.dboxes = dboxes640_coco()
 
     def __call__(self, image, target):
         # Ensure always return cropped image
@@ -150,7 +154,7 @@ class SSDCropping(object):
 
 class Resize(object):
     """对图像进行resize处理,该方法应放在ToTensor前"""
-    def __init__(self, size=(300, 300)):
+    def __init__(self, size=(640, 640)):
         self.resize = t.Resize(size)
 
     def __call__(self, image, target):
@@ -170,27 +174,23 @@ class ColorJitter(object):
 
 class Normalization(object):
     """对图像标准化处理,该方法应放在ToTensor后"""
-    def __init__(self, mean=None, std=None):
-        if mean is None:
-            mean = [0.485, 0.456, 0.406]
-        if std is None:
-            std = [0.229, 0.224, 0.225]
-        self.normalize = t.Normalize(mean=mean, std=std)
+    def __init__(self):
+        self.mean = torch.as_tensor([123.68, 116.779, 103.939])
 
     def __call__(self, image, target):
-        image = self.normalize(image)
+        image = image.sub(self.mean[:, None, None])
         return image, target
 
 
 class AssignGTtoDefaultBox(object):
     def __init__(self):
-        self.default_box = dboxes300_coco()
+        self.default_box = dboxes640_coco()
         self.encoder = Encoder(self.default_box)
 
     def __call__(self, image, target):
         boxes = target['boxes']
         labels = target["labels"]
-        # bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
+        # bboxes_out (Tensor 76725 x 4), labels_out (Tensor 76725)
         bboxes_out, labels_out = self.encoder.encode(boxes, labels)
         target['boxes'] = bboxes_out
         target['labels'] = labels_out
