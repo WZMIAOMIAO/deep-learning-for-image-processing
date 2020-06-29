@@ -8,6 +8,7 @@
 * 最好使用GPU训练
 
 ## 文件结构：
+```
 * ├── backbone: 特征提取网络，可以根据自己的要求选择
 * ├── network_files: Faster R-CNN网络（包括Fast R-CNN以及RPN等模块）
 * ├── train_utils: 训练验证相关模块（包括cocotools）
@@ -17,6 +18,7 @@
 * ├── train_multi_GPU.py: 针对使用多GPU的用户使用
 * ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
 * ├── pascal_voc_classes.json: pascal_voc标签文件
+```
 
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
 * MobileNetV2 backbone: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth

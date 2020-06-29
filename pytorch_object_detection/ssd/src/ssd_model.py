@@ -100,7 +100,7 @@ class SSD300(nn.Module):
         locs, confs = torch.cat(locs, 2).contiguous(), torch.cat(confs, 2).contiguous()
         return locs, confs
 
-    def forward(self, image, targets):
+    def forward(self, image, targets=None):
         x = self.feature_extractor(image)
 
         # Feature Map 38x38x1024, 19x19x512, 10x10x512, 5x5x256, 3x3x256, 1x1x256
@@ -117,6 +117,8 @@ class SSD300(nn.Module):
         # 38x38x4 + 19x19x6 + 10x10x6 + 5x5x6 + 3x3x4 + 1x1x4 = 8732
 
         if self.training:
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             # bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
             bboxes_out = targets['boxes']
             bboxes_out = bboxes_out.transpose(1, 2).contiguous()

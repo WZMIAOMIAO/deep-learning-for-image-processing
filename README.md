@@ -18,8 +18,8 @@
     * MobileNet（已完成）
     * ShuffleNet (准备中)
 * 目标识别检测
-    * Faster RCNN（进行中）
-    * SSD (准备中)
+    * Faster RCNN/FPN（进行中）
+    * SSD/RetinaNet (进行中)
     * YOLO v3
 * 目标分割
 

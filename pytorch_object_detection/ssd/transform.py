@@ -10,7 +10,7 @@ class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, image, target):
+    def __call__(self, image, target=None):
         for trans in self.transforms:
             image, target = trans(image, target)
         return image, target
