@@ -9,16 +9,13 @@ from lxml import etree
 class VOC2012DataSet(Dataset):
     """读取解析PASCAL VOC2012数据集"""
 
-    def __init__(self, voc_root, transforms, train_set=True):
-        self.root = os.path.join(voc_root, "VOCdevkit", "VOC2012")
+    def __init__(self, voc_root, transforms, year='VOC2012', train_set='train.txt'):
+        self.root = os.path.join(voc_root, "VOCdevkit", year)
         self.img_root = os.path.join(self.root, "JPEGImages")
         self.annotations_root = os.path.join(self.root, "Annotations")
 
-        # read train.txt or val.txt file
-        if train_set:
-            txt_list = os.path.join(self.root, "ImageSets", "Main", "train.txt")
-        else:
-            txt_list = os.path.join(self.root, "ImageSets", "Main", "val.txt")
+        txt_list = os.path.join(self.root, "ImageSets", "Main", train_set)
+
         with open(txt_list) as read:
             self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                              for line in read.readlines()]

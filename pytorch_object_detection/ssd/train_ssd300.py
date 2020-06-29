@@ -55,7 +55,7 @@ def main(parser_data):
     }
 
     VOC_root = parser_data.data_path
-    train_dataset = VOC2012DataSet(VOC_root, data_transform['train'], True)
+    train_dataset = VOC2012DataSet(VOC_root, data_transform['train'], train_set='train.txt')
     # 注意训练时，batch_size必须大于1
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                     batch_size=8,
@@ -63,7 +63,7 @@ def main(parser_data):
                                                     num_workers=4,
                                                     collate_fn=utils.collate_fn)
 
-    val_dataset = VOC2012DataSet(VOC_root, data_transform['val'], False)
+    val_dataset = VOC2012DataSet(VOC_root, data_transform['val'], train_set='val.txt')
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=1,
                                                   shuffle=False,

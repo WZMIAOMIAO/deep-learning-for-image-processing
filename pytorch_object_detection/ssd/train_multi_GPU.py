@@ -62,10 +62,10 @@ def main(args):
 
     VOC_root = args.data_path
     # load train data set
-    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
+    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], train_set='train.txt')
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], False)
+    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], train_set='val.txt')
 
     print("Creating data loaders")
     if args.distributed:
@@ -168,9 +168,9 @@ if __name__ == "__main__":
     # 数据加载以及预处理的线程数
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.01 / 8 * num_GPU
-    parser.add_argument('--lr', default=0.01, type=float,
-                        help='initial learning rate, 0.02 is the default value for training '
+    # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.005 / 8 * num_GPU
+    parser.add_argument('--lr', default=0.005, type=float,
+                        help='initial learning rate, 0.005 is the default value for training '
                         'on 8 gpus and 2 images_per_gpu')
     # SGD的momentum参数
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
