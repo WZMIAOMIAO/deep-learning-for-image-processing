@@ -1,9 +1,11 @@
 import tensorflow as tf
 
 
-def rename_var(ckpt_path, new_ckpt_path):
+def rename_var(ckpt_path, new_ckpt_path, num_classes=5):
     with tf.Graph().as_default(), tf.compat.v1.Session().as_default() as sess:
         var_list = tf.train.list_variables(ckpt_path)
+        new_var_list = []
+
         for var_name, shape in var_list:
             # print(var_name)
             if var_name in except_list:
@@ -30,9 +32,9 @@ def rename_var(ckpt_path, new_ckpt_path):
             re_var = tf.Variable(var, name=new_var_name)
             new_var_list.append(re_var)
 
-        re_var = tf.Variable(tf.keras.initializers.he_uniform()([1280, 5]), name="Logits/kernel")
+        re_var = tf.Variable(tf.keras.initializers.he_uniform()([1280, num_classes]), name="Logits/kernel")
         new_var_list.append(re_var)
-        re_var = tf.Variable(tf.keras.initializers.he_uniform()([5]), name="Logits/bias")
+        re_var = tf.Variable(tf.keras.initializers.he_uniform()([num_classes]), name="Logits/bias")
 
         new_var_list.append(re_var)
         tf.keras.initializers.he_uniform()
@@ -44,5 +46,5 @@ def rename_var(ckpt_path, new_ckpt_path):
 except_list = ['global_step', 'MobilenetV2/Logits/Conv2d_1c_1x1/biases', 'MobilenetV2/Logits/Conv2d_1c_1x1/weights']
 ckpt_path = './pretain_model/mobilenet_v2_1.0_224.ckpt'
 new_ckpt_path = './pretrain_weights.ckpt'
-new_var_list = []
-rename_var(ckpt_path, new_ckpt_path)
+num_classes = 5
+rename_var(ckpt_path, new_ckpt_path, num_classes)
