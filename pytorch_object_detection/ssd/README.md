@@ -42,7 +42,7 @@
 * https://b23.tv/GJnkOD
 
 ## 进一步了解该项目，以及对SSD算法代码的分析可参考我的bilibili
-
+* https://www.bilibili.com/video/BV1vK411H771/
 
 ## Resnet50 + SSD算法框架图
 ![Resnet50 SSD](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_object_detection/ssd/res50_ssd.png) 
