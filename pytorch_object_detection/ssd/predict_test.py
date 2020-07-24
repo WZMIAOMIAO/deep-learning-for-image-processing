@@ -22,10 +22,10 @@ print(device)
 model = create_model(num_classes=21)
 
 # load train weights
-# train_weights = "./save_weights/ssd300-15.pth"
-# train_weights_dict = torch.load(train_weights, map_location=device)['model']
-#
-# model.load_state_dict(train_weights_dict, strict=False)
+train_weights = "./save_weights/ssd300-15.pth"
+train_weights_dict = torch.load(train_weights, map_location=device)['model']
+
+model.load_state_dict(train_weights_dict, strict=False)
 model.to(device)
 
 # read class_indict
