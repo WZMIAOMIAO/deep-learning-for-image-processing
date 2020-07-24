@@ -146,29 +146,28 @@ class Loss(nn.Module):
     """
     def __init__(self, dboxes):
         super(Loss, self).__init__()
-        self.scale_xy = 1.0 / dboxes.scale_xy
-        self.scale_wh = 1.0 / dboxes.scale_wh
+        # Two factor are from following links
+        # http://jany.st/post/2017-11-05-single-shot-detector-ssd-from-scratch-in-tensorflow.html
+        self.scale_xy = 1.0 / dboxes.scale_xy  # 10
+        self.scale_wh = 1.0 / dboxes.scale_wh  # 5
 
         self.location_loss = nn.SmoothL1Loss(reduction='none')
-        # self.location_loss = nn.SmoothL1Loss(reduce=False)
+        # [num_anchors, 4] -> [4, num_anchors] -> [1, 4, num_anchors]
         self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0),
                                    requires_grad=False)
 
-        # Two factor are from following links
-        # http://jany.st/post/2017-11-05-single-shot-detector-ssd-from-scratch-in-tensorflow.html
         self.confidence_loss = nn.CrossEntropyLoss(reduction='none')
-        # self.confidence_loss = nn.CrossEntropyLoss(reduce=False)
 
     def _location_vec(self, loc):
         # type: (Tensor)
         """
         Generate Location Vectors
         计算ground truth相对anchors的回归参数
-        :param loc:
+        :param loc: anchor匹配到的对应GTBOX Nx4x8732
         :return:
         """
-        gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, :]
-        gwh = self.scale_wh * (loc[:, 2:, :] / self.dboxes[:, 2:, :]).log()
+        gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, :]  # Nx2x8732
+        gwh = self.scale_wh * (loc[:, 2:, :] / self.dboxes[:, 2:, :]).log()  # Nx2x8732
         return torch.cat((gxy, gwh), dim=1).contiguous()
 
     def forward(self, ploc, plabel, gloc, glabel):
@@ -217,8 +216,9 @@ class Loss(nn.Module):
         # avoid no object detected
         # 避免出现图像中没有GTBOX的情况
         total_loss = loc_loss + con_loss
-        num_mask = (pos_num > 0).float()  # 统计一个batch中的每张图像中是否存在GTBOX
+        # eg. [15, 3, 5, 0] -> [1.0, 1.0, 1.0, 0.0]
+        num_mask = (pos_num > 0).float()  # 统计一个batch中的每张图像中是否存在正样本
         pos_num = pos_num.float().clamp(min=1e-6)  # 防止出现分母为零的情况
-        ret = (total_loss * num_mask / pos_num).mean(dim=0)  # 只计算存在GTBOX的图像损失
+        ret = (total_loss * num_mask / pos_num).mean(dim=0)  # 只计算存在正样本的图像损失
         return ret
 

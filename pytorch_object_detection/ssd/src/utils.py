@@ -339,7 +339,8 @@ class Encoder(object):
 
 class DefaultBoxes(object):
     def __init__(self, fig_size, feat_size, steps, scales, aspect_ratios, scale_xy=0.1, scale_wh=0.2):
-        self.fig_size = fig_size   # 输入网络的图像大小
+        self.fig_size = fig_size   # 输入网络的图像大小 300
+        # [38, 19, 10, 5, 3, 1]
         self.feat_size = feat_size  # 每个预测层的feature map尺寸
 
         self.scale_xy_ = scale_xy
@@ -347,10 +348,14 @@ class DefaultBoxes(object):
 
         # According to https://github.com/weiliu89/caffe
         # Calculation method slightly different from paper
+        # [8, 16, 32, 64, 100, 300]
         self.steps = steps    # 每个特征层上的一个cell在原图上的跨度
+
+        # [21, 45, 99, 153, 207, 261, 315]
         self.scales = scales  # 每个特征层上预测的default box的scale
 
         fk = fig_size / np.array(steps)     # 计算每层特征层的fk
+        # [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
         self.aspect_ratios = aspect_ratios  # 每个预测特征层上预测的default box的ratios
 
         self.default_boxes = []
@@ -376,17 +381,18 @@ class DefaultBoxes(object):
                     cx, cy = (j + 0.5) / fk[idx], (i + 0.5) / fk[idx]
                     self.default_boxes.append((cx, cy, w, h))
 
-            self.dboxes = torch.tensor(self.default_boxes, dtype=torch.float32)  # 这里不转类型会报错
-            self.dboxes.clamp_(min=0, max=1)  # 将坐标（x, y, w, h）都限制在0-1之间
+        # 将default_boxes转为tensor格式
+        self.dboxes = torch.tensor(self.default_boxes, dtype=torch.float32)  # 这里不转类型会报错
+        self.dboxes.clamp_(min=0, max=1)  # 将坐标（x, y, w, h）都限制在0-1之间
 
-            # For IoU calculation
-            # ltrb is left top coordinate and right bottom coordinate
-            # 将(x, y, w, h)转换成(xmin, ymin, xmax, ymax)，方便后续计算IoU(匹配正负样本时)
-            self.dboxes_ltrb = self.dboxes.clone()
-            self.dboxes_ltrb[:, 0] = self.dboxes[:, 0] - 0.5 * self.dboxes[:, 2]
-            self.dboxes_ltrb[:, 1] = self.dboxes[:, 1] - 0.5 * self.dboxes[:, 3]
-            self.dboxes_ltrb[:, 2] = self.dboxes[:, 0] + 0.5 * self.dboxes[:, 2]
-            self.dboxes_ltrb[:, 3] = self.dboxes[:, 1] + 0.5 * self.dboxes[:, 3]
+        # For IoU calculation
+        # ltrb is left top coordinate and right bottom coordinate
+        # 将(x, y, w, h)转换成(xmin, ymin, xmax, ymax)，方便后续计算IoU(匹配正负样本时)
+        self.dboxes_ltrb = self.dboxes.clone()
+        self.dboxes_ltrb[:, 0] = self.dboxes[:, 0] - 0.5 * self.dboxes[:, 2]   # xmin
+        self.dboxes_ltrb[:, 1] = self.dboxes[:, 1] - 0.5 * self.dboxes[:, 3]   # ymin
+        self.dboxes_ltrb[:, 2] = self.dboxes[:, 0] + 0.5 * self.dboxes[:, 2]   # xmax
+        self.dboxes_ltrb[:, 3] = self.dboxes[:, 1] + 0.5 * self.dboxes[:, 3]   # ymax
 
     @property
     def scale_xy(self):
@@ -498,10 +504,11 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
 class PostProcess(nn.Module):
     def __init__(self, dboxes):
         super(PostProcess, self).__init__()
+        # [num_anchors, 4] -> [1, num_anchors, 4]
         self.dboxes_xywh = nn.Parameter(dboxes(order='xywh').unsqueeze(dim=0),
                                         requires_grad=False)
-        self.scale_xy = dboxes.scale_xy
-        self.scale_wh = dboxes.scale_wh
+        self.scale_xy = dboxes.scale_xy  # 0.1
+        self.scale_wh = dboxes.scale_wh  # 0.2
 
         self.criteria = 0.5
         self.max_output = 100
@@ -509,16 +516,20 @@ class PostProcess(nn.Module):
     def scale_back_batch(self, bboxes_in, scores_in):
         # type: (Tensor, Tensor)
         """
-            将box格式从xywh转换回ltrb, 将预测目标score通过softmax处理
+            1）通过预测的boxes回归参数得到最终预测坐标
+            2）将box格式从xywh转换回ltrb
+            3）将预测目标score通过softmax处理
             Do scale and transform from xywh to ltrb
             suppose input N x 4 x num_bbox | N x label_num x num_bbox
 
-            bboxes_in: 是网络预测的xywh回归参数
-            scores_in: 是预测的每个default box的各目标概率
+            bboxes_in: [N, 4, 8732]是网络预测的xywh回归参数
+            scores_in: [N, label_num, 8732]是预测的每个default box的各目标概率
         """
 
         # Returns a view of the original tensor with its dimensions permuted.
+        # [batch, 4, 8732] -> [batch, 8732, 4]
         bboxes_in = bboxes_in.permute(0, 2, 1)
+        # [batch, label_num, 8732] -> [batch, 8732, label_num]
         scores_in = scores_in.permute(0, 2, 1)
         # print(bboxes_in.is_contiguous())
 
@@ -540,6 +551,7 @@ class PostProcess(nn.Module):
         bboxes_in[:, :, 2] = r  # xmax
         bboxes_in[:, :, 3] = b  # ymax
 
+        # scores_in: [batch, 8732, label_num]
         return bboxes_in, F.softmax(scores_in, dim=-1)
 
     def decode_single_new(self, bboxes_in, scores_in, criteria, num_output):
@@ -562,27 +574,28 @@ class PostProcess(nn.Module):
 
         # create labels for each prediction
         labels = torch.arange(num_classes, device=device)
+        # [num_classes] -> [8732, num_classes]
         labels = labels.view(1, -1).expand_as(scores_in)
 
         # remove prediction with the background label
         # 移除归为背景类别的概率信息
-        bboxes_in = bboxes_in[:, 1:, :]
-        scores_in = scores_in[:, 1:]
-        labels = labels[:, 1:]
+        bboxes_in = bboxes_in[:, 1:, :]  # [8732, 21, 4] -> [8732, 20, 4]
+        scores_in = scores_in[:, 1:]  # [8732, 21] -> [8732, 20]
+        labels = labels[:, 1:]  # [8732, 21] -> [8732, 20]
 
         # batch everything, by making every class prediction be a separate instance
-        bboxes_in = bboxes_in.reshape(-1, 4)
-        scores_in = scores_in.reshape(-1)
-        labels = labels.reshape(-1)
+        bboxes_in = bboxes_in.reshape(-1, 4)  # [8732, 20, 4] -> [8732x20, 4]
+        scores_in = scores_in.reshape(-1)  # [8732, 20] -> [8732x20]
+        labels = labels.reshape(-1)  # [8732, 20] -> [8732x20]
 
         # remove low scoring boxes
         # 移除低概率目标，self.scores_thresh=0.05
         inds = torch.nonzero(scores_in > 0.05).squeeze(1)
-        bboxes_in, scores_in, labels = bboxes_in[inds], scores_in[inds], labels[inds]
+        bboxes_in, scores_in, labels = bboxes_in[inds, :], scores_in[inds], labels[inds]
 
         # remove empty boxes
         ws, hs = bboxes_in[:, 2] - bboxes_in[:, 0], bboxes_in[:, 3] - bboxes_in[:, 1]
-        keep = (ws >= 0.1 / 300) & (hs >= 0.1 / 300)
+        keep = (ws >= 1 / 300) & (hs >= 1 / 300)
         keep = keep.nonzero().squeeze(1)
         bboxes_in, scores_in, labels = bboxes_in[keep], scores_in[keep], labels[keep]
 
@@ -598,12 +611,14 @@ class PostProcess(nn.Module):
         return bboxes_out, labels_out, scores_out
 
     def forward(self, bboxes_in, scores_in):
-        # 将box格式从xywh转换回ltrb（方便后面非极大值抑制时求iou）, 将预测目标score通过softmax处理
+        # 通过预测的boxes回归参数得到最终预测坐标, 将预测目标score通过softmax处理
         bboxes, probs = self.scale_back_batch(bboxes_in, scores_in)
 
         outputs = torch.jit.annotate(List[Tuple[Tensor, Tensor, Tensor]], [])
         # 遍历一个batch中的每张image数据
-        for bbox, prob in zip(bboxes.split(1, 0), probs.split(1, 0)):
+        # bboxes: [batch, 8732, 4]
+        for bbox, prob in zip(bboxes.split(1, 0), probs.split(1, 0)):  # split_size, split_dim
+            # bbox: [1, 8732, 4]
             bbox = bbox.squeeze(0)
             prob = prob.squeeze(0)
             outputs.append(self.decode_single_new(bbox, prob, self.criteria, self.max_output))
