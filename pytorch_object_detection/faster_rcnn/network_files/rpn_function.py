@@ -80,7 +80,7 @@ class AnchorsGenerator(nn.Module):
         h_ratios = torch.sqrt(aspect_ratios)
         w_ratios = 1.0 / h_ratios
 
-        # [r1, r2, r3] * [s1, s2, s3]'
+        # [r1, r2, r3]' * [s1, s2, s3]
         # number of elements is len(ratios)*len(scales)
         ws = (w_ratios[:, None] * scales[None, :]).view(-1)
         hs = (h_ratios[:, None] * scales[None, :]).view(-1)
@@ -89,7 +89,7 @@ class AnchorsGenerator(nn.Module):
         # 生成的anchors模板都是以（0, 0）为中心的, shape [len(ratios)*len(scales), 4]
         base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
 
-        return base_anchors.round()
+        return base_anchors.round()  # round 四舍五入
 
     def set_cell_anchors(self, dtype, device):
         # type: (int, Device) -> None
@@ -128,15 +128,16 @@ class AnchorsGenerator(nn.Module):
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
 
+        # 遍历每个预测特征层的grid_size，strides和cell_anchors
         for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
             grid_height, grid_width = size
             stride_height, stride_width = stride
             device = base_anchors.device
 
             # For output anchor, compute [x_center, y_center, x_center, y_center]
-            # shape: [grid_width] 对应原图上的列坐标
+            # shape: [grid_width] 对应原图上的x坐标(列)
             shifts_x = torch.arange(0, grid_width, dtype=torch.float32, device=device) * stride_width
-            # shape: [grid_height] 对应原图上的行坐标
+            # shape: [grid_height] 对应原图上的y坐标(行)
             shifts_y = torch.arange(0, grid_height, dtype=torch.float32, device=device) * stride_height
 
             # 计算预测特征矩阵上每个点对应原图上的坐标(anchors模板的坐标偏移量)
@@ -148,15 +149,15 @@ class AnchorsGenerator(nn.Module):
 
             # 计算anchors坐标(xmin, ymin, xmax, ymax)在原图上的坐标偏移量
             # shape: [grid_width*grid_height, 4]
-            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
+            shifts = torch.stack([shift_x, shift_y, shift_x, shift_y], dim=1)
 
             # For every (base anchor, output anchor) pair,
             # offset each zero-centered base anchor by the center of the output anchor.
-            # 将anchors模板与原图上的坐标偏移量相加得到原图上所有anchors的坐标信息
+            # 将anchors模板与原图上的坐标偏移量相加得到原图上所有anchors的坐标信息(shape不同时会使用广播机制)
             shifts_anchor = shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)
             anchors.append(shifts_anchor.reshape(-1, 4))
 
-        return anchors
+        return anchors  # List[Tensor(all_num_anchors, 4)]
 
     def cached_grid_anchors(self, grid_sizes, strides):
         # type: (List[List[int]], List[List[Tensor]])
@@ -171,11 +172,13 @@ class AnchorsGenerator(nn.Module):
 
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor])
-        # 获取每个预测特征层的尺寸
+        # 获取每个预测特征层的尺寸(height, width)
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
 
         # 获取输入图像的height和width
         image_size = image_list.tensors.shape[-2:]
+
+        # 获取变量类型和设备类型
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
 
         # one step in feature map equate n pixel stride in origin image
@@ -220,7 +223,7 @@ class RPNHead(nn.Module):
         super(RPNHead, self).__init__()
         # 3x3 滑动窗口
         self.conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
-        # 计算预测的目标概率（这里的目标只是指前景或者背景）
+        # 计算预测的目标分数（这里的目标只是指前景或者背景）
         self.cls_logits = nn.Conv2d(in_channels, num_anchors, kernel_size=1, stride=1)
         # 计算预测的目标bbox regression参数
         self.bbox_pred = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=1, stride=1)
