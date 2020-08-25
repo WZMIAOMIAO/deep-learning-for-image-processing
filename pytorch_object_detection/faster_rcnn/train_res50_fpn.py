@@ -84,7 +84,8 @@ def main(parser_data):
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
         # train for one epoch, printing every 10 iterations
         utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, print_freq=50, warmup=True)
+                              device, epoch, train_loss=train_loss, train_lr=learning_rate,
+                              print_freq=50, warmup=True)
         # update the learning rate
         lr_scheduler.step()
 
