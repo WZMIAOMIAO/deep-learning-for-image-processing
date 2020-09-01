@@ -11,7 +11,7 @@ import os
 
 
 def create_model(num_classes):
-    backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
+    backbone = MobileNetV2().features
     backbone.out_channels = 1280
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
@@ -43,7 +43,7 @@ def main():
         "val": transforms.Compose([transforms.ToTensor()])
     }
 
-    VOC_root = os.getcwd()
+    VOC_root = "./"
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
@@ -67,6 +67,10 @@ def main():
 
     model.to(device)
 
+    train_loss = []
+    learning_rate = []
+    val_mAP = []
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     #  first frozen backbone and train 5 epochs                   #
     #  首先冻结前置特征提取网络权重（backbone），训练rpn以及最终预测网络部分 #
@@ -83,10 +87,11 @@ def main():
     for epoch in range(num_epochs):
         # train for one epoch, printing every 10 iterations
         utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, print_freq=50)
+                              device, epoch, print_freq=50,
+                              train_loss=train_loss, train_lr=learning_rate)
 
         # evaluate on the test dataset
-        utils.evaluate(model, val_data_set_loader, device=device)
+        utils.evaluate(model, val_data_set_loader, device=device, mAP_list=val_mAP)
 
     torch.save(model.state_dict(), "./save_weights/pretrain.pth")
 
@@ -115,12 +120,13 @@ def main():
     for epoch in range(num_epochs):
         # train for one epoch, printing every 50 iterations
         utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, print_freq=50, warmup=True)
+                              device, epoch, print_freq=50,
+                              train_loss=train_loss, train_lr=learning_rate)
         # update the learning rate
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        utils.evaluate(model, val_data_set_loader, device=device)
+        utils.evaluate(model, val_data_set_loader, device=device, mAP_list=val_mAP)
 
         # save weights
         if epoch > 10:
@@ -130,6 +136,16 @@ def main():
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'epoch': epoch}
             torch.save(save_files, "./save_weights/mobile-model-{}.pth".format(epoch))
+
+    # plot loss and lr curve
+    if len(train_loss) != 0 and len(learning_rate) != 0:
+        from plot_curve import plot_loss_and_lr
+        plot_loss_and_lr(train_loss, learning_rate)
+
+    # plot mAP curve
+    if len(val_mAP) != 0:
+        from plot_curve import plot_map
+        plot_map(val_mAP)
 
     # model.eval()
     # x = [torch.rand(3, 300, 400), torch.rand(3, 400, 400)]

@@ -77,15 +77,20 @@ def main(parser_data):
         parser_data.start_epoch = checkpoint['epoch'] + 1
         print("the training process from epoch{}...".format(parser_data.start_epoch))
 
+    train_loss = []
+    learning_rate = []
+    val_mAP = []
+
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
         # train for one epoch, printing every 10 iterations
         utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, print_freq=50, warmup=True)
+                              device, epoch, train_loss=train_loss, train_lr=learning_rate,
+                              print_freq=50, warmup=True)
         # update the learning rate
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        utils.evaluate(model, val_data_set_loader, device=device)
+        utils.evaluate(model, val_data_set_loader, device=device, mAP_list=val_mAP)
 
         # save weights
         save_files = {
@@ -94,6 +99,16 @@ def main(parser_data):
             'lr_scheduler': lr_scheduler.state_dict(),
             'epoch': epoch}
         torch.save(save_files, "./save_weights/resNetFpn-model-{}.pth".format(epoch))
+
+    # plot loss and lr curve
+    if len(train_loss) != 0 and len(learning_rate) != 0:
+        from plot_curve import plot_loss_and_lr
+        plot_loss_and_lr(train_loss, learning_rate)
+
+    # plot mAP curve
+    if len(val_mAP) != 0:
+        from plot_curve import plot_map
+        plot_map(val_mAP)
 
     # model.eval()
     # x = [torch.rand(3, 300, 400), torch.rand(3, 400, 400)]

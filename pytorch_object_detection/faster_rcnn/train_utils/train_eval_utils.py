@@ -12,7 +12,8 @@ from train_utils.coco_utils import get_coco_api_from_dataset
 from train_utils.coco_eval import CocoEvaluator
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, warmup=False):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
+                    train_loss=None, train_lr=None, warmup=False):
     model.train()
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -38,6 +39,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
 
         loss_value = losses_reduced.item()
+        if isinstance(train_loss, list):
+            # 记录训练损失
+            train_loss.append(loss_value)
 
         if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
             print("Loss is {}, stopping training".format(loss_value))
@@ -52,11 +56,14 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wa
             lr_scheduler.step()
 
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
-        metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+        now_lr = optimizer.param_groups[0]["lr"]
+        metric_logger.update(lr=now_lr)
+        if isinstance(train_lr, list):
+            train_lr.append(now_lr)
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device):
+def evaluate(model, data_loader, device, mAP_list=None):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -99,6 +106,13 @@ def evaluate(model, data_loader, device):
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)
+
+    print_txt = coco_evaluator.coco_eval[iou_types[0]].stats
+    coco_mAP = print_txt[0]
+    voc_mAP = print_txt[1]
+    if isinstance(mAP_list, list):
+        mAP_list.append(voc_mAP)
+
     return coco_evaluator
 
 
