@@ -491,7 +491,7 @@ class RegionProposalNetwork(torch.nn.Module):
         image_range = torch.arange(num_images, device=device)
         batch_idx = image_range[:, None]  # [batch_size, 1]
 
-        # 根据预测概率排前pre_nms_top_n的anchors索引值获取相应概率信息
+        # 根据每个预测特征层预测概率排前pre_nms_top_n的anchors索引值获取相应概率信息
         objectness = objectness[batch_idx, top_n_idx]
         levels = levels[batch_idx, top_n_idx]
         # 预测概率排前pre_nms_top_n的anchors索引值获取相应bbox坐标信息
@@ -562,7 +562,7 @@ class RegionProposalNetwork(torch.nn.Module):
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
-            features (List[Tensor]): features computed from the images that are
+            features (Dict[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
             targets (List[Dict[Tensor]): ground-truth boxes present in the image (optional).
@@ -583,7 +583,7 @@ class RegionProposalNetwork(torch.nn.Module):
         # objectness和pred_bbox_deltas都是list
         objectness, pred_bbox_deltas = self.head(features)
 
-        # 生成一个batch图像的所有anchors信息
+        # 生成一个batch图像的所有anchors信息,list(tensor)元素个数等于batch_size
         anchors = self.anchor_generator(images, features)
 
         # batch_size
