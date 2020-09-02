@@ -28,15 +28,15 @@ def main(save_path=None):
     torch_out = model(x)
 
     # export the model
-    torch.onnx.export(model,
-                      x,
-                      save_path,
-                      export_params=True,
-                      opset_version=10,
-                      do_constant_folding=True,
-                      input_names=["input"],
-                      output_names=["output"],
-                      dynamic_axes={"input": {0: "batch_size"},
+    torch.onnx.export(model,                       # model being run
+                      x,                           # model input (or a tuple for multiple inputs)
+                      save_path,                   # where to save the model (can be a file or file-like object)
+                      export_params=True,          # store the trained parameter weights inside the model file
+                      opset_version=10,            # the ONNX version to export the model to
+                      do_constant_folding=True,    # whether to execute constant folding for optimization
+                      input_names=["input"],       # the model's input names
+                      output_names=["output"],     # the model's output names
+                      dynamic_axes={"input": {0: "batch_size"},  # variable length axes
                                     "output": {0: "batch_size"}})
 
     # check onnx model
