@@ -5,6 +5,8 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 import json
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 data_transform = transforms.Compose(
     [transforms.Resize(256),
      transforms.CenterCrop(224),
@@ -31,7 +33,7 @@ except Exception as e:
 model = resnet34(num_classes=5)
 # load model weights
 model_weight_path = "./resNet34.pth"
-model.load_state_dict(torch.load(model_weight_path))
+model.load_state_dict(torch.load(model_weight_path, map_location=device))
 model.eval()
 with torch.no_grad():
     # predict class

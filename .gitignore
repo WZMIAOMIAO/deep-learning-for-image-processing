@@ -12,6 +12,9 @@ flower_data
 *.config
 *.gz
 *.onnx
+*.xml
+*.bin
+*.mapping
 checkpoint
 data
 VOCdevkit
