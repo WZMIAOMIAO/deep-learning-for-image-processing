@@ -11,6 +11,10 @@ flower_data
 *.ckpt
 *.config
 *.gz
+*.onnx
+*.xml
+*.bin
+*.mapping
 checkpoint
 data
 VOCdevkit

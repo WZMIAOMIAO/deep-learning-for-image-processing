@@ -11,7 +11,7 @@ import os
 
 
 def create_model(num_classes):
-    backbone = MobileNetV2().features
+    backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
     backbone.out_channels = 1280
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
