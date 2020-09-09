@@ -18,15 +18,15 @@ def main():
     # set log format
     log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
-    assert os.path.exists(model_xml_path), ".xml file not exist..."
-    assert os.path.exists(model_bin_path), ".bin file not exist..."
+    assert os.path.exists(model_xml_path), ".xml file does not exist..."
+    assert os.path.exists(model_bin_path), ".bin file does not exist..."
 
     # search *.jpg files
     image_list = glob.glob(os.path.join(image_path, "*.jpg"))
     assert len(image_list) > 0, "no image(.jpg) be found..."
 
     # load class label
-    assert os.path.exists(class_json_path), "class_json_path not exist..."
+    assert os.path.exists(class_json_path), "class_json_path does not exist..."
     json_file = open(class_json_path, 'r')
     class_indict = json.load(json_file)
 
@@ -78,6 +78,7 @@ def main():
         # start sync inference
         res = exec_net.infer(inputs={input_blob: image})
         prediction = np.squeeze(res[output_blob])
+        # print(prediction)
 
         # np softmax process
         prediction -= np.max(prediction, keepdims=True)  # 为了稳定地计算softmax概率， 一般会减掉最大元素
