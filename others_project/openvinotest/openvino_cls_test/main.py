@@ -68,7 +68,7 @@ def main():
         # bgr(opencv default format) -> rgb
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         # pre-process
-        image = image / 255.
+        image = (image / 255.).astype(np.float32)
         image = (image - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
         # change data from HWC to CHW
         image = image.transpose((2, 0, 1))
