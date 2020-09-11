@@ -4,7 +4,7 @@ import json
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 from model import MobileNetV2
 
@@ -39,19 +39,24 @@ def transform_image(image_bytes):
                                             [0.485, 0.456, 0.406],
                                             [0.229, 0.224, 0.225])])
     image = Image.open(io.BytesIO(image_bytes))
+    if image.mode != "RGB":
+        raise ValueError("input file does not RGB image...")
     return my_transforms(image).unsqueeze(0)
 
 
 def get_prediction(image_bytes):
-    tensor = transform_image(image_bytes=image_bytes)
-    outputs = torch.softmax(model.forward(tensor).squeeze(), dim=0)
-    prediction = outputs.detach().cpu().numpy()
-    template = "class:{:<15} probability:{:.3f}"
-    index_pre = [(class_indict[str(index)], float(p)) for index, p in enumerate(prediction)]
-    # sort probability
-    index_pre.sort(key=lambda x: x[1], reverse=True)
-    text = [template.format(k, v) for k, v in index_pre]
-    return_info = {"result": text}
+    try:
+        tensor = transform_image(image_bytes=image_bytes)
+        outputs = torch.softmax(model.forward(tensor).squeeze(), dim=0)
+        prediction = outputs.detach().cpu().numpy()
+        template = "class:{:<15} probability:{:.3f}"
+        index_pre = [(class_indict[str(index)], float(p)) for index, p in enumerate(prediction)]
+        # sort probability
+        index_pre.sort(key=lambda x: x[1], reverse=True)
+        text = [template.format(k, v) for k, v in index_pre]
+        return_info = {"result": text}
+    except Exception as e:
+        return_info = {"result": str(e)}
     return return_info
 
 
@@ -62,6 +67,11 @@ def predict():
     img_bytes = image.read()
     info = get_prediction(image_bytes=img_bytes)
     return jsonify(info)
+
+
+@app.route("/", methods=["GET", "POST"])
+def root():
+    return render_template("up.html")
 
 
 if __name__ == '__main__':
