@@ -7,7 +7,7 @@ import onnxruntime
 import numpy as np
 from model import resnet34
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 
 def to_numpy(tensor):
@@ -58,7 +58,7 @@ def main(save_path=None):
     img = Image.open("../tulip.jpg")
 
     # pre-process
-    preprocess = transforms.Compose([transforms.Resize(224),
+    preprocess = transforms.Compose([transforms.Resize([224, 224]),
                                      transforms.ToTensor(),
                                      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
     img = preprocess(img)
