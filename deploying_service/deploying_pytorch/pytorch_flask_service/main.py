@@ -22,12 +22,12 @@ print(device)
 # create model
 model = MobileNetV2(num_classes=5)
 # load model weights
-model_weight_path = weights_path
-model.load_state_dict(torch.load(model_weight_path, map_location=device))
+model.load_state_dict(torch.load(weights_path, map_location=device))
+model.to(device)
 model.eval()
 
 # load class info
-json_file = open(class_json_path, 'r')
+json_file = open(class_json_path, 'rb')
 class_indict = json.load(json_file)
 
 
@@ -41,7 +41,7 @@ def transform_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     if image.mode != "RGB":
         raise ValueError("input file does not RGB image...")
-    return my_transforms(image).unsqueeze(0)
+    return my_transforms(image).unsqueeze(0).to(device)
 
 
 def get_prediction(image_bytes):
@@ -56,7 +56,7 @@ def get_prediction(image_bytes):
         text = [template.format(k, v) for k, v in index_pre]
         return_info = {"result": text}
     except Exception as e:
-        return_info = {"result": str(e)}
+        return_info = {"result": [str(e)]}
     return return_info
 
 
