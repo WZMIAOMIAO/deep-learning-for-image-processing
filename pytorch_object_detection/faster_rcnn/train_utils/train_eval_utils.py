@@ -26,27 +26,30 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
 
         lr_scheduler = warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
+    enable_amp = True if "cuda" in device.type else False
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        loss_dict = model(images, targets)
+        # 混合精度训练上下文管理器，如果在CPU环境中不起任何作用
+        with torch.cuda.amp.autocast(enabled=enable_amp):
+            loss_dict = model(images, targets)
 
-        losses = sum(loss for loss in loss_dict.values())
+            losses = sum(loss for loss in loss_dict.values())
 
-        # reduce losses over all GPUs for logging purpose
-        loss_dict_reduced = reduce_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+            # reduce losses over all GPUs for logging purpose
+            loss_dict_reduced = reduce_dict(loss_dict)
+            losses_reduced = sum(loss for loss in loss_dict_reduced.values())
 
-        loss_value = losses_reduced.item()
-        if isinstance(train_loss, list):
-            # 记录训练损失
-            train_loss.append(loss_value)
+            loss_value = losses_reduced.item()
+            if isinstance(train_loss, list):
+                # 记录训练损失
+                train_loss.append(loss_value)
 
-        if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
-            print("Loss is {}, stopping training".format(loss_value))
-            print(loss_dict_reduced)
-            sys.exit(1)
+            if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
+                print("Loss is {}, stopping training".format(loss_value))
+                print(loss_dict_reduced)
+                sys.exit(1)
 
         optimizer.zero_grad()
         losses.backward()

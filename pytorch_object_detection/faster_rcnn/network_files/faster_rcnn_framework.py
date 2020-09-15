@@ -42,7 +42,7 @@ class FasterRCNNBase(nn.Module):
         return detections
 
     def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
         Arguments:
             images (list[Tensor]): images to be processed
@@ -79,6 +79,7 @@ class FasterRCNNBase(nn.Module):
         # original_image_sizes = [img.shape[-2:] for img in images]
 
         images, targets = self.transform(images, targets)  # 对图像进行预处理
+        # print(images.tensors.shape)
         features = self.backbone(images.tensors)  # 将图像输入backbone得到特征图
         if isinstance(features, torch.Tensor):  # 若只在一层特征层上预测，将feature放入有序字典中，并编号为‘0’
             features = OrderedDict([('0', features)])  # 若在多层特征层上预测，传入的就是一个有序字典
@@ -239,7 +240,7 @@ class FasterRCNN(FasterRCNNBase):
 
     def __init__(self, backbone, num_classes=None,
                  # transform parameter
-                 min_size=800, max_size=1344,      # 预处理resize时限制的最小尺寸与最大尺寸
+                 min_size=800, max_size=1000,      # 预处理resize时限制的最小尺寸与最大尺寸
                  image_mean=None, image_std=None,  # 预处理normalize时使用的均值和方差
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,

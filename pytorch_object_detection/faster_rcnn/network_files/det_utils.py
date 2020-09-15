@@ -82,8 +82,8 @@ class BalancedPositiveNegativeSampler(object):
                 matched_idxs_per_image, dtype=torch.uint8
             )
 
-            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1, dtype=torch.uint8)
-            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1, dtype=torch.uint8)
+            pos_idx_per_image_mask[pos_idx_per_image] = 1
+            neg_idx_per_image_mask[neg_idx_per_image] = 1
 
             pos_idx.append(pos_idx_per_image_mask)
             neg_idx.append(neg_idx_per_image_mask)
@@ -260,11 +260,11 @@ class BoxCoder(object):
         # xmin
         pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
         # ymin
-        pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_h
+        pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
         # xmax
         pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
         # ymax
-        pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_h
+        pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 
@@ -344,10 +344,10 @@ class Matcher(object):
             matched_vals < self.high_threshold
         )
         # iou小于low_threshold的matches索引置为-1
-        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)  # -1
+        matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD  # -1
 
         # iou在[low_threshold, high_threshold]之间的matches索引置为-2
-        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)    # -2
+        matches[between_thresholds] = self.BETWEEN_THRESHOLDS    # -2
 
         if self.allow_low_quality_matches:
             assert all_matches is not None
