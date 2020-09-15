@@ -11,6 +11,7 @@ def create_model(num_classes):
     backbone = resnet50_fpn_backbone()
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
+    # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
     weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
@@ -36,12 +37,13 @@ def main(parser_data):
     }
 
     VOC_root = parser_data.data_path
+    assert os.path.exists(os.path.join(VOC_root, "VOCdevkit")), "not found VOCdevkit in path:'{}'".format(VOC_root)
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
-                                                    batch_size=4,
-                                                    shuffle=True,
+                                                    batch_size=1,
+                                                    shuffle=False,
                                                     num_workers=0,
                                                     collate_fn=utils.collate_fn)
 
@@ -55,7 +57,7 @@ def main(parser_data):
 
     # create model num_classes equal background + 20 classes
     model = create_model(num_classes=21)
-    print(model)
+    # print(model)
 
     model.to(device)
 
@@ -63,6 +65,7 @@ def main(parser_data):
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
+
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                    step_size=5,
@@ -117,6 +120,11 @@ def main(parser_data):
 
 
 if __name__ == "__main__":
+    version = torch.version.__version__[:5]  # example: 1.6.0
+    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
+    if version < "1.6.0":
+        raise EnvironmentError("pytorch version must be 1.6.0 or above")
+
     import argparse
 
     parser = argparse.ArgumentParser(

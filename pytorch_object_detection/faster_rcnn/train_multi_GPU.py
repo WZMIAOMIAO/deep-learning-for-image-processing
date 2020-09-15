@@ -15,6 +15,7 @@ def create_model(num_classes):
     backbone = resnet50_fpn_backbone()
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
+    # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
     weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
@@ -47,6 +48,7 @@ def main(args):
     }
 
     VOC_root = args.data_path
+    assert os.path.exists(os.path.join(VOC_root, "VOCdevkit")), "not found VOCdevkit in path:'{}'".format(VOC_root)
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
 
@@ -135,6 +137,11 @@ def main(args):
 
 
 if __name__ == "__main__":
+    version = torch.version.__version__[:5]  # example: 1.6.0
+    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
+    if version < "1.6.0":
+        raise EnvironmentError("pytorch version must be 1.6.0 or above")
+
     import argparse
     parser = argparse.ArgumentParser(
         description=__doc__)

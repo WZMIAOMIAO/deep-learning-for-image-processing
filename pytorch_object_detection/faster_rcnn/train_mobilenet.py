@@ -11,6 +11,7 @@ import os
 
 
 def create_model(num_classes):
+    # https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
     backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
     backbone.out_channels = 1280
 
@@ -44,12 +45,14 @@ def main():
     }
 
     VOC_root = "./"
+    assert os.path.exists(os.path.join(VOC_root, "VOCdevkit")), "not found VOCdevkit in path:'{}'".format(VOC_root)
+
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
                                                     batch_size=8,
-                                                    shuffle=True,
+                                                    shuffle=False,
                                                     num_workers=0,
                                                     collate_fn=utils.collate_fn)
 
@@ -63,7 +66,7 @@ def main():
 
     # create model num_classes equal background + 20 classes
     model = create_model(num_classes=21)
-    print(model)
+    # print(model)
 
     model.to(device)
 
@@ -154,4 +157,9 @@ def main():
 
 
 if __name__ == "__main__":
+    version = torch.version.__version__[:5]  # example: 1.6.0
+    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
+    if version < "1.6.0":
+        raise EnvironmentError("pytorch version must be 1.6.0 or above")
+
     main()
