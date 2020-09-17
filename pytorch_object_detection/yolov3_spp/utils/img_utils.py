@@ -10,12 +10,12 @@ def letterbox(img: np.ndarray,
               scale_up=True):
     """
     将图片缩放调整到指定大小
-    :param img:
-    :param new_shape:
-    :param color:
+    :param img: 输入的图像numpy格式
+    :param new_shape: 输入网络的shape
+    :param color: padding用什么颜色填充
     :param auto:
-    :param scale_fill:
-    :param scale_up:
+    :param scale_fill: 简单粗暴缩放到指定大小
+    :param scale_up:  只缩小，不放大
     :return:
     """
 

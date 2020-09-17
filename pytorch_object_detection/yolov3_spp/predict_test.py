@@ -30,7 +30,7 @@ def main():
     model(img)
 
     img_o = cv2.imread(img_path)  # BGR
-    assert img is not None, "Image Not Found " + img_path
+    assert img_o is not None, "Image Not Found " + img_path
 
     img = img_utils.letterbox(img_o, new_shape=input_size, auto=True, color=(0, 0, 0))[0]
     # Convert
