@@ -110,7 +110,7 @@ def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
             info = {"boxes": bboxes_out.to(cpu_device),
                     "labels": labels_out.to(cpu_device),
                     "scores": scores_out.to(cpu_device),
-                    "height_width": targets[index]["height_width"]}
+                    "height_width": targets[index]["height_width"].to(cpu_device)}
             outputs.append(info)
 
         # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
