@@ -7,8 +7,8 @@
 import os
 import shutil
 
-train_annotation_dir = "/home/w180662/my_project/my_yolo_dataset/train/labels"
-val_annotation_dir = "/home/w180662/my_project/my_yolo_dataset/val/labels"
+train_annotation_dir = "~/my_project/my_yolo_dataset/train/labels"
+val_annotation_dir = "~/my_project/my_yolo_dataset/val/labels"
 classes_label = "./data/my_classes.txt"
 cfg_path = "./cfg/yolov3-spp.cfg"
 

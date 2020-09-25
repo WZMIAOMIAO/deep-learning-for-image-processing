@@ -5,7 +5,6 @@ import onnxruntime
 import numpy as np
 from matplotlib import pyplot as plt
 from draw_box_utils import draw_box
-from numba import guvectorize, float64, int8
 
 
 def to_numpy(tensor):
@@ -140,19 +139,7 @@ def nms(bboxes: np.ndarray, iou_threshold=0.5, soft_threshold=0.3, sigma=0.5, me
         best_bbox = bboxes[max_ind]
         best_bboxes_index.append(best_bbox[5])
         bboxes = np.concatenate([bboxes[:max_ind], bboxes[max_ind + 1:]])  # 将最大概率目标去除
-        # ious = bboxes_iou(best_bbox[np.newaxis, :4], bboxes[:, :4])
-        boxes1 = best_bbox[np.newaxis, :4]
-        boxes2 = bboxes[:, :4]
-        boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] - boxes1[..., 1])
-        boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] - boxes2[..., 1])
-
-        left_up = np.maximum(boxes1[..., :2], boxes2[..., :2])
-        right_down = np.minimum(boxes1[..., 2:], boxes2[..., 2:])
-
-        inter_section = np.maximum(right_down - left_up, 0.0)
-        inter_area = inter_section[..., 0] * inter_section[..., 1]
-        union_area = boxes1_area + boxes2_area - inter_area
-        ious = np.maximum(1.0 * inter_area / union_area, np.finfo(np.float32).eps)
+        ious = bboxes_iou(best_bbox[np.newaxis, :4], bboxes[:, :4])
 
         if method == "nms":
             iou_mask = np.less(ious, iou_threshold)  # <
