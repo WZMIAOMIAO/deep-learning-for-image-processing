@@ -1,29 +1,42 @@
+"""
+本脚本有两个功能：
+1.将voc数据集标注信息(.xml)转为yolo标注格式(.txt)，并将图像文件复制到相应文件夹
+2.根据json标签文件，生成对应txt标签(my_class.txt)
+"""
 import os
 from tqdm import tqdm
 from lxml import etree
 import json
+import shutil
 
 
+# voc数据集根目录以及版本
 voc_root = "/home/w180662/my_project/my_github/pytorch_object_detection/VOCdevkit"
 voc_version = "VOC2012"
 
+# 转换的训练集以及验证集对应txt文件
 train_txt = "train.txt"
 val_txt = "val.txt"
 
-train_save_path = "/home/w180662/my_project/yolo_annotation_train"
-val_save_path = "/home/w180662/my_project/yolo_annotation_val"
+# 转换后的文件保存目录
+save_file_root = "/home/w180662/my_project/my_yolo_dataset"
 
+# label标签对应json文件
+label_json_path = './data/pascal_voc_classes.json'
+
+# 拼接出voc的images目录，xml目录，txt目录
 voc_images_path = os.path.join(voc_root, voc_version, "JPEGImages")
 voc_xml_path = os.path.join(voc_root, voc_version, "Annotations")
 train_txt_path = os.path.join(voc_root, voc_version, "ImageSets", "Main", train_txt)
 val_txt_path = os.path.join(voc_root, voc_version, "ImageSets", "Main", val_txt)
 
+# 检查文件/文件夹都是否存在
 assert os.path.exists(voc_images_path), "VOC images path not exist..."
 assert os.path.exists(voc_xml_path), "VOC xml path not exist..."
 assert os.path.exists(train_txt_path), "VOC train txt file not exist..."
 assert os.path.exists(val_txt_path), "VOC val txt file not exist..."
-assert os.path.exists(train_save_path), "path saving yolo annotation not exist..."
-assert os.path.exists(val_save_path), "path saving yolo annotation not exist..."
+assert os.path.exists(save_file_root), "path saving yolo annotation not exist..."
+assert os.path.exists(label_json_path), "label_json_path does not exist..."
 
 
 def parse_xml_to_dict(xml):
@@ -51,8 +64,23 @@ def parse_xml_to_dict(xml):
     return {xml.tag: result}
 
 
-def translate_info(file_names: list, save_path: str, class_dict: dict):
-    for file in tqdm(file_names, desc="translate train file..."):
+def translate_info(file_names: list, save_root: str, class_dict: dict, train_val='train'):
+    """
+    将对应xml文件信息转为yolo中使用的txt文件信息
+    :param file_names:
+    :param save_root:
+    :param class_dict:
+    :param train_val:
+    :return:
+    """
+    save_txt_path = os.path.join(save_root, train_val, "labels")
+    if os.path.exists(save_txt_path) is False:
+        os.makedirs(save_txt_path)
+    save_images_path = os.path.join(save_root, train_val, "images")
+    if os.path.exists(save_images_path) is False:
+        os.makedirs(save_images_path)
+
+    for file in tqdm(file_names, desc="translate {} file...".format(train_val)):
         # 检查下图像文件是否存在
         img_path = os.path.join(voc_images_path, file + ".jpg")
         assert os.path.exists(img_path), "file:{} not exist...".format(img_path)
@@ -70,7 +98,7 @@ def translate_info(file_names: list, save_path: str, class_dict: dict):
         img_width = int(data["size"]["width"])
 
         # write object info into txt
-        with open(os.path.join(save_path, file + ".txt"), "w") as f:
+        with open(os.path.join(save_txt_path, file + ".txt"), "w") as f:
             for index, obj in enumerate(data["object"]):
                 # 获取每个object的box信息
                 xmin = float(obj["bndbox"]["xmin"])
@@ -78,7 +106,7 @@ def translate_info(file_names: list, save_path: str, class_dict: dict):
                 ymin = float(obj["bndbox"]["ymin"])
                 ymax = float(obj["bndbox"]["ymax"])
                 class_name = obj["name"]
-                class_index = class_dict[class_name] - 1
+                class_index = class_dict[class_name] - 1  # 目标id从0开始
 
                 # 将box信息转换到yolo格式
                 xcenter = xmin + (xmax - xmin) / 2
@@ -99,27 +127,39 @@ def translate_info(file_names: list, save_path: str, class_dict: dict):
                 else:
                     f.write("\n" + " ".join(info))
 
+        # copy image into save_images_path
+        shutil.copyfile(img_path, os.path.join(save_images_path, img_path.split("/")[-1]))
+
+
+def create_class_txt(class_dict: dict):
+    keys = class_dict.keys()
+    with open("./data/my_class.txt", "w") as w:
+        for index, k in enumerate(keys):
+            if index + 1 == len(keys):
+                w.write(k)
+            else:
+                w.write(k + "\n")
+
 
 def main():
     # read class_indict
-    try:
-        json_file = open('./pascal_voc_classes.json', 'r')
-        class_dict = json.load(json_file)
-    except Exception as e:
-        print(e)
-        exit(-1)
+    json_file = open(label_json_path, 'r')
+    class_dict = json.load(json_file)
 
     # 读取train.txt中的所有行信息，删除空行
     with open(train_txt_path, "r") as r:
         train_file_names = [i for i in r.read().splitlines() if len(i.strip()) > 0]
-    # voc信息转yolo
-    translate_info(train_file_names, train_save_path, class_dict)
+    # voc信息转yolo，并将图像文件复制到相应文件夹
+    translate_info(train_file_names, save_file_root, class_dict, "train")
 
     # 读取val.txt中的所有行信息，删除空行
     with open(val_txt_path, "r") as r:
         val_file_names = [i for i in r.read().splitlines() if len(i.strip()) > 0]
-    # voc信息转yolo
-    translate_info(val_file_names, val_save_path, class_dict)
+    # voc信息转yolo，并将图像文件复制到相应文件夹
+    translate_info(val_file_names, save_file_root, class_dict, "val")
+
+    # 创建my_class.txt文件
+    create_class_txt(class_dict)
 
 
 if __name__ == "__main__":
