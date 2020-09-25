@@ -329,9 +329,9 @@ class Encoder(object):
 
         bboxes_out = torch.cat(bboxes_out, dim=0).contiguous()
         scores_out = torch.cat(scores_out, dim=0).contiguous()
-        labels_out = torch.tensor(labels_out, dtype=torch.long)
+        labels_out = torch.as_tensor(labels_out, dtype=torch.long)
 
-        # 对所有目标的概率进行排序（无论是什么类别）,取前max_num个目标
+        # 对所有目标的概率进行排序（无论是什 么类别）,取前max_num个目标
         _, max_ids = scores_out.sort(dim=0)
         max_ids = max_ids[-max_output:]
         return bboxes_out[max_ids, :], labels_out[max_ids], scores_out[max_ids]
@@ -382,7 +382,7 @@ class DefaultBoxes(object):
                     self.default_boxes.append((cx, cy, w, h))
 
         # 将default_boxes转为tensor格式
-        self.dboxes = torch.tensor(self.default_boxes, dtype=torch.float32)  # 这里不转类型会报错
+        self.dboxes = torch.as_tensor(self.default_boxes, dtype=torch.float32)  # 这里不转类型会报错
         self.dboxes.clamp_(min=0, max=1)  # 将坐标（x, y, w, h）都限制在0-1之间
 
         # For IoU calculation

@@ -121,6 +121,14 @@ def xywh2xyxy(x):
 
 
 def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
+    """
+    将预测的坐标信息转换回原图尺度
+    :param img1_shape: 缩放后的图像尺度
+    :param coords: 预测的box信息
+    :param img0_shape: 缩放前的图像尺度
+    :param ratio_pad: 缩放过程中的缩放比例以及pad
+    :return:
+    """
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = max(img1_shape) / max(img0_shape)  # gain  = old / new

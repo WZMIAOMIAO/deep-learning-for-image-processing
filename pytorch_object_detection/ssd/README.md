@@ -26,6 +26,7 @@
 ## 预训练权重下载地址（下载后放入src文件夹中）：
 * ResNet50+SSD: https://ngc.nvidia.com/catalog/models  
  `搜索ssd -> 找到SSD for PyTorch(FP32) -> download FP32 -> 解压文件`
+* 如果找不到可通过百度网盘下载，链接:https://pan.baidu.com/s/1byOnoNuqmBLZMDA0-lbCMQ 提取码:iggj 
 
 ## 数据集，本例程使用的是PASCAL VOC2012数据集(下载后放入项目当前文件夹中)
 * Pascal VOC2012 train/val数据集下载地址：http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar

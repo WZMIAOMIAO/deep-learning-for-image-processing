@@ -207,17 +207,21 @@ class YOLOLayer(nn.Module):
             return p
         elif ONNX_EXPORT:
             # Avoid broadcasting for ANE operations
-            m = self.na * self.nx * self.ny
+            m = self.na * self.nx * self.ny  # 3*
             ng = 1. / self.ng.repeat(m, 1)
             grid = self.grid.repeat(1, self.na, 1, 1, 1).view(m, 2)
             anchor_wh = self.anchor_wh.repeat(1, 1, self.nx, self.ny, 1).view(m, 2) * ng
 
             p = p.view(m, self.no)
-            xy = torch.sigmoid(p[:, 0:2]) + grid  # x, y
-            wh = torch.exp(p[:, 2:4]) * anchor_wh  # width, height
-            p_cls = torch.sigmoid(p[:, 4:5]) if self.nc == 1 else \
-                torch.sigmoid(p[:, 5:self.no]) * torch.sigmoid(p[:, 4:5])  # conf
-            return p_cls, xy * ng, wh
+            # xy = torch.sigmoid(p[:, 0:2]) + grid  # x, y
+            # wh = torch.exp(p[:, 2:4]) * anchor_wh  # width, height
+            # p_cls = torch.sigmoid(p[:, 4:5]) if self.nc == 1 else \
+            #     torch.sigmoid(p[:, 5:self.no]) * torch.sigmoid(p[:, 4:5])  # conf
+            p[:, :2] = (torch.sigmoid(p[:, 0:2]) + grid) * ng  # x, y
+            p[:, 2:4] = torch.exp(p[:, 2:4]) * anchor_wh  # width, height
+            p[:, 4:] = torch.sigmoid(p[:, 4:])
+            p[:, 5:] = p[:, 5:self.no] * p[:, 4:5]
+            return p
         else:  # inference
             io = p.clone()  # inference output
             io[..., :2] = torch.sigmoid(io[..., :2]) + self.grid  # xy 计算在feature map上的xy坐标
@@ -232,6 +236,7 @@ class Darknet(nn.Module):
 
     def __init__(self, cfg, img_size=(416, 416), verbose=False):
         super(Darknet, self).__init__()
+        self.input_size = [img_size] * 2 if isinstance(img_size, int) else img_size
         self.module_defs = parse_model_cfg(cfg)
         self.module_list, self.routs = create_modules(self.module_defs, img_size, cfg)
         self.yolo_layers = get_yolo_layers(self)
@@ -297,8 +302,26 @@ class Darknet(nn.Module):
         if self.training:  # train
             return yolo_out
         elif ONNX_EXPORT:  # export
-            x = [torch.cat(x, 0) for x in zip(*yolo_out)]
-            return x[0], torch.cat(x[1:3], 1)  # scores, boxes: 3780x80, 3780x4
+            # x = [torch.cat(x, 0) for x in zip(*yolo_out)]
+            # return x[0], torch.cat(x[1:3], 1)  # scores, boxes: 3780x80, 3780x4
+            p = torch.cat(yolo_out, dim=0)
+
+            # # 根据objectness虑除低概率目标
+            # mask = torch.nonzero(torch.gt(p[:, 4], 0.1), as_tuple=False).squeeze(1)
+            # # onnx不支持超过一维的索引（pytorch太灵活了）
+            # # p = p[mask]
+            # p = torch.index_select(p, dim=0, index=mask)
+            #
+            # # 虑除小面积目标，w > 2 and h > 2 pixel
+            # # ONNX暂不支持bitwise_and和all操作
+            # mask_s = torch.gt(p[:, 2], 2./self.input_size[0]) & torch.gt(p[:, 3], 2./self.input_size[1])
+            # mask_s = torch.nonzero(mask_s, as_tuple=False).squeeze(1)
+            # p = torch.index_select(p, dim=0, index=mask_s)  # width-height 虑除小目标
+            #
+            # if mask_s.numel() == 0:
+            #     return torch.empty([0, 85])
+
+            return p
         else:  # inference or test
             x, p = zip(*yolo_out)  # inference output, training output
             x = torch.cat(x, 1)  # cat yolo outputs

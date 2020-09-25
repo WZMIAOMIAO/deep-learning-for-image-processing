@@ -43,7 +43,7 @@ def main(parser_data):
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
                                                     batch_size=1,
-                                                    shuffle=False,
+                                                    shuffle=True,
                                                     num_workers=0,
                                                     collate_fn=utils.collate_fn)
 
