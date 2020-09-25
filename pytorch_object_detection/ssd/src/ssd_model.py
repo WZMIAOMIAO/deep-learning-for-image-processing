@@ -159,7 +159,7 @@ class Loss(nn.Module):
         self.confidence_loss = nn.CrossEntropyLoss(reduction='none')
 
     def _location_vec(self, loc):
-        # type: (Tensor)
+        # type: (Tensor) -> Tensor
         """
         Generate Location Vectors
         计算ground truth相对anchors的回归参数
@@ -171,7 +171,7 @@ class Loss(nn.Module):
         return torch.cat((gxy, gwh), dim=1).contiguous()
 
     def forward(self, ploc, plabel, gloc, glabel):
-        # type: (Tensor, Tensor, Tensor, Tensor)
+        # type: (Tensor, Tensor, Tensor, Tensor) -> Tensor
         """
             ploc, plabel: Nx4x8732, Nxlabel_numx8732
                 predicted location and labels
@@ -199,7 +199,7 @@ class Loss(nn.Module):
         # positive mask will never selected
         # 获取负样本
         con_neg = con.clone()
-        con_neg[mask] = torch.tensor(0.0)
+        con_neg[mask] = 0.0
         # 按照confidence_loss降序排列 con_idx(Tensor: [N, 8732])
         _, con_idx = con_neg.sort(dim=1, descending=True)
         _, con_rank = con_idx.sort(dim=1)  # 这个步骤比较巧妙
