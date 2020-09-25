@@ -2,14 +2,6 @@ import torch
 import math
 from torch.jit.annotations import List, Tuple
 from torch import Tensor
-import torchvision
-
-
-# TODO: https://github.com/pytorch/pytorch/issues/26727
-def zeros_like(tensor, dtype):
-    # type: (Tensor, int) -> Tensor
-    return torch.zeros_like(tensor, dtype=dtype, layout=tensor.layout,
-                            device=tensor.device, pin_memory=tensor.is_pinned())
 
 
 @torch.jit.script
@@ -19,7 +11,7 @@ class BalancedPositiveNegativeSampler(object):
     """
 
     def __init__(self, batch_size_per_image, positive_fraction):
-        # type: (int, float)
+        # type: (int, float) -> None
         """
         Arguments:
             batch_size_per_image (int): number of elements to be selected per image
@@ -29,7 +21,7 @@ class BalancedPositiveNegativeSampler(object):
         self.positive_fraction = positive_fraction
 
     def __call__(self, matched_idxs):
-        # type: (List[Tensor])
+        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
         Arguments:
             matched idxs: list of tensors containing -1, 0 or positive values.
@@ -75,10 +67,10 @@ class BalancedPositiveNegativeSampler(object):
             neg_idx_per_image = negative[perm2]
 
             # create binary mask from indices
-            pos_idx_per_image_mask = zeros_like(
+            pos_idx_per_image_mask = torch.zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
-            neg_idx_per_image_mask = zeros_like(
+            neg_idx_per_image_mask = torch.zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
 
@@ -151,7 +143,7 @@ class BoxCoder(object):
     """
 
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
-        # type: (Tuple[float, float, float, float], float)
+        # type: (Tuple[float, float, float, float], float) -> None
         """
         Arguments:
             weights (4-element tuple)
@@ -161,7 +153,7 @@ class BoxCoder(object):
         self.bbox_xform_clip = bbox_xform_clip
 
     def encode(self, reference_boxes, proposals):
-        # type: (List[Tensor], List[Tensor])
+        # type: (List[Tensor], List[Tensor]) -> List[Tensor]
         """
         结合anchors和与之对应的gt计算regression参数
         Args:
@@ -198,7 +190,7 @@ class BoxCoder(object):
         return targets
 
     def decode(self, rel_codes, boxes):
-        # type: (Tensor, List[Tensor])
+        # type: (Tensor, List[Tensor]) -> Tensor
         """
 
         Args:
@@ -280,7 +272,7 @@ class Matcher(object):
     }
 
     def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
-        # type: (float, float, bool)
+        # type: (float, float, bool) -> None
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -297,8 +289,8 @@ class Matcher(object):
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
         assert low_threshold <= high_threshold
-        self.high_threshold = high_threshold
-        self.low_threshold = low_threshold
+        self.high_threshold = high_threshold  # 0.7
+        self.low_threshold = low_threshold    # 0.3
         self.allow_low_quality_matches = allow_low_quality_matches
 
     def __call__(self, match_quality_matrix):
