@@ -163,7 +163,7 @@ class BoxCoder(object):
         Returns: regression parameters
 
         """
-        # 统计每张图像的正负样本数，方便后面拼接在一起处理后在分开
+        # 统计每张图像的anchors个数，方便后面拼接在一起处理后在分开
         # reference_boxes和proposal数据结构相同
         boxes_per_image = [len(b) for b in reference_boxes]
         reference_boxes = torch.cat(reference_boxes, dim=0)
