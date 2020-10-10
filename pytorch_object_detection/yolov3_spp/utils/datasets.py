@@ -315,20 +315,21 @@ class LoadImageAndLabels(Dataset):  # for training/testing
 
         labels_out = torch.zeros((nL, 6))  # nL: number of labels
         if nL:
+            # labels_out[:, 0] = index
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert BGR to RGB, and HWC to CHW(3x512x512)
         img = img[:, :, ::-1].transpose(2, 0, 1)
         img = np.ascontiguousarray(img)
 
-        return torch.from_numpy(img), labels_out, self.img_files[index], shapes
+        return torch.from_numpy(img), labels_out, self.img_files[index], shapes, index
 
     @staticmethod
     def collate_fn(batch):
-        img, label, path, shapes = zip(*batch)  # transposed
+        img, label, path, shapes, index = zip(*batch)  # transposed
         for i, l in enumerate(label):
             l[:, 0] = i  # add target image index for build_targets()
-        return torch.stack(img, 0), torch.cat(label, 0), path, shapes
+        return torch.stack(img, 0), torch.cat(label, 0), path, shapes, index
 
 
 def load_image(self, index):
@@ -345,7 +346,7 @@ def load_image(self, index):
             img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
         return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
     else:
-        return self.imgs[index], self.img_hw0[index], self.img_hw(index)  # img, hw_original, hw_resized
+        return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
 
 
 def load_mosaic(self, index):

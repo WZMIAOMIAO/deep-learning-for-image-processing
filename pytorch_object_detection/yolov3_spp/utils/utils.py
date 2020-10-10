@@ -410,6 +410,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
         lobj += BCEobj(pi[..., 4], tobj)  # obj loss
 
+    # 乘上每种损失的对应权重
     lbox *= h['giou']
     lobj *= h['obj']
     lcls *= h['cls']
@@ -421,8 +422,8 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             lcls *= g / nt / model.nc
             lbox *= g / nt
 
-    loss = lbox + lobj + lcls
-    return loss, torch.cat((lbox, lobj, lcls, loss)).detach()
+    # loss = lbox + lobj + lcls
+    return {"box_loss": lbox, "obj_loss": lobj, "class_loss": lcls}
 
 
 def build_targets(p, targets, model):

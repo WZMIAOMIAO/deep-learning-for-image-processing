@@ -226,7 +226,7 @@ class YOLOLayer(nn.Module):
             io = p.clone()  # inference output
             io[..., :2] = torch.sigmoid(io[..., :2]) + self.grid  # xy 计算在feature map上的xy坐标
             io[..., 2:4] = torch.exp(io[..., 2:4]) * self.anchor_wh  # wh yolo method 计算在feature map上的wh
-            io[..., :4] *= self.stride  # 换算映射会原图尺度
+            io[..., :4] *= self.stride  # 换算映射回原图尺度
             torch.sigmoid_(io[..., 4:])
             return io.view(bs, -1, self.no), p  # view [1, 3, 13, 13, 85] as [1, 507, 85]
 
@@ -331,6 +331,7 @@ class Darknet(nn.Module):
                 x[1][..., 0] = img_size[1] - x[1][..., 0]  # flip lr
                 x[2][..., :4] /= s[1]  # scale
                 x = torch.cat(x, 1)
+
             return x, p
 
     def info(self, verbose=False):
