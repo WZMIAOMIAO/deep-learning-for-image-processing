@@ -360,14 +360,16 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
 
 def compute_loss(p, targets, model):  # predictions, targets, model
     ft = torch.cuda.FloatTensor if p[0].is_cuda else torch.Tensor
-    lcls, lbox, lobj = ft([0]), ft([0]), ft([0])  # Tensor(0)
+    lcls = ft([0], device=p[0].device)  # Tensor(0)
+    lbox = ft([0], device=p[0].device)  # Tensor(0)
+    lobj = ft([0], device=p[0].device)  # Tensor(0)
     tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
     h = model.hyp  # hyperparameters
     red = 'mean'  # Loss reduction (sum or mean)
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=ft([h['cls_pw']]), reduction=red)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=ft([h['obj_pw']]), reduction=red)
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=ft([h['cls_pw']], device=p[0].device), reduction=red)
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=ft([h['obj_pw']], device=p[0].device), reduction=red)
 
     # class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
     cp, cn = smooth_BCE(eps=0.0)
@@ -410,6 +412,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
         lobj += BCEobj(pi[..., 4], tobj)  # obj loss
 
+    # 乘上每种损失的对应权重
     lbox *= h['giou']
     lobj *= h['obj']
     lcls *= h['cls']
@@ -421,8 +424,8 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             lcls *= g / nt / model.nc
             lbox *= g / nt
 
-    loss = lbox + lobj + lcls
-    return loss, torch.cat((lbox, lobj, lcls, loss)).detach()
+    # loss = lbox + lobj + lcls
+    return {"box_loss": lbox, "obj_loss": lobj, "class_loss": lcls}
 
 
 def build_targets(p, targets, model):

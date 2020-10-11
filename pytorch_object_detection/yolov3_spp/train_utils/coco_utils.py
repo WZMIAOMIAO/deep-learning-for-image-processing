@@ -12,33 +12,37 @@ def convert_to_coco_api(ds):
     ann_id = 1
     dataset = {'images': [], 'categories': [], 'annotations': []}
     categories = set()
+    # 遍历dataset中的每张图像
     for img_idx in range(len(ds)):
         # find better way to get target
-        img, targets = ds[img_idx]
-        image_id = targets["image_id"].item()
+        img, targets, _, _, image_id = ds[img_idx]
+        # targets: [num_obj, 6] , that number 6 means -> (img_index, obj_index, x, y, w, h)
         img_dict = {}
-        img_dict['id'] = image_id
+        img_dict['id'] = int(image_id)
         img_dict['height'] = img.shape[-2]
         img_dict['width'] = img.shape[-1]
         dataset['images'].append(img_dict)
-        bboxes = targets["boxes"]
-        bboxes[:, 2:] -= bboxes[:, :2]
-        bboxes = bboxes.tolist()
-        labels = targets['labels'].tolist()
-        areas = targets['area'].tolist()
-        iscrowd = targets['iscrowd'].tolist()
-        num_objs = len(bboxes)
-        for i in range(num_objs):
+
+        for obj in targets:
             ann = {}
-            ann['image_id'] = image_id
-            ann['bbox'] = bboxes[i]
-            ann['category_id'] = labels[i]
-            categories.add(labels[i])
-            ann['area'] = areas[i]
-            ann['iscrowd'] = iscrowd[i]
-            ann['id'] = ann_id
-            dataset['annotations'].append(ann)
+            ann["image_id"] = image_id
+            # 将相对坐标转为绝对坐标
+            # box (x, y, w, h)
+            boxes = obj[2:]
+            # (x, y, w, h) to (xmin, ymin, w, h)
+            boxes[:2] -= 0.5*boxes[2:]
+            boxes[[0, 2]] *= img_dict["width"]
+            boxes[[1, 3]] *= img_dict["height"]
+            boxes = boxes.tolist()
+            ann["bbox"] = boxes
+            ann["category_id"] = int(obj[1])
+            categories.add(int(obj[1]))
+            ann["area"] = boxes[2] * boxes[3]
+            ann["iscrowd"] = 0
+            ann["id"] = ann_id
+            dataset["annotations"].append(ann)
             ann_id += 1
+
     dataset['categories'] = [{'id': i} for i in sorted(categories)]
     coco_ds.dataset = dataset
     coco_ds.createIndex()

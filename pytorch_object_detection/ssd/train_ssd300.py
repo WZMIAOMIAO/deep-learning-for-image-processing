@@ -1,8 +1,10 @@
-from src.ssd_model import SSD300, Backbone
+import os
+
 import torch
+
 import transform
 from my_dataset import VOC2012DataSet
-import os
+from src.ssd_model import SSD300, Backbone
 import train_utils.train_eval_utils as utils
 from train_utils.coco_utils import get_coco_api_from_dataset
 
@@ -36,7 +38,7 @@ def create_model(num_classes=21, device=torch.device('cpu')):
 
 def main(parser_data):
     device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
-    print(device)
+    print("Using {} device training.".format(device.type))
 
     if not os.path.exists("save_weights"):
         os.mkdir("save_weights")
@@ -55,20 +57,28 @@ def main(parser_data):
     }
 
     VOC_root = parser_data.data_path
+    # check voc root
+    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+
     train_dataset = VOC2012DataSet(VOC_root, data_transform['train'], train_set='train.txt')
     # 注意训练时，batch_size必须大于1
+    batch_size = parser_data.batch_size
+    assert batch_size > 1, "batch size must be greater than 1"
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    print('Using %g dataloader workers' % nw)
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
-                                                    batch_size=8,
+                                                    batch_size=batch_size,
                                                     shuffle=True,
-                                                    num_workers=4,
-                                                    collate_fn=utils.collate_fn)
+                                                    num_workers=nw,
+                                                    collate_fn=train_dataset.collate_fn)
 
     val_dataset = VOC2012DataSet(VOC_root, data_transform['val'], train_set='val.txt')
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
-                                                  batch_size=1,
+                                                  batch_size=batch_size,
                                                   shuffle=False,
-                                                  num_workers=0,
-                                                  collate_fn=utils.collate_fn)
+                                                  num_workers=nw,
+                                                  collate_fn=train_dataset.collate_fn)
 
     model = create_model(num_classes=21, device=device)
     model.to(device)
@@ -142,7 +152,7 @@ if __name__ == '__main__':
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录
-    parser.add_argument('--data-path', default='./', help='dataset')
+    parser.add_argument('--data-path', default='../', help='dataset')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
@@ -152,6 +162,9 @@ if __name__ == '__main__':
     # 训练的总epoch数
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
+    # 训练的batch size
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
+                        help='batch size when training.')
 
     args = parser.parse_args()
     print(args)

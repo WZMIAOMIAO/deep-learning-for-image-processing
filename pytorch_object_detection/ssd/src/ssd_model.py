@@ -180,7 +180,7 @@ class Loss(nn.Module):
                 ground truth location and labels
         """
         # 获取正样本的mask  Tensor: [N, 8732]
-        mask = glabel > 0
+        mask = torch.gt(glabel, 0)  # (gt: >)
         # mask1 = torch.nonzero(glabel)
         # 计算一个batch中的每张图片的正样本个数 Tensor: [N]
         pos_num = mask.sum(dim=1)
@@ -208,7 +208,7 @@ class Loss(nn.Module):
         # 用于损失计算的负样本数是正样本的3倍（在原论文Hard negative mining部分），
         # 但不能超过总样本数8732
         neg_num = torch.clamp(3 * pos_num, max=mask.size(1)).unsqueeze(-1)
-        neg_mask = con_rank < neg_num  # Tensor [N, 8732]
+        neg_mask = torch.lt(con_rank, neg_num)  # (lt: <) Tensor [N, 8732]
 
         # confidence最终loss使用选取的正样本loss+选取的负样本loss
         con_loss = (con * (mask.float() + neg_mask.float())).sum(dim=1)  # Tensor [N]
@@ -217,7 +217,7 @@ class Loss(nn.Module):
         # 避免出现图像中没有GTBOX的情况
         total_loss = loc_loss + con_loss
         # eg. [15, 3, 5, 0] -> [1.0, 1.0, 1.0, 0.0]
-        num_mask = (pos_num > 0).float()  # 统计一个batch中的每张图像中是否存在正样本
+        num_mask = torch.gt(pos_num, 0).float()  # 统计一个batch中的每张图像中是否存在正样本
         pos_num = pos_num.float().clamp(min=1e-6)  # 防止出现分母为零的情况
         ret = (total_loss * num_mask / pos_num).mean(dim=0)  # 只计算存在正样本的图像损失
         return ret

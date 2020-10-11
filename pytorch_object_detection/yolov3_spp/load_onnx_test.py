@@ -119,7 +119,7 @@ def bboxes_iou(boxes1: np.ndarray, boxes2: np.ndarray) -> np.ndarray:
     return ious
 
 
-def nms(bboxes: np.ndarray, iou_threshold=0.5, soft_threshold=0.3, sigma=0.5, method="nms") -> np.ndarray:
+def nms(bboxes: np.ndarray, iou_threshold=0.5, soft_threshold=0.3, sigma=0.5, method="nms", ) -> np.ndarray:
     """
     单独对一个类别进行NMS处理
     :param bboxes: [x1, y1, x2, y2, score]
@@ -191,7 +191,7 @@ def post_process(pred: np.ndarray, multi_label=False, conf_thres=0.3):
     cls = pred[:, 5]  # classes
     boxes, scores = pred[:, :4] + cls.reshape(-1, 1) * max_wh, pred[:, 4:5]
     t1 = time.time()
-    indexes = nms(np.concatenate([boxes, scores], axis=1), method="nms")
+    indexes = nms(np.concatenate([boxes, scores], axis=1))
     print("NMS time is {}".format(time.time() - t1))
     pred = pred[indexes]
 

@@ -1,19 +1,21 @@
-import torch
-import train_utils.train_eval_utils as utils
 import time
 import os
 import datetime
-from my_dataset import VOC2012DataSet
-from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from src.ssd_model import SSD300, Backbone
+
+import torch
+
 import transform
-import torch.multiprocessing as mp
+from my_dataset import VOC2012DataSet
+from src.ssd_model import SSD300, Backbone
+import train_utils.train_eval_utils as utils
+from train_utils.distributed_utils import init_distributed_mode, save_on_master, mkdir
+from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
 
 def create_model(num_classes, device=torch.device('cpu')):
     # https://download.pytorch.org/models/resnet50-19c8e357.pth
-    pre_train_path = "./src/resnet50.pth"
-    backbone = Backbone(pretrain_path=pre_train_path)
+    # pre_train_path = "./src/resnet50.pth"
+    backbone = Backbone(pretrain_path=None)
     model = SSD300(backbone=backbone, num_classes=num_classes)
 
     pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
@@ -40,7 +42,7 @@ def create_model(num_classes, device=torch.device('cpu')):
 def main(args):
     print(args)
     # mp.spawn(main_worker, args=(args,), nprocs=args.world_size, join=True)
-    utils.init_distributed_mode(args)
+    init_distributed_mode(args)
 
     device = torch.device(args.device)
 
@@ -61,6 +63,10 @@ def main(args):
     }
 
     VOC_root = args.data_path
+    # check voc root
+    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], train_set='train.txt')
 
@@ -85,12 +91,12 @@ def main(args):
 
     data_loader = torch.utils.data.DataLoader(
         train_data_set, batch_sampler=train_batch_sampler, num_workers=args.workers,
-        collate_fn=utils.collate_fn)
+        collate_fn=train_data_set.collate_fn)
 
     data_loader_test = torch.utils.data.DataLoader(
-        val_data_set, batch_size=4,
+        val_data_set, batch_size=1,
         sampler=test_sampler, num_workers=args.workers,
-        collate_fn=utils.collate_fn)
+        collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
     model = create_model(num_classes=21)
@@ -132,7 +138,7 @@ def main(args):
         lr_scheduler.step()
         if args.output_dir:
             # 只在主节点上执行保存权重操作
-            utils.save_on_master({
+            save_on_master({
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
@@ -209,6 +215,6 @@ if __name__ == "__main__":
 
     # 如果指定了保存文件地址，检查文件夹是否存在，若不存在，则创建
     if args.output_dir:
-        utils.mkdir(args.output_dir)
+        mkdir(args.output_dir)
 
     main(args)
