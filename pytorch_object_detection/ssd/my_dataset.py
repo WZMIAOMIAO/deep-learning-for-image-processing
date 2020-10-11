@@ -116,6 +116,23 @@ class VOC2012DataSet(Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
+    @staticmethod
+    def collate_fn(batch):
+        images, targets = tuple(zip(*batch))
+        # images = torch.stack(images, dim=0)
+        #
+        # boxes = []
+        # labels = []
+        # img_id = []
+        # for t in targets:
+        #     boxes.append(t['boxes'])
+        #     labels.append(t['labels'])
+        #     img_id.append(t["image_id"])
+        # targets = {"boxes": torch.stack(boxes, dim=0),
+        #            "labels": torch.stack(labels, dim=0),
+        #            "image_id": torch.as_tensor(img_id)}
+
+        return images, targets
 
 # import transforms
 # from draw_box_utils import draw_box
