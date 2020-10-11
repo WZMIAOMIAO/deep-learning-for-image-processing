@@ -211,7 +211,7 @@ class FeaturePyramidNetwork(nn.Module):
         self.extra_blocks = extra_blocks
 
     def get_result_from_inner_blocks(self, x, idx):
-        # type: (Tensor, int)
+        # type: (Tensor, int) -> Tensor
         """
         This is equivalent to self.inner_blocks[idx](x),
         but torchscript doesn't support this yet
@@ -230,7 +230,7 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
     def get_result_from_layer_blocks(self, x, idx):
-        # type: (Tensor, int)
+        # type: (Tensor, int) -> Tensor
         """
         This is equivalent to self.layer_blocks[idx](x),
         but torchscript doesn't support this yet
@@ -249,7 +249,7 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
     def forward(self, x):
-        # type: (Dict[str, Tensor])
+        # type: (Dict[str, Tensor]) -> Dict[str, Tensor]
         """
         Computes the FPN for a set of feature maps.
         Arguments:
@@ -263,12 +263,13 @@ class FeaturePyramidNetwork(nn.Module):
         x = list(x.values())
 
         # 将resnet layer4的channel调整到指定的out_channels
-        last_inner = self.inner_blocks[-1](x[-1])
-
+        # last_inner = self.inner_blocks[-1](x[-1])
+        last_inner = self.get_result_from_inner_blocks(x[-1], -1)
         # result中保存着每个预测特征层
         results = []
         # 将layer4调整channel后的特征矩阵，通过3x3卷积后得到对应的预测特征矩阵
-        results.append(self.layer_blocks[-1](last_inner))
+        # results.append(self.layer_blocks[-1](last_inner))
+        results.append(self.get_result_from_layer_blocks(last_inner, -1))
 
         # 倒序遍历resenet输出特征层，以及对应inner_block和layer_block
         # layer3 -> layer2 -> layer1 （layer4已经处理过了）
@@ -306,7 +307,7 @@ class LastLevelMaxPool(torch.nn.Module):
     """
 
     def forward(self, x, names):
-        # type: (List[Tensor], List[str])
+        # type: (List[Tensor], List[str]) -> Tuple[List[Tensor], List[str]]
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names

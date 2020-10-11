@@ -1,14 +1,17 @@
+import os
+
 import torch
+
 import transforms
 from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
 from backbone.resnet50_fpn_model import resnet50_fpn_backbone
 from my_dataset import VOC2012DataSet
 from train_utils import train_eval_utils as utils
-import os
 
 
 def create_model(num_classes):
     backbone = resnet50_fpn_backbone()
+    # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
     # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
@@ -28,7 +31,7 @@ def create_model(num_classes):
 
 def main(parser_data):
     device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
-    print(device)
+    print("Using {} device training.".format(device.type))
 
     data_transform = {
         "train": transforms.Compose([transforms.ToTensor(),
@@ -37,23 +40,30 @@ def main(parser_data):
     }
 
     VOC_root = parser_data.data_path
-    assert os.path.exists(os.path.join(VOC_root, "VOCdevkit")), "not found VOCdevkit in path:'{}'".format(VOC_root)
+    # check voc root
+    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
+
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
+    batch_size = parser_data.batch_size
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    print('Using %g dataloader workers' % nw)
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
-                                                    batch_size=2,
+                                                    batch_size=batch_size,
                                                     shuffle=True,
-                                                    num_workers=0,
-                                                    collate_fn=utils.collate_fn)
+                                                    num_workers=nw,
+                                                    collate_fn=train_data_set.collate_fn)
 
     # load validation data set
     val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], False)
     val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=2,
+                                                      batch_size=batch_size,
                                                       shuffle=False,
-                                                      num_workers=0,
-                                                      collate_fn=utils.collate_fn)
+                                                      num_workers=nw,
+                                                      collate_fn=train_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
     model = create_model(num_classes=21)
@@ -133,7 +143,7 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录
-    parser.add_argument('--data-path', default='./', help='dataset')
+    parser.add_argument('--data-path', default='../', help='dataset')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
@@ -143,6 +153,9 @@ if __name__ == "__main__":
     # 训练的总epoch数
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
+    # 训练的batch size
+    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+                        help='batch size when training.')
 
     args = parser.parse_args()
     print(args)
