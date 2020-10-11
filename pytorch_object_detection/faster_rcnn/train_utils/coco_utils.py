@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 import torch
 import torchvision
 import torch.utils.data
@@ -10,7 +12,7 @@ def convert_to_coco_api(ds):
     ann_id = 1
     dataset = {'images': [], 'categories': [], 'annotations': []}
     categories = set()
-    for img_idx in range(len(ds)):
+    for img_idx in tqdm(range(len(ds)), desc="start caching val_data for evaluation..."):
         # find better way to get target
         img, targets = ds[img_idx]
         image_id = targets["image_id"].item()
