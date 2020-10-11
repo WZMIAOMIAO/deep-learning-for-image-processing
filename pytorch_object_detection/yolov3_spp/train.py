@@ -183,9 +183,10 @@ def train(hyp):
                                      single_cls=opt.single_cls)
 
     # dataloader
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
                                                    batch_size=batch_size,
-                                                   num_workers=8,
+                                                   num_workers=nw,
                                                    # Shuffle=True unless rectangular training is used
                                                    shuffle=not opt.rect,
                                                    pin_memory=True,
@@ -193,7 +194,7 @@ def train(hyp):
 
     val_datasetloader = torch.utils.data.DataLoader(val_dataset,
                                                     batch_size=batch_size,
-                                                    num_workers=4,
+                                                    num_workers=nw,
                                                     pin_memory=True,
                                                     collate_fn=val_dataset.collate_fn)
 
@@ -208,8 +209,10 @@ def train(hyp):
     nb = len(train_dataloader)  # number of batches
     n_burn = max(3 * nb, 500)  # burn-in iterations, max(3 epochs, 500 iterations)
     # caching val_data when you have plenty of memory(RAM)
+    print("caching val_data for evaluation.")
     coco = get_coco_api_from_dataset(val_dataset)
     print("starting traning for %g epochs..." % epochs)
+    print('Using %g dataloader workers' % nw)
     for epoch in range(start_epoch, epochs):
         mloss, lr = train_util.train_one_epoch(model, optimizer, train_dataloader,
                                                device, epoch,

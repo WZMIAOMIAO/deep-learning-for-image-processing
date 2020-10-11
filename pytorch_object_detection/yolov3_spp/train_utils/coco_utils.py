@@ -1,8 +1,9 @@
+from tqdm import tqdm
+
 import torch
 import torchvision
 import torch.utils.data
 from pycocotools.coco import COCO
-from tqdm import tqdm
 
 
 def convert_to_coco_api(ds):
@@ -12,7 +13,7 @@ def convert_to_coco_api(ds):
     dataset = {'images': [], 'categories': [], 'annotations': []}
     categories = set()
     # 遍历dataset中的每张图像
-    for img_idx in tqdm(range(len(ds)), desc="start caching val_data for evaluation..."):
+    for img_idx in range(len(ds)):
         # find better way to get target
         img, targets, _, _, image_id = ds[img_idx]
         # targets: [num_obj, 6] , that number 6 means -> (img_index, obj_index, x, y, w, h)
