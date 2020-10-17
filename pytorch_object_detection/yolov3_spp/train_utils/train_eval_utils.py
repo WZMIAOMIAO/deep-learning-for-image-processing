@@ -1,5 +1,6 @@
 import sys
 
+from torch.cuda import amp
 import torch.nn.functional as F
 
 from utils.utils import *
@@ -9,7 +10,7 @@ import train_utils.distributed_utils as utils
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch,
-                    print_freq, accumulate, img_size, batch_size,
+                    print_freq, accumulate, img_size,
                     grid_min, grid_max, gs,
                     multi_scale=False, warmup=False):
     model.train()
@@ -19,12 +20,15 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
 
     lr_scheduler = None
     if epoch == 0 and warmup is True:  # 当训练第一轮（epoch=0）时，启用warmup训练方式，可理解为热身训练
-        warmup_factor = 5.0 / 1000
+        warmup_factor = 1.0 / 1000
         warmup_iters = min(1000, len(data_loader) - 1)
 
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
+        accumulate = 1
 
     enable_amp = True if "cuda" in device.type else False
+    scaler = amp.GradScaler(enabled=enable_amp)
+
     mloss = torch.zeros(4).to(device)  # mean losses
     now_lr = 0.
     nb = len(data_loader)  # number of batches
@@ -53,7 +57,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
                 imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
         # 混合精度训练上下文管理器，如果在CPU环境中不起任何作用
-        with torch.cuda.amp.autocast(enabled=enable_amp):
+        with amp.autocast(enabled=enable_amp):
             pred = model(imgs)
 
             # loss
@@ -76,20 +80,22 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
                 print("training image path: {}".format(",".join(paths)))
                 sys.exit(1)
 
-        # 每训练64张图片更新一次权重
+            losses *= 1 / accumulate  # scale loss
+
         # backward
-        losses *= batch_size / 64  # scale loss
-        losses.backward()
+        scaler.scale(losses).backward()
         # optimize
+        # 每训练64张图片更新一次权重
         if ni % accumulate == 0:
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             optimizer.zero_grad()
 
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         now_lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(lr=now_lr)
 
-        if lr_scheduler is not None:  # 第一轮使用warmup训练方式
+        if ni % accumulate == 0 and lr_scheduler is not None:  # 第一轮使用warmup训练方式
             lr_scheduler.step()
 
     return mloss, now_lr
