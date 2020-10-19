@@ -17,6 +17,8 @@ def create_model(num_classes=21, device=torch.device('cpu')):
 
     # https://ngc.nvidia.com/catalog/models -> search ssd -> download FP32
     pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
+    if os.path.exists(pre_ssd_path) is False:
+        raise FileNotFoundError("nvidia_ssdpyt_fp32.pt not find in {}".format(pre_ssd_path))
     pre_model_dict = torch.load(pre_ssd_path, map_location=device)
     pre_weights_dict = pre_model_dict["model"]
 
