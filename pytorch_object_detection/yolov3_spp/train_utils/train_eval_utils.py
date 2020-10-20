@@ -80,7 +80,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
                 print("training image path: {}".format(",".join(paths)))
                 sys.exit(1)
 
-            losses *= 1 / accumulate  # scale loss
+            losses *= 1. / accumulate  # scale loss
 
         # backward
         scaler.scale(losses).backward()

@@ -174,8 +174,8 @@ def train(hyp):
     # start training
     # caching val_data when you have plenty of memory(RAM)
     print("caching val_data for evaluation.")
-    coco = None
-    # coco = get_coco_api_from_dataset(val_dataset)
+    # coco = None
+    coco = get_coco_api_from_dataset(val_dataset)
     print("starting traning for %g epochs..." % epochs)
     print('Using %g dataloader workers' % nw)
     for epoch in range(start_epoch, epochs):
