@@ -54,9 +54,9 @@ def main():
     pred[:, :4] = utils.scale_coords(img.shape[2:], pred[:, :4], img_o.shape).round()
     print(pred.shape)
 
-    bboxes = pred[:, :4].detach().numpy()
-    scores = pred[:, 4].detach().numpy()
-    classes = pred[:, 5].detach().numpy().astype(np.int) + 1
+    bboxes = pred[:, :4].detach().cpu().numpy()
+    scores = pred[:, 4].detach().cpu().numpy()
+    classes = pred[:, 5].detach().cpu().numpy().astype(np.int) + 1
 
     category_index = dict([(i + 1, str(i + 1)) for i in range(90)])
     img_o = draw_box(img_o[:, :, ::-1], bboxes, classes, scores, category_index)

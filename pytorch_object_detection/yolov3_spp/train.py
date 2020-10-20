@@ -1,5 +1,6 @@
 import argparse
 
+import yaml
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
@@ -10,38 +11,15 @@ from utils.utils import *
 from train_utils import train_eval_utils as train_util
 from train_utils.coco_utils import get_coco_api_from_dataset
 
-wdir = "weights" + os.sep  # weights dir
-last = wdir + "last.pt"
-best = wdir + "best.pt"
-results_file = "results.txt"
-
-# Hyperparameters
-hyp = {'giou': 3.54,  # giou loss gain
-       'cls': 37.4,  # cls loss gain
-       'cls_pw': 1.0,  # cls BCELoss positive_weight
-       'obj': 64.3,  # obj loss gain (*=img_size/320 if img_size != 320)
-       'obj_pw': 1.0,  # obj BCELoss positive_weight
-       'iou_t': 0.20,  # iou training threshold
-       'lr0': 0.001,  # initial learning rate (SGD=5E-3, Adam=5E-4)
-       'lrf': 0.00001,  # final learning rate (with cos scheduler)
-       'momentum': 0.937,  # SGD momentum
-       'weight_decay': 0.0005,  # optimizer weight decay
-       'fl_gamma': 0.0,  # focal loss gamma (efficientDet default is gamma=1.5)
-       'hsv_h': 0.0138,  # image HSV-Hue augmentation (fraction)
-       'hsv_s': 0.678,  # image HSV-Saturation augmentation (fraction)
-       'hsv_v': 0.36,  # image HSV-Value augmentation (fraction)
-       'degrees': 1.98 * 0,  # image rotation (+/- deg)
-       'translate': 0.05 * 0,  # image translation (+/- fraction)
-       'scale': 0.05 * 0,  # image scale (+/- gain)
-       'shear': 0.641 * 0}  # image shear (+/- deg)
-
-# Print focal loss if gamma > 0
-if hyp['fl_gamma']:
-    print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
-
 
 def train(hyp):
     device = torch.device(opt.device if torch.cuda.is_available() else "cpu")
+    print("Using {} device training.".format(device.type))
+
+    wdir = "weights" + os.sep  # weights dir
+    last = wdir + "last.pt"
+    best = wdir + "best.pt"
+    results_file = "results.txt"
 
     cfg = opt.cfg
     data = opt.data
@@ -75,6 +53,7 @@ def train(hyp):
     test_path = data_dict["valid"]
     nc = 1 if opt.single_cls else int(data_dict["classes"])  # number of classes
     hyp["cls"] *= nc / 80  # update coco-tuned hyp['cls'] to current dataset
+    hyp["obj"] *= imgsz_test / 320
 
     # remove previous results
     for f in glob.glob("*_batch*.jpg") + glob.glob(results_file):
@@ -83,24 +62,24 @@ def train(hyp):
     # Initialize model
     model = Darknet(cfg).to(device)
 
-    # optimizer
-    pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
-    for k, v in dict(model.named_parameters()).items():
-        if ".bias" in k:
-            pg2 += [v]  # biases (bn biases and conv2d biases)
-        elif "Conv2d.weight" in k:
-            pg1 += [v]  # apply weight_decay
-        else:
-            pg0 += [v]  # all else, (bn weight)
+    # 是否冻结权重，只训练predictor的权重
+    if opt.freeze_layers:
+        # 索引减一对应的是predictor的索引，YOLOLayer并不是predictor
+        output_layer_indices = [idx - 1 for idx, module in enumerate(model.module_list) if
+                                isinstance(module, YOLOLayer)]
+        # 冻结除predictor和YOLOLayer外的所有层
+        freeze_layer_indeces = [x for x in range(len(model.module_list)) if
+                                (x not in output_layer_indices) and
+                                (x - 1 not in output_layer_indices)]
+        # Freeze non-output layers
+        for idx in freeze_layer_indeces:
+            for parameter in model.module_list[idx].parameters():
+                parameter.requires_grad_(False)
 
-    if opt.adam:
-        optimizer = optim.Adam(pg0, lr=hyp["lr0"])
-    else:
-        optimizer = optim.SGD(pg0, lr=hyp["lr0"], momentum=hyp["momentum"], nesterov=True)
-    optimizer.add_param_group({"params": pg1, "weight_decay": hyp["weight_decay"]})  # add pg1 with weight_decay
-    optimizer.add_param_group({"params": pg2})  # add pg2 (biases)
-    print('Optimizer groups: %g .bias, %g Conv2d.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
-    del pg0, pg1, pg2
+    # optimizer
+    pg = [p for p in model.parameters() if p.requires_grad]
+    optimizer = optim.SGD(pg, lr=hyp["lr0"], momentum=hyp["momentum"],
+                          weight_decay=hyp["weight_decay"], nesterov=True)
 
     start_epoch = 0
     best_fitness = 0.0
@@ -135,27 +114,14 @@ def train(hyp):
 
         del ckpt
 
-    if opt.freeze_layers:
-        # 索引减一对应的是predictor的索引，YOLOLayer并不是predictor
-        output_layer_indices = [idx - 1 for idx, module in enumerate(model.module_list) if
-                                isinstance(module, YOLOLayer)]
-        # 冻结除predictor和YOLOLayer外的所有层
-        freeze_layer_indeces = [x for x in range(len(model.module_list)) if
-                                (x not in output_layer_indices) and
-                                (x - 1 not in output_layer_indices)]
-        # Freeze non-output layers
-        for idx in freeze_layer_indeces:
-            for parameter in model.module_list[idx].parameters():
-                parameter.requires_grad_(False)
-
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
-    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * 0.99 + 0.01  # cosine
+    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp["lrf"]) + hyp["lrf"]  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     scheduler.last_epoch = start_epoch  # 指定从哪个epoch开始
 
     # Plot lr schedule
     # y = []
-    # for _ in range(epochs+20):
+    # for _ in range(epochs):
     #     scheduler.step()
     #     y.append(optimizer.param_groups[0]['lr'])
     # plt.plot(y, '.-', label='LambdaLR')
@@ -203,13 +169,12 @@ def train(hyp):
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # giou loss ratio (obj_loss = 1.0 or giou)
     # 计算每个类别的目标个数，并计算每个类别的比重
-    model.class_weights = labels_to_class_weights(train_dataset.labels, nc).to(device)  # attach class weights
+    # model.class_weights = labels_to_class_weights(train_dataset.labels, nc).to(device)  # attach class weights
 
     # start training
-    nb = len(train_dataloader)  # number of batches
-    n_burn = max(3 * nb, 500)  # burn-in iterations, max(3 epochs, 500 iterations)
     # caching val_data when you have plenty of memory(RAM)
     print("caching val_data for evaluation.")
+    # coco = None
     coco = get_coco_api_from_dataset(val_dataset)
     print("starting traning for %g epochs..." % epochs)
     print('Using %g dataloader workers' % nw)
@@ -218,7 +183,6 @@ def train(hyp):
                                                device, epoch,
                                                accumulate=accumulate,  # 迭代多少batch才训练完64张图片
                                                img_size=imgsz_train,  # 输入图像的大小
-                                               batch_size=batch_size,
                                                multi_scale=multi_scale,
                                                grid_min=grid_min,  # grid的最小尺寸
                                                grid_max=grid_max,  # grid的最大尺寸
@@ -254,15 +218,15 @@ def train(hyp):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch-size', type=int, default=4)
     parser.add_argument('--cfg', type=str, default='cfg/my_yolov3.cfg', help="*.cfg path")
     parser.add_argument('--data', type=str, default='data/my_data.data', help='*.data path')
+    parser.add_argument('--hyp', type=str, default='cfg/hyp.yaml', help='hyperparameters path')
     parser.add_argument('--multi-scale', type=bool, default=True,
                         help='adjust (67%% - 150%%) img_size every 10 batches')
     parser.add_argument('--img-size', type=int, default=512, help='test size')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
@@ -272,15 +236,19 @@ if __name__ == '__main__':
                         help='initial weights path')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
-    parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--freeze-layers', action='store_true', help='Freeze non-output layers')
+    parser.add_argument('--freeze-layers', type=bool, default=True, help='Freeze non-output layers')
     opt = parser.parse_args()
-    opt.weights = last if opt.resume and not opt.weights else opt.weights
+
     # 检查文件是否存在
     opt.cfg = check_file(opt.cfg)
     opt.data = check_file(opt.data)
+    opt.hyp = check_file(opt.hyp)
+
     print(opt)
+
+    with open(opt.hyp) as f:
+        hyp = yaml.load(f, Loader=yaml.FullLoader)
 
     print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
     tb_writer = SummaryWriter(comment=opt.name)

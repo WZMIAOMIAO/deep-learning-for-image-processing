@@ -43,7 +43,7 @@ def create_modules(modules_defs: list, img_size, cfg):
                 pass
 
             if bn:
-                modules.add_module("BatchNorm2d", nn.BatchNorm2d(filters, momentum=0.03, eps=1E-4))
+                modules.add_module("BatchNorm2d", nn.BatchNorm2d(filters))
             else:
                 # 如果该卷积操作没有bn层，意味着该层为yolo的predictor
                 routs.append(i)  # detection output (goes into yolo layer)

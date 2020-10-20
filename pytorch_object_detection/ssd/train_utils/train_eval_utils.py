@@ -92,16 +92,14 @@ def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
     for images, targets in metric_logger.log_every(data_loader, 100, header):
         images = torch.stack(images, dim=0)
 
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         images = images.to(device)
-        # targets = {k: v.to(device) for k, v in targets.items()}
 
         if device != torch.device("cpu"):
             torch.cuda.synchronize(device)
 
         model_time = time.time()
         #  list((bboxes_out, labels_out, scores_out), ...)
-        results = model(images, targets)
+        results = model(images, targets=None)
 
         outputs = []
         for index, (bboxes_out, labels_out, scores_out) in enumerate(results):

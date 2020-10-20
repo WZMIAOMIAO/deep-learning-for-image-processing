@@ -359,17 +359,17 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
 
 
 def compute_loss(p, targets, model):  # predictions, targets, model
-    ft = torch.cuda.FloatTensor if p[0].is_cuda else torch.Tensor
-    lcls = ft([0], device=p[0].device)  # Tensor(0)
-    lbox = ft([0], device=p[0].device)  # Tensor(0)
-    lobj = ft([0], device=p[0].device)  # Tensor(0)
+    device = p[0].device
+    lcls = torch.zeros(1, device=device)  # Tensor(0)
+    lbox = torch.zeros(1, device=device)  # Tensor(0)
+    lobj = torch.zeros(1, device=device)  # Tensor(0)
     tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
     h = model.hyp  # hyperparameters
     red = 'mean'  # Loss reduction (sum or mean)
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=ft([h['cls_pw']], device=p[0].device), reduction=red)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=ft([h['obj_pw']], device=p[0].device), reduction=red)
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device), reduction=red)
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device), reduction=red)
 
     # class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
     cp, cn = smooth_BCE(eps=0.0)
@@ -383,11 +383,12 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     nt = 0  # targets
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
-        tobj = torch.zeros_like(pi[..., 0])  # target obj
+        tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
 
         nb = b.shape[0]  # number of targets
         if nb:
             nt += nb  # cumulative targets
+            # 对应匹配到正样本的预测信息
             ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
 
             # GIoU
@@ -395,16 +396,20 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             pwh = ps[:, 2:4].exp().clamp(max=1E3) * anchors[i]
             pbox = torch.cat((pxy, pwh), 1)  # predicted box
             giou = bbox_iou(pbox.t(), tbox[i], x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
-            lbox += (1.0 - giou).sum() if red == 'sum' else (1.0 - giou).mean()  # giou loss
+            lbox += (1.0 - giou).mean()  # giou loss
 
             # Obj
             tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
 
             # Class
             if model.nc > 1:  # cls loss (only if multiple classes)
-                t = torch.full_like(ps[:, 5:], cn)  # targets
+                t = torch.full_like(ps[:, 5:], cn, device=device)  # targets
                 t[range(nb), tcls[i]] = cp
                 lcls += BCEcls(ps[:, 5:], t)  # BCE
+
+                # t = torch.full_like(pi[..., 5:], cn, device=device)
+                # t[b, a, gj, gi, tcls[i]] = cp
+                # lcls += BCEcls(pi[..., 5:], t)
 
             # Append targets to text file
             # with open('targets.txt', 'a') as file:
@@ -416,13 +421,6 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     lbox *= h['giou']
     lobj *= h['obj']
     lcls *= h['cls']
-    if red == 'sum':
-        bs = tobj.shape[0]  # batch size
-        g = 3.0  # loss gain
-        lobj *= g / bs
-        if nt:
-            lcls *= g / nt / model.nc
-            lbox *= g / nt
 
     # loss = lbox + lobj + lcls
     return {"box_loss": lbox, "obj_loss": lobj, "class_loss": lcls}
@@ -437,18 +435,25 @@ def build_targets(p, targets, model):
 
     style = None
     multi_gpu = type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
-    for i, j in enumerate(model.yolo_layers):
+    for i, j in enumerate(model.yolo_layers):  # [89, 101, 113]
+        # 获取该yolo predictor对应的anchors
         anchors = model.module.module_list[j].anchor_vec if multi_gpu else model.module_list[j].anchor_vec
         gain[2:] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
         na = anchors.shape[0]  # number of anchors
+        # [3] -> [3, 1] -> [3, nt]
         at = torch.arange(na).view(na, 1).repeat(1, nt)  # anchor tensor, same as .repeat_interleave(nt)
 
         # Match targets to anchors
         a, t, offsets = [], targets * gain, 0
-        if nt:
+        if nt:  # 如果存在target的话
             # r = t[None, :, 4:6] / anchors[:, None]  # wh ratio
             # j = torch.max(r, 1. / r).max(2)[0] < model.hyp['anchor_t']  # compare
+
+            # iou_t = 0.20
+            # j: [3, nt]
             j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
+            # t.repeat(na, 1, 1): [nt, 6] -> [3, nt, 6]
+            # 获取iou大于阈值的anchor与target对应信息
             a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
 
             # overlaps
@@ -468,18 +473,20 @@ def build_targets(p, targets, model):
                 offsets = torch.cat((z, z[j] + off[0], z[k] + off[1], z[l] + off[2], z[m] + off[3]), 0) * g
 
         # Define
+        # long等于to(torch.int64), 数值向下取整
         b, c = t[:, :2].long().T  # image, class
         gxy = t[:, 2:4]  # grid xy
         gwh = t[:, 4:6]  # grid wh
-        gij = (gxy - offsets).long()
+        gij = (gxy - offsets).long()  # 匹配targets所在的grid cell左上角坐标
         gi, gj = gij.T  # grid xy indices
 
         # Append
-        indices.append((b, a, gj, gi))  # image, anchor, grid indices
-        tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
+        indices.append((b, a, gj, gi))  # image, anchor, grid indices(x, y)
+        tbox.append(torch.cat((gxy - gij, gwh), 1))  # gt box相对anchor的x,y偏移量以及w,h
         anch.append(anchors[a])  # anchors
         tcls.append(c)  # class
         if c.shape[0]:  # if any targets
+            # 目标的标签数值不能大于给定的目标类别数
             assert c.max() < model.nc, 'Model accepts %g classes labeled from 0-%g, however you labelled a class %g. ' \
                                        'See https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data' % (
                                            model.nc, model.nc - 1, c.max())
@@ -487,7 +494,8 @@ def build_targets(p, targets, model):
     return tcls, tbox, indices, anch
 
 
-def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, multi_label=True, classes=None, agnostic=False):
+def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6,
+                        multi_label=True, classes=None, agnostic=False, max_num=100):
     """
     Performs  Non-Maximum Suppression on inference results
 
@@ -548,6 +556,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, multi_label=T
         c = x[:, 5] * 0 if agnostic else x[:, 5]  # classes
         boxes, scores = x[:, :4].clone() + c.view(-1, 1) * max_wh, x[:, 4]  # boxes (offset by class), scores
         i = torchvision.ops.boxes.nms(boxes, scores, iou_thres)
+        i = i[:max_num]  # 最多只保留前max_num个目标信息
         if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
             try:  # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
                 iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix

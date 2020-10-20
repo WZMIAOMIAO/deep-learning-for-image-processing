@@ -78,7 +78,6 @@ def evaluate(model, data_loader, device, mAP_list=None):
 
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         image = list(img.to(device) for img in image)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         # 当使用CPU时，跳过GPU相关指令
         if device != torch.device("cpu"):
