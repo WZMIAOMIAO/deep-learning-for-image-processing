@@ -67,13 +67,16 @@ def main(parser_data):
     # 注意训练时，batch_size必须大于1
     batch_size = parser_data.batch_size
     assert batch_size > 1, "batch size must be greater than 1"
+    # 防止最后一个batch_size=1，如果最后一个batch_size=1就舍去
+    drop_last = True if len(train_dataset) % batch_size == 1 else False
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using %g dataloader workers' % nw)
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                     batch_size=batch_size,
                                                     shuffle=True,
                                                     num_workers=nw,
-                                                    collate_fn=train_dataset.collate_fn)
+                                                    collate_fn=train_dataset.collate_fn,
+                                                    drop_last=drop_last)
 
     val_dataset = VOC2012DataSet(VOC_root, data_transform['val'], train_set='val.txt')
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
