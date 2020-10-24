@@ -160,7 +160,7 @@ def evaluate(model, data_loader, coco=None, device=None):
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)
 
-    result_info = coco_evaluator.coco_eval[iou_types[0]].stats
+    result_info = coco_evaluator.coco_eval[iou_types[0]].stats.tolist()  # numpy to list
 
     return result_info
 

@@ -52,7 +52,7 @@ def exif_size(img):
 class LoadImageAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=416, batch_size=16, augment=False, hyp=None,
                  rect=False, image_weights=False, cache_images=False,
-                 single_cls=False, pad=0.0):
+                 single_cls=False, pad=0.0, rank=-1):
 
         try:
             path = str(Path(path))
@@ -93,7 +93,12 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                             for x in self.img_files]
 
         # Read image shapes (wh)
-        sp = path.replace(".txt", "") + ".shapes"  # shapefile path
+        # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
+        if rect is True:
+            sp = path.replace(".txt", "") + ".rect.shapes"  # shapefile path
+        else:
+            sp = path.replace(".txt", "") + ".norect.shapes"  # shapefile path
+
         try:
             with open(sp, "r") as f:  # read existing shapefile
                 s = [x.split() for x in f.read().splitlines()]
@@ -143,7 +148,11 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         self.labels = [np.zeros((0, 5), dtype=np.float32)] * n
         create_datasubset, extract_bounding_boxes, labels_loaded = False, False, False
         nm, nf, ne, ns, nd = 0, 0, 0, 0, 0  # number mission, found, empty, datasunset, duplicate
-        np_labels_path = str(Path(self.label_files[0]).parent) + ".npy"  # saved labels in *.npy file
+        # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
+        if rect is True:
+            np_labels_path = str(Path(self.label_files[0]).parent) + ".rect.npy"  # saved labels in *.npy file
+        else:
+            np_labels_path = str(Path(self.label_files[0]).parent) + ".norect.npy"
         if os.path.isfile(np_labels_path):
             s = np_labels_path  # print string
             x = np.load(np_labels_path, allow_pickle=True)
@@ -153,7 +162,12 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         else:
             s = path.replace("images", "labels")
 
-        pbar = tqdm(self.label_files)
+        # 处理进度条只在第一个进程中显示
+        if rank in [-1, 0]:
+            pbar = tqdm(self.label_files)
+        else:
+            pbar = self.label_files
+
         for i, file in enumerate(pbar):
             if labels_loaded is True:
                 l = self.labels[i]
@@ -165,6 +179,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                     nm += 1  # file missing
                     continue
 
+            # 如果标注信息不为空的话
             if l.shape[0]:
                 assert l.shape[1] == 5, "> 5 label columns: %s" % file
                 assert (l >= 0).all(), "negative labels: %s" % file
@@ -216,8 +231,10 @@ class LoadImageAndLabels(Dataset):  # for training/testing
             else:
                 ne += 1  # file empty
 
-            pbar.desc = "Caching labels %s (%g found, %g missing, %g empty, %g duplicate, for %g images)" % (
-                s, nf, nm, ne, nd, n)
+            # 处理进度条只在第一个进程中显示
+            if rank in [-1, 0]:
+                pbar.desc = "Caching labels %s (%g found, %g missing, %g empty, %g duplicate, for %g images)" % (
+                    s, nf, nm, ne, nd, n)
         assert nf > 0 or n == 20288, "No labels found in %s. See %s" % (os.path.dirname(file) + os.sep, help_url)
 
         # 如果标签信息没有被保存成numpy的格式，且训练样本数大于1000则将标签信息保存成numpy的格式

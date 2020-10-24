@@ -1,20 +1,36 @@
 import argparse
+import datetime
+import pickle
 
 import yaml
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
+
 from models import *
 from utils.datasets import *
 from utils.utils import *
 from train_utils import train_eval_utils as train_util
+from train_utils.distributed_utils import init_distributed_mode, save_on_master, torch_distributed_zero_first
 from train_utils.coco_utils import get_coco_api_from_dataset
 
 
-def train(hyp):
-    device = torch.device(opt.device if torch.cuda.is_available() else "cpu")
-    print("Using {} device training.".format(device.type))
+def main(opt, hyp):
+    # 初始化各进程
+    init_distributed_mode(opt)
+
+    if opt.rank in [-1, 0]:
+        print(opt)
+        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
+        tb_writer = SummaryWriter(comment=opt.name)
+
+    device = torch.device(opt.device)
+    if "cuda" not in device.type:
+        raise EnvironmentError("not find GPU device for training.")
+
+    # 使用DDP后会对每个device上的gradients取均值，所以需要放大学习率
+    hyp["lr0"] *= opt.world_size
 
     wdir = "weights" + os.sep  # weights dir
     best = wdir + "best.pt"
@@ -43,7 +59,8 @@ def train(hyp):
         grid_min, grid_max = imgsz_min // gs, imgsz_max // gs
         imgsz_min, imgsz_max = int(grid_min * gs), int(grid_max * gs)
         imgsz_train = imgsz_max  # initialize with max size
-        print("Using multi_scale training, image range[{}, {}]".format(imgsz_min, imgsz_max))
+        if opt.rank in [-1, 0]:  # 只在第一个进程中显示打印信息
+            print("Using multi_scale training, image range[{}, {}]".format(imgsz_min, imgsz_max))
 
     # configure run
     # init_seeds()  # 初始化随机种子，保证结果可复现
@@ -54,9 +71,10 @@ def train(hyp):
     hyp["cls"] *= nc / 80  # update coco-tuned hyp['cls'] to current dataset
     hyp["obj"] *= imgsz_test / 320
 
-    # Remove previous results
-    for f in glob.glob(results_file):
-        os.remove(f)
+    if opt.rank in [-1, 0]:
+        # Remove previous results
+        for f in glob.glob(results_file) + glob.glob("tmp.pk"):
+            os.remove(f)
 
     # Initialize model
     model = Darknet(cfg).to(device)
@@ -85,6 +103,15 @@ def train(hyp):
             for parameter in model.module_list[idx].parameters():
                 parameter.requires_grad_(False)
 
+    model_without_ddp = model
+    if opt.distributed:
+        # SyncBatchNorm
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
+
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[opt.gpu])
+        model.yolo_layers = model.module.yolo_layers  # move yolo layer indices to top level
+        model_without_ddp = model.module
+
     # optimizer
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(pg, lr=hyp["lr0"], momentum=hyp["momentum"],
@@ -97,8 +124,9 @@ def train(hyp):
 
         # load model
         try:
-            ckpt["model"] = {k: v for k, v in ckpt["model"].items() if model.state_dict()[k].numel() == v.numel()}
-            model.load_state_dict(ckpt["model"], strict=False)
+            ckpt["model"] = {k: v for k, v in ckpt["model"].items()
+                             if model_without_ddp.state_dict()[k].numel() == v.numel()}
+            model_without_ddp.load_state_dict(ckpt["model"], strict=False)
         except KeyError as e:
             s = "%s is not compatible with %s. Specify --weights '' or specify a --cfg compatible with %s. " \
                 "See https://github.com/ultralytics/yolov3/issues/657" % (opt.weights, opt.cfg, opt.weights)
@@ -109,16 +137,18 @@ def train(hyp):
             optimizer.load_state_dict(ckpt["optimizer"])
             best_map = ckpt["best_map"]
 
-        # load results
-        if ckpt.get("training_results") is not None:
-            with open(results_file, "w") as file:
-                file.write(ckpt["training_results"])  # write results.txt
+        if opt.rank in [-1, 0]:
+            # load results
+            if ckpt.get("training_results") is not None:
+                with open(results_file, "w") as file:
+                    file.write(ckpt["training_results"])  # write results.txt
 
         # epochs
         start_epoch = ckpt["epoch"] + 1
         if epochs < start_epoch:
-            print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
-                  (opt.weights, ckpt['epoch'], epochs))
+            if opt.rank in [-1, 0]:  # 只在第一个进程中显示打印信息
+                print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                      (opt.weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
         del ckpt
@@ -128,67 +158,68 @@ def train(hyp):
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     scheduler.last_epoch = start_epoch  # 指定从哪个epoch开始
 
-    # Plot lr schedule
-    # y = []
-    # for _ in range(epochs):
-    #     scheduler.step()
-    #     y.append(optimizer.param_groups[0]['lr'])
-    # plt.plot(y, '.-', label='LambdaLR')
-    # plt.xlabel('epoch')
-    # plt.ylabel('LR')
-    # plt.tight_layout()
-    # plt.savefig('LR.png', dpi=300)
-
-    # model.yolo_layers = model.module.yolo_layers
-
     # dataset
     # 训练集的图像尺寸指定为multi_scale_range中最大的尺寸
-    train_dataset = LoadImageAndLabels(train_path, imgsz_train, batch_size,
-                                       augment=True,
-                                       hyp=hyp,  # augmentation hyperparameters
-                                       rect=opt.rect,  # rectangular training
-                                       cache_images=opt.cache_images,
-                                       single_cls=opt.single_cls)
+    # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
+    with torch_distributed_zero_first(opt.rank):
+        train_dataset = LoadImageAndLabels(train_path, imgsz_train, batch_size,
+                                           augment=True,
+                                           hyp=hyp,  # augmentation hyperparameters
+                                           rect=opt.rect,  # rectangular training
+                                           cache_images=opt.cache_images,
+                                           single_cls=opt.single_cls,
+                                           rank=opt.rank)
+        # 验证集的图像尺寸指定为img_size(512)
+        val_dataset = LoadImageAndLabels(test_path, imgsz_test, batch_size,
+                                         hyp=hyp,
+                                         cache_images=opt.cache_images,
+                                         single_cls=opt.single_cls,
+                                         rank=opt.rank)
 
-    # 验证集的图像尺寸指定为img_size(512)
-    val_dataset = LoadImageAndLabels(test_path, imgsz_test, batch_size,
-                                     hyp=hyp,
-                                     rect=True,  # 将每个batch的图像调整到合适大小，可减少运算量(并不是512x512标准尺寸)
-                                     cache_images=opt.cache_images,
-                                     single_cls=opt.single_cls)
+    # 给每个rank对应的进程分配训练的样本索引
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
+    # 将样本索引每batch_size个元素组成一个list
+    train_batch_sampler = torch.utils.data.BatchSampler(
+        train_sampler, batch_size, drop_last=True)
 
     # dataloader
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
-    train_dataloader = torch.utils.data.DataLoader(train_dataset,
-                                                   batch_size=batch_size,
-                                                   num_workers=nw,
-                                                   # Shuffle=True unless rectangular training is used
-                                                   shuffle=not opt.rect,
-                                                   pin_memory=True,
-                                                   collate_fn=train_dataset.collate_fn)
+    if opt.rank in [-1, 0]:
+        print('Using %g dataloader workers' % nw)
+    train_data_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_sampler=train_batch_sampler, num_workers=nw,
+        pin_memory=True, collate_fn=train_dataset.collate_fn)
 
-    val_datasetloader = torch.utils.data.DataLoader(val_dataset,
-                                                    batch_size=batch_size,
-                                                    num_workers=nw,
-                                                    pin_memory=True,
-                                                    collate_fn=val_dataset.collate_fn)
+    val_data_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=batch_size,
+        sampler=val_sampler, num_workers=nw,
+        pin_memory=True, collate_fn=val_dataset.collate_fn)
 
     # Model parameters
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # giou loss ratio (obj_loss = 1.0 or giou)
-    # 计算每个类别的目标个数，并计算每个类别的比重
-    # model.class_weights = labels_to_class_weights(train_dataset.labels, nc).to(device)  # attach class weights
 
     # start training
     # caching val_data when you have plenty of memory(RAM)
-    # coco = None
-    coco = get_coco_api_from_dataset(val_dataset)
+    with torch_distributed_zero_first(opt.rank):
+        if os.path.exists("tmp.pk") is False:
+            coco = get_coco_api_from_dataset(val_dataset)
+            with open("tmp.pk", "wb") as f:
+                pickle.dump(coco, f)
+        else:
+            with open("tmp.pk", "rb") as f:
+                coco = pickle.load(f)
 
-    print("starting traning for %g epochs..." % epochs)
-    print('Using %g dataloader workers' % nw)
+    if opt.rank in [-1, 0]:
+        print("starting traning for %g epochs..." % epochs)
+        print('Using %g dataloader workers' % nw)
+
+    start_time = time.time()
     for epoch in range(start_epoch, epochs):
-        mloss, lr = train_util.train_one_epoch(model, optimizer, train_dataloader,
+        train_sampler.set_epoch(epoch)
+        mloss, lr = train_util.train_one_epoch(model, optimizer, train_data_loader,
                                                device, epoch,
                                                accumulate=accumulate,  # 迭代多少batch才训练完64张图片
                                                img_size=imgsz_train,  # 输入图像的大小
@@ -203,44 +234,35 @@ def train(hyp):
 
         if opt.notest is False or epoch == epochs - 1:
             # evaluate on the test dataset
-            result_info = train_util.evaluate(model, val_datasetloader,
+            result_info = train_util.evaluate(model, val_data_loader,
                                               coco=coco, device=device)
 
-            coco_mAP = result_info[0]
-            voc_mAP = result_info[1]
-            coco_mAR = result_info[8]
+            # only first process in DDP process to record info and save weights
+            if opt.rank in [-1, 0]:
+                coco_mAP = result_info[0]
+                voc_mAP = result_info[1]
+                coco_mAR = result_info[8]
 
-            # write into tensorboard
-            if tb_writer:
-                tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss', 'train/loss', "learning_rate",
-                        "mAP@[IoU=0.50:0.95]", "mAP@[IoU=0.5]", "mAR@[IoU=0.50:0.95]"]
+                # write into tensorboard
+                if tb_writer:
+                    tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss', 'train/loss', "learning_rate",
+                            "mAP@[IoU=0.50:0.95]", "mAP@[IoU=0.5]", "mAR@[IoU=0.50:0.95]"]
 
-                for x, tag in zip(mloss.tolist() + [lr, coco_mAP, voc_mAP, coco_mAR], tags):
-                    tb_writer.add_scalar(tag, x, epoch)
+                    for x, tag in zip(mloss.tolist() + [lr, coco_mAP, voc_mAP, coco_mAR], tags):
+                        tb_writer.add_scalar(tag, x, epoch)
 
-            # write into txt
-            with open(results_file, "a") as f:
-                result_info = [str(round(i, 4)) for i in result_info]
-                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
-                f.write(txt + "\n")
+                # write into txt
+                with open(results_file, "a") as f:
+                    result_info = [str(round(i, 4)) for i in result_info]
+                    txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                    f.write(txt + "\n")
 
-            # update best mAP(IoU=0.50:0.95)
-            if coco_mAP > best_map:
-                best_map = coco_mAP
+                # update best mAP(IoU=0.50:0.95)
+                if coco_mAP > best_map:
+                    best_map = coco_mAP
 
-            if opt.savebest is False:
-                # save weights every epoch
-                with open(results_file, 'r') as f:
-                    save_files = {
-                        'model': model.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        'training_results': f.read(),
-                        'epoch': epoch,
-                        'best_map': best_map}
-                    torch.save(save_files, "./weights/yolov3spp-{}.pt".format(epoch))
-            else:
-                # only save best weights
-                if best_map == coco_mAP:
+                if opt.savebest is False:
+                    # save weights every epoch
                     with open(results_file, 'r') as f:
                         save_files = {
                             'model': model.state_dict(),
@@ -248,7 +270,23 @@ def train(hyp):
                             'training_results': f.read(),
                             'epoch': epoch,
                             'best_map': best_map}
-                        torch.save(save_files, best.format(epoch))
+                        torch.save(save_files, "./weights/yolov3spp-{}.pt".format(epoch))
+                else:
+                    # only save best weights
+                    if best_map == coco_mAP:
+                        with open(results_file, 'r') as f:
+                            save_files = {
+                                'model': model.state_dict(),
+                                'optimizer': optimizer.state_dict(),
+                                'training_results': f.read(),
+                                'epoch': epoch,
+                                'best_map': best_map}
+                            torch.save(save_files, best.format(epoch))
+
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    if opt.rank in [-1, 0]:
+        print('Training time {}'.format(total_time_str))
 
 
 if __name__ == '__main__':
@@ -271,17 +309,19 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--freeze-layers', type=bool, default=True, help='Freeze non-output layers')
+    # 开启的进程数(注意不是线程)
+    parser.add_argument('--world-size', default=4, type=int,
+                        help='number of distributed processes')
+    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+
     opt = parser.parse_args()
 
     # 检查文件是否存在
     opt.cfg = check_file(opt.cfg)
     opt.data = check_file(opt.data)
     opt.hyp = check_file(opt.hyp)
-    print(opt)
 
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)
 
-    print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-    tb_writer = SummaryWriter(comment=opt.name)
-    train(hyp)
+    main(opt, hyp)
