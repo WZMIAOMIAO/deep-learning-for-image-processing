@@ -93,12 +93,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                             for x in self.img_files]
 
         # Read image shapes (wh)
-        # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
-        if rect is True:
-            sp = path.replace(".txt", "") + ".rect.shapes"  # shapefile path
-        else:
-            sp = path.replace(".txt", "") + ".norect.shapes"  # shapefile path
-
+        sp = path.replace(".txt", "") + ".shapes"  # shapefile path
         try:
             with open(sp, "r") as f:  # read existing shapefile
                 s = [x.split() for x in f.read().splitlines()]
@@ -149,6 +144,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         create_datasubset, extract_bounding_boxes, labels_loaded = False, False, False
         nm, nf, ne, ns, nd = 0, 0, 0, 0, 0  # number mission, found, empty, datasunset, duplicate
         # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
+        # 当rect为True时会对self.images和self.labels进行从新排序
         if rect is True:
             np_labels_path = str(Path(self.label_files[0]).parent) + ".rect.npy"  # saved labels in *.npy file
         else:

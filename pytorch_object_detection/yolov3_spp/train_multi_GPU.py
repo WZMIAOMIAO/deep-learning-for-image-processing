@@ -30,7 +30,7 @@ def main(opt, hyp):
         raise EnvironmentError("not find GPU device for training.")
 
     # 使用DDP后会对每个device上的gradients取均值，所以需要放大学习率
-    hyp["lr0"] *= opt.world_size
+    hyp["lr0"] *= max(1., opt.world_size * opt.batch_size / 64)
 
     wdir = "weights" + os.sep  # weights dir
     best = wdir + "best.pt"
@@ -40,7 +40,8 @@ def main(opt, hyp):
     data = opt.data
     epochs = opt.epochs
     batch_size = opt.batch_size
-    accumulate = max(round(64 / batch_size), 1)  # accumulate n times before optimizer update (bs 64)
+    # accumulate n times before optimizer update (bs 64)
+    accumulate = max(round(64 / (opt.world_size * opt.batch_size)), 1)
     weights = opt.weights  # initial training weights
     imgsz_train = opt.img_size
     imgsz_test = opt.img_size  # test image sizes
@@ -63,7 +64,7 @@ def main(opt, hyp):
             print("Using multi_scale training, image range[{}, {}]".format(imgsz_min, imgsz_max))
 
     # configure run
-    # init_seeds()  # 初始化随机种子，保证结果可复现
+    random.seed(0)  # 设置随机种子
     data_dict = parse_data_cfg(data)
     train_path = data_dict["train"]
     test_path = data_dict["valid"]
@@ -78,6 +79,37 @@ def main(opt, hyp):
 
     # Initialize model
     model = Darknet(cfg).to(device)
+
+    start_epoch = 0
+    best_map = 0.0
+    # 如果指定了预训练权重，则载入预训练权重
+    if weights.endswith(".pt"):
+        ckpt = torch.load(weights, map_location=device)
+
+        # load model
+        try:
+            ckpt["model"] = {k: v for k, v in ckpt["model"].items()
+                             if model.state_dict()[k].numel() == v.numel()}
+            model.load_state_dict(ckpt["model"], strict=False)
+        except KeyError as e:
+            s = "%s is not compatible with %s. Specify --weights '' or specify a --cfg compatible with %s. " \
+                "See https://github.com/ultralytics/yolov3/issues/657" % (opt.weights, opt.cfg, opt.weights)
+            raise KeyError(s) from e
+
+        if opt.rank in [-1, 0]:
+            # load results
+            if ckpt.get("training_results") is not None:
+                with open(results_file, "w") as file:
+                    file.write(ckpt["training_results"])  # write results.txt
+
+        # epochs
+        start_epoch = ckpt["epoch"] + 1
+        if epochs < start_epoch:
+            print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                  (opt.weights, ckpt['epoch'], epochs))
+            epochs += ckpt['epoch']  # finetune additional epochs
+
+        del ckpt
 
     # 是否冻结权重，只训练predictor的权重
     if opt.freeze_layers:
@@ -103,55 +135,18 @@ def main(opt, hyp):
             for parameter in model.module_list[idx].parameters():
                 parameter.requires_grad_(False)
 
-    model_without_ddp = model
-    if opt.distributed:
-        # SyncBatchNorm
+    # SyncBatchNorm
+    # 如果只训练最后的predictor(其中不含bn层)，SyncBatchNorm没有作用
+    if opt.freeze_layers is False:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
 
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[opt.gpu])
-        model.yolo_layers = model.module.yolo_layers  # move yolo layer indices to top level
-        model_without_ddp = model.module
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[opt.gpu])
+    model.yolo_layers = model.module.yolo_layers  # move yolo layer indices to top level
 
     # optimizer
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(pg, lr=hyp["lr0"], momentum=hyp["momentum"],
                           weight_decay=hyp["weight_decay"], nesterov=True)
-
-    start_epoch = 0
-    best_map = 0.0
-    if weights.endswith(".pt"):
-        ckpt = torch.load(weights, map_location=device)
-
-        # load model
-        try:
-            ckpt["model"] = {k: v for k, v in ckpt["model"].items()
-                             if model_without_ddp.state_dict()[k].numel() == v.numel()}
-            model_without_ddp.load_state_dict(ckpt["model"], strict=False)
-        except KeyError as e:
-            s = "%s is not compatible with %s. Specify --weights '' or specify a --cfg compatible with %s. " \
-                "See https://github.com/ultralytics/yolov3/issues/657" % (opt.weights, opt.cfg, opt.weights)
-            raise KeyError(s) from e
-
-        # load optimizer
-        if ckpt["optimizer"] is not None:
-            optimizer.load_state_dict(ckpt["optimizer"])
-            best_map = ckpt["best_map"]
-
-        if opt.rank in [-1, 0]:
-            # load results
-            if ckpt.get("training_results") is not None:
-                with open(results_file, "w") as file:
-                    file.write(ckpt["training_results"])  # write results.txt
-
-        # epochs
-        start_epoch = ckpt["epoch"] + 1
-        if epochs < start_epoch:
-            if opt.rank in [-1, 0]:  # 只在第一个进程中显示打印信息
-                print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
-                      (opt.weights, ckpt['epoch'], epochs))
-            epochs += ckpt['epoch']  # finetune additional epochs
-
-        del ckpt
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp["lrf"]) + hyp["lrf"]  # cosine
@@ -306,10 +301,10 @@ if __name__ == '__main__':
     parser.add_argument('--weights', type=str, default='weights/yolov3-spp-ultralytics-512.pt',
                         help='initial weights path')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
-    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda', help='device id (i.e. 0 or 0,1 or cpu)')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--freeze-layers', type=bool, default=True, help='Freeze non-output layers')
-    # 开启的进程数(注意不是线程)
+    # 开启的进程数(注意不是线程),不用设置该参数，会根据nproc_per_node自动设置
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
