@@ -232,7 +232,7 @@ class RPNHead(nn.Module):
                 torch.nn.init.constant_(layer.bias, 0)
 
     def forward(self, x):
-        # type: (List[Tensor]) -> Tuple[List[Tensor], List(Tensor)]
+        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         logits = []
         bbox_reg = []
         for i, feature in enumerate(x):
