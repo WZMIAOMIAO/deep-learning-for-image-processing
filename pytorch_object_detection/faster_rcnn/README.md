@@ -25,9 +25,8 @@
 * ResNet50+FPN backbone: https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
  
  
-## 数据集，本例程使用的是PASCAL VOC2012数据集(下载后放入项目当前文件夹中)
+## 数据集，本例程使用的是PASCAL VOC2012数据集
 * Pascal VOC2012 train/val数据集下载地址：http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
-* 如果需要使用Pascal VOC2012 test数据集请参考：https://pjreddie.com/projects/pascal-voc-dataset-mirror/
 * 如果不了解数据集或者想使用自己的数据集进行训练，请参考我的bilibili：https://b23.tv/F1kSCK
 
 
@@ -36,7 +35,7 @@
 * 确保提前下载好对应预训练模型权重
 * 若要训练mobilenetv2+fasterrcnn，直接使用train_mobilenet.py训练脚本
 * 若要训练resnet50+fpn+fasterrcnn，直接使用train_resnet50_fpn.py训练脚本
-* 若要使用多GPU训练，使用 "python -m torch.distributed.launch --nproc_per_node=8 --use_env train_multi_GPU.py" 指令,nproc_per_node参数为使用GPU数量
+* 若要使用多GPU训练，使用```python -m torch.distributed.launch --nproc_per_node=8 --use_env train_multi_GPU.py```指令,```nproc_per_node```参数为使用GPU数量
 
 ## 如果对Faster RCNN原理不是很理解可参考我的bilibili
 * https://b23.tv/sXcBSP
