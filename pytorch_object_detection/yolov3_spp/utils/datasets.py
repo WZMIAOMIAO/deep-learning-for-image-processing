@@ -359,7 +359,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         x = self.labels[index]
         if x.size > 0:
             labels = x.copy()  # label: class, x, y, w, h
-        return torch.from_numpy(labels), self.img_files[index], o_shapes
+        return torch.from_numpy(labels), o_shapes
 
     @staticmethod
     def collate_fn(batch):

@@ -12,8 +12,8 @@ from draw_box_utils import draw_box
 
 def main():
     img_size = 512  # 必须是32的整数倍 [416, 512, 608]
-    cfg = "cfg/yolov3-spp.cfg"
-    weights = "weights/yolov3-spp-ultralytics-{}.pt".format(img_size)
+    cfg = "cfg/my_yolov3.cfg"  # 改成生成的.cfg文件
+    weights = "weights/yolov3spp-voc-512.pth".format(img_size)  # 改成自己训练好的权重文件
     img_path = "test.jpg"
     input_size = (img_size, img_size)
 

@@ -15,17 +15,17 @@ def convert_to_coco_api(ds):
     # 遍历dataset中的每张图像
     for img_idx in tqdm(range(len(ds)), desc="loading eval info for coco tools."):
         # find better way to get target
-        targets, shapes, image_id = ds.coco_index(img_idx)
+        targets, shapes = ds.coco_index(img_idx)
         # targets: [num_obj, 6] , that number 6 means -> (img_index, obj_index, x, y, w, h)
         img_dict = {}
-        img_dict['id'] = int(image_id)
+        img_dict['id'] = img_idx
         img_dict['height'] = shapes[0]
         img_dict['width'] = shapes[1]
         dataset['images'].append(img_dict)
 
         for obj in targets:
             ann = {}
-            ann["image_id"] = image_id
+            ann["image_id"] = img_idx
             # 将相对坐标转为绝对坐标
             # box (x, y, w, h)
             boxes = obj[1:]

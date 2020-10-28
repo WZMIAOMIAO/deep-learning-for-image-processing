@@ -1,0 +1,11 @@
+numpy==1.17.0
+torchvision==0.7.0
+opencv_python==4.3.0.36
+lxml==4.2.4
+torch==1.6.0
+scipy==1.4.1
+pycocotools==2.0.0
+matplotlib==3.2.1
+tqdm==4.42.1
+tensorboard==2.1.0
+PyYAML==5.3.1

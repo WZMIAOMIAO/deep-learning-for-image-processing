@@ -1,7 +1,7 @@
 """
 本脚本有两个功能：
 1.将voc数据集标注信息(.xml)转为yolo标注格式(.txt)，并将图像文件复制到相应文件夹
-2.根据json标签文件，生成对应txt标签(my_class.txt)
+2.根据json标签文件，生成对应names标签(my_data_label.names)
 """
 import os
 from tqdm import tqdm
@@ -11,7 +11,7 @@ import shutil
 
 
 # voc数据集根目录以及版本
-voc_root = "~/VOCdevkit"
+voc_root = "../VOCdevkit"
 voc_version = "VOC2012"
 
 # 转换的训练集以及验证集对应txt文件
@@ -19,7 +19,7 @@ train_txt = "train.txt"
 val_txt = "val.txt"
 
 # 转换后的文件保存目录
-save_file_root = "~/my_project/my_yolo_dataset"
+save_file_root = "/home/wz/my_project/my_yolo_dataset"
 
 # label标签对应json文件
 label_json_path = './data/pascal_voc_classes.json'
@@ -131,9 +131,9 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
         shutil.copyfile(img_path, os.path.join(save_images_path, img_path.split("/")[-1]))
 
 
-def create_class_txt(class_dict: dict):
+def create_class_names(class_dict: dict):
     keys = class_dict.keys()
-    with open("./data/my_class.txt", "w") as w:
+    with open("./data/my_data_label.names", "w") as w:
         for index, k in enumerate(keys):
             if index + 1 == len(keys):
                 w.write(k)
@@ -159,7 +159,7 @@ def main():
     translate_info(val_file_names, save_file_root, class_dict, "val")
 
     # 创建my_class.txt文件
-    create_class_txt(class_dict)
+    create_class_names(class_dict)
 
 
 if __name__ == "__main__":
