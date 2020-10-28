@@ -20,16 +20,16 @@
 * 目标识别检测
     * Faster RCNN/FPN（进行中）
     * SSD/RetinaNet (进行中)
-    * YOLO v3
+    * YOLOv3 SPP (进行中)
 * 目标分割
 
 
 ## 所需环境
 * Anaconda3（建议使用）
 * python3.6
-* pycharm 2019.3 (IDE)
-* pytorch 1.5 (pip package)
-* torchvision 0.6.0 (pip package)
+* pycharm (IDE)
+* pytorch 1.6 (pip package)
+* torchvision 0.7.0 (pip package)
 * tensorflow 2.1 (pip package)
 
 [你可能遇到的问题](./summary_problem.md)     
