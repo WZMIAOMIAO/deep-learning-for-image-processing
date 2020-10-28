@@ -124,6 +124,6 @@ cfg_path = "./cfg/yolov3-spp.cfg"
 * 若要使用多GPU训练，使用```python -m torch.distributed.launch --nproc_per_node=8 --use_env train_multi_GPU.py```指令,```nproc_per_node```参数为使用GPU数量
 
 ## 如果对YOLOv3 SPP网络原理不是很理解可参考我的bilibili
-
+[https://www.bilibili.com/video/BV1yi4y1g7ro?p=3](https://www.bilibili.com/video/BV1yi4y1g7ro?p=3)
 
 ## 进一步了解该项目，以及对YOLOv3 SPP代码的分析可参考我的bilibili
