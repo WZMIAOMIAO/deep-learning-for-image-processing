@@ -92,7 +92,7 @@ def train(hyp):
 
     start_epoch = 0
     best_map = 0.0
-    if weights.endswith(".pt"):
+    if weights.endswith(".pt") or weights.endswith(".pth"):
         ckpt = torch.load(weights, map_location=device)
 
         # load model

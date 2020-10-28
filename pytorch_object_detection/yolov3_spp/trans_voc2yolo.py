@@ -19,7 +19,7 @@ train_txt = "train.txt"
 val_txt = "val.txt"
 
 # 转换后的文件保存目录
-save_file_root = "/home/wz/my_project/my_yolo_dataset"
+save_file_root = "./my_yolo_dataset"
 
 # label标签对应json文件
 label_json_path = './data/pascal_voc_classes.json'
@@ -35,8 +35,9 @@ assert os.path.exists(voc_images_path), "VOC images path not exist..."
 assert os.path.exists(voc_xml_path), "VOC xml path not exist..."
 assert os.path.exists(train_txt_path), "VOC train txt file not exist..."
 assert os.path.exists(val_txt_path), "VOC val txt file not exist..."
-assert os.path.exists(save_file_root), "path saving yolo annotation not exist..."
 assert os.path.exists(label_json_path), "label_json_path does not exist..."
+if os.path.exists(save_file_root) is False:
+    os.makedirs(save_file_root)
 
 
 def parse_xml_to_dict(xml):
@@ -128,7 +129,7 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
                     f.write("\n" + " ".join(info))
 
         # copy image into save_images_path
-        shutil.copyfile(img_path, os.path.join(save_images_path, img_path.split("/")[-1]))
+        shutil.copyfile(img_path, os.path.join(save_images_path, img_path.split(os.sep)[-1]))
 
 
 def create_class_names(class_dict: dict):
