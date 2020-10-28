@@ -197,7 +197,7 @@ class YOLOLayer(nn.Module):
             bs = 1  # batch size
         else:
             bs, _, ny, nx = p.shape  # batch_size, predict_param(255), grid(13), grid(13)
-            if (self.nx, self.ny) != (nx, ny):
+            if (self.nx, self.ny) != (nx, ny) or hasattr(self, "grid"):  # fix no grid bug
                 self.create_grids((nx, ny), p.device)
 
         # p.view(batch_size, 255, 13, 13) -> (batch_size, 3, 13, 13, 85)  # (bs, anchors, grid, grid, classes + xywh)

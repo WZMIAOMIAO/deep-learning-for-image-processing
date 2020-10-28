@@ -5,11 +5,10 @@
 3.根据yolov3-spp.cfg创建my_yolov3.cfg文件修改其中的predictor filters以及yolo classes参数(这两个参数是根据类别数改变的)
 """
 import os
-import shutil
 
-train_annotation_dir = "/home/w180662/my_project/my_yolo_dataset/train/labels"
-val_annotation_dir = "/home/w180662/my_project/my_yolo_dataset/val/labels"
-classes_label = "./data/my_classes.txt"
+train_annotation_dir = "/home/wz/my_project/my_yolo_dataset/train/labels"
+val_annotation_dir = "/home/wz/my_project/my_yolo_dataset/val/labels"
+classes_label = "./data/my_data_label.names"
 cfg_path = "./cfg/yolov3-spp.cfg"
 
 assert os.path.exists(train_annotation_dir), "train_annotation_dir not exist!"
@@ -34,7 +33,7 @@ def calculate_data_txt(txt_path, dataset_dir):
 
 def create_data_data(create_data_path, label_path, train_path, val_path, classes_info):
     # create my_data.data file that record classes, train, valid and names info.
-    shutil.copyfile(label_path, "./data/my_data_label.names")
+    # shutil.copyfile(label_path, "./data/my_data_label.names")
     with open(create_data_path, "w") as w:
         w.write("classes={}".format(len(classes_info)) + "\n")  # 记录类别个数
         w.write("train={}".format(train_path) + "\n")           # 记录训练集对应txt文件路径
