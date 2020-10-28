@@ -93,12 +93,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                             for x in self.img_files]
 
         # Read image shapes (wh)
-        # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
-        if rect is True:
-            sp = path.replace(".txt", "") + ".rect.shapes"  # shapefile path
-        else:
-            sp = path.replace(".txt", "") + ".norect.shapes"  # shapefile path
-
+        sp = path.replace(".txt", "") + ".shapes"  # shapefile path
         try:
             with open(sp, "r") as f:  # read existing shapefile
                 s = [x.split() for x in f.read().splitlines()]
@@ -149,6 +144,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         create_datasubset, extract_bounding_boxes, labels_loaded = False, False, False
         nm, nf, ne, ns, nd = 0, 0, 0, 0, 0  # number mission, found, empty, datasunset, duplicate
         # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
+        # 当rect为True时会对self.images和self.labels进行从新排序
         if rect is True:
             np_labels_path = str(Path(self.label_files[0]).parent) + ".rect.npy"  # saved labels in *.npy file
         else:
@@ -340,6 +336,30 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         img = np.ascontiguousarray(img)
 
         return torch.from_numpy(img), labels_out, self.img_files[index], shapes, index
+
+    def coco_index(self, index):
+        """该方法是专门为cocotools统计标签信息准备，不对图像和标签作任何处理"""
+        # load image
+        # path = self.img_files[index]
+        # img = cv2.imread(path)  # BGR
+        # import matplotlib.pyplot as plt
+        # plt.imshow(img[:, :, ::-1])
+        # plt.show()
+
+        # assert img is not None, "Image Not Found " + path
+        # o_shapes = img.shape[:2]  # orig hw
+        o_shapes = self.shapes[index][::-1]  # wh to hw
+
+        # Convert BGR to RGB, and HWC to CHW(3x512x512)
+        # img = img[:, :, ::-1].transpose(2, 0, 1)
+        # img = np.ascontiguousarray(img)
+
+        # load labels
+        labels = []
+        x = self.labels[index]
+        if x.size > 0:
+            labels = x.copy()  # label: class, x, y, w, h
+        return torch.from_numpy(labels), o_shapes
 
     @staticmethod
     def collate_fn(batch):

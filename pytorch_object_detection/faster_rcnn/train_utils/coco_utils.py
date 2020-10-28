@@ -14,12 +14,12 @@ def convert_to_coco_api(ds):
     categories = set()
     for img_idx in range(len(ds)):
         # find better way to get target
-        img, targets = ds[img_idx]
+        hw, targets = ds.coco_index(img_idx)
         image_id = targets["image_id"].item()
         img_dict = {}
         img_dict['id'] = image_id
-        img_dict['height'] = img.shape[-2]
-        img_dict['width'] = img.shape[-1]
+        img_dict['height'] = hw[0]
+        img_dict['width'] = hw[1]
         dataset['images'].append(img_dict)
         bboxes = targets["boxes"]
         bboxes[:, 2:] -= bboxes[:, :2]

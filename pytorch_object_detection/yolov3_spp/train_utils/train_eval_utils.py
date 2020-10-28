@@ -74,9 +74,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
                                     losses_reduced)).detach()
             mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
 
-            loss_value = losses_reduced.item()
             if not torch.isfinite(losses_reduced):
-                print('WARNING: non-finite loss, ending training ', loss_value)
+                print('WARNING: non-finite loss, ending training ', loss_dict_reduced)
                 print("training image path: {}".format(",".join(paths)))
                 sys.exit(1)
 
@@ -116,7 +115,7 @@ def evaluate(model, data_loader, coco=None, device=None):
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
-    for imgs, targets, paths, _, img_index in metric_logger.log_every(data_loader, 100, header):
+    for imgs, targets, paths, shapes, img_index in metric_logger.log_every(data_loader, 100, header):
         imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
         # targets = targets.to(device)
 
@@ -135,6 +134,9 @@ def evaluate(model, data_loader, coco=None, device=None):
             else:
                 # xmin, ymin, xmax, ymax
                 boxes = p[:, :4]
+                # shapes: (h0, w0), ((h / h0, w / w0), pad)
+                # 将boxes信息还原回原图尺度，这样计算的mAP才是准确的
+                boxes = scale_coords(imgs[index].shape[1:], boxes, shapes[index][0]).round()
 
             # 注意这里传入的boxes格式必须是xmin, ymin, xmax, ymax，且为绝对坐标
             info = {"boxes": boxes.to(cpu_device),
