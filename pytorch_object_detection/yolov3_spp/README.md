@@ -3,9 +3,9 @@
 ## 环境配置：
 * Python3.6或者3.7
 * Pytorch1.6(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
-* pycocotools(Linux: pip install pycocotools;   
-  Windows:pip install pycocotools-windows(不需要额外安装vs))
-* 更多环境配置信息，请查看requirements.txt文件
+* pycocotools(Linux: ```pip install pycocotools```;   
+  Windows: ```pip install pycocotools-windows```(不需要额外安装vs))
+* 更多环境配置信息，请查看```requirements.txt```文件
 * 最好使用GPU训练
 
 ## 文件结构：
@@ -81,6 +81,16 @@ save_file_root = "/home/wz/my_project/my_yolo_dataset"
 # label标签对应json文件
 label_json_path = './data/pascal_voc_classes.json'
 ```
+* 生成的```my_data_label.names```标签文件格式如下
+```text
+aeroplane
+bicycle
+bird
+boat
+bottle
+bus
+...
+```
 
 ### 根据摆放好的数据集信息生成一系列相关准备文件
 * 使用```calculate_dataset.py```脚本生成```my_train_data.txt```文件、```my_val_data.txt```文件以及```my_data.data```文件，并生成新的```my_yolov3.cfg```文件
@@ -90,7 +100,7 @@ label_json_path = './data/pascal_voc_classes.json'
 train_annotation_dir = "/home/wz/my_project/my_yolo_dataset/train/labels"
 # 验证集的labels目录路径
 val_annotation_dir = "/home/wz/my_project/my_yolo_dataset/val/labels"
-# 上一步生成的my_data_label.names文件路径
+# 上一步生成的my_data_label.names文件路径(如果没有该文件，可以自己手动编辑一个txt文档，然后重命名为.names格式即可)
 classes_label = "./data/my_data_label.names"
 # 原始yolov3-spp.cfg网络结构配置文件
 cfg_path = "./cfg/yolov3-spp.cfg"
