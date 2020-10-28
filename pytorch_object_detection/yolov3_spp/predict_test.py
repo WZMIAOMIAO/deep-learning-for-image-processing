@@ -58,7 +58,7 @@ def main():
         t2 = torch_utils.time_synchronized()
         print(t2 - t1)
 
-        pred = utils.non_max_suppression(pred, conf_thres=0.3, iou_thres=0.6, multi_label=True)[0]
+        pred = utils.non_max_suppression(pred, conf_thres=0.1, iou_thres=0.6, multi_label=True)[0]
         t3 = time.time()
         print(t3 - t2)
 

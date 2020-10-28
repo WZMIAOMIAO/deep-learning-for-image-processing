@@ -23,7 +23,7 @@
   │     ├── img_utils.py: 部分图像处理方法
   │     ├── layers.py: 实现的一些基础层结构
   │     ├── parse_config.py: 解析yolov3-spp.cfg文件
-  │     ├── torch.utils.py: 使用pytorch实现的一些工具
+  │     ├── torch_utils.py: 使用pytorch实现的一些工具
   │     └── utils.py: 训练网络过程中使用到的一些方法
   │
   ├── train_utils: 训练验证网络时使用到的工具(包括多GPU训练以及使用cocotools)
@@ -49,7 +49,7 @@
 │         ├── train   训练集目录
 │         │     ├── images  训练集图像目录
 │         │     └── labels  训练集标签目录 
-│         └── eval    验证集目录
+│         └── val    验证集目录
 │               ├── images  验证集图像目录
 │               └── labels  验证集标签目录            
 ```
