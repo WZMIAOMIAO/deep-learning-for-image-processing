@@ -37,7 +37,7 @@ feature.trainable = False
 model = tf.keras.Sequential([feature,
                              tf.keras.layers.GlobalAvgPool2D(),
                              tf.keras.layers.Dropout(rate=0.5),
-                             tf.keras.layers.Dense(1024),
+                             tf.keras.layers.Dense(1024, activation="relu"),
                              tf.keras.layers.Dropout(rate=0.5),
                              tf.keras.layers.Dense(5),
                              tf.keras.layers.Softmax()])
