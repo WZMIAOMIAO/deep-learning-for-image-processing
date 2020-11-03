@@ -56,19 +56,17 @@ class LoadImageAndLabels(Dataset):  # for training/testing
 
         try:
             path = str(Path(path))
-            parent = str(Path(path).parent) + os.sep
+            # parent = str(Path(path).parent) + os.sep
             if os.path.isfile(path):  # file
                 with open(path, "r") as f:
                     f = f.read().splitlines()
-                    # local to global path
-                    f = [x.replace("./", parent) if x.startswith("./") else x for x in f]
             elif os.path.isdir(path):  # folder
                 f = glob.iglob(path + os.sep + "*.*")
             else:
                 raise Exception("%s does not exist" % path)
 
             # local to global path
-            self.img_files = [x.replace("./", parent) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
+            self.img_files = [x for x in f if os.path.splitext(x)[-1].lower() in img_formats]
         except:
             raise Exception("Error loading data from %s. See %s" % (path, help_url))
 
