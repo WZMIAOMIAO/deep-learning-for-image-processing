@@ -4,8 +4,9 @@ import torch
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from utils import read_split_data
+from utils import read_split_data, plot_data_loader_image
 
+# http://download.tensorflow.org/example_images/flower_photos.tgz
 root = "/home/w180662/my_project/my_github/data_set/flower_data/flower_photos"  # 数据集所在根目录
 
 
@@ -37,6 +38,8 @@ def main():
                                                shuffle=True,
                                                num_workers=nw,
                                                collate_fn=train_data_set.collate_fn)
+
+    # plot_data_loader_image(train_loader)
 
     for step, data in enumerate(train_loader):
         images, labels = data
