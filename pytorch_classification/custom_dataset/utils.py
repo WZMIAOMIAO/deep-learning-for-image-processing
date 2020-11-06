@@ -37,10 +37,10 @@ def read_split_data(root: str, val_rate: float = 0.2):
         # 记录该类别的样本数量
         every_class_num.append(len(images))
         # 按比例随机采样验证样本
-        eval_path = random.sample(images, k=int(len(images) * val_rate))
+        val_path = random.sample(images, k=int(len(images) * val_rate))
 
         for img_path in images:
-            if img_path in eval_path:  # 如果该路径在采样的验证集样本中则存入验证集
+            if img_path in val_path:  # 如果该路径在采样的验证集样本中则存入验证集
                 val_images_path.append(img_path)
                 val_images_label.append(image_class)
             else:  # 否则存入训练集
