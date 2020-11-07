@@ -1,108 +1,122 @@
-import torch
-import torch.nn as nn
-from torchvision import transforms, datasets
-import json
-import matplotlib.pyplot as plt
 import os
+import argparse
+
+import torch
+from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
 import torch.optim as optim
+
 from model import resnet34, resnet101
+from my_dataset import MyDataSet
+from utils import read_split_data
+from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+def main(args):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-data_transform = {
-    "train": transforms.Compose([transforms.RandomResizedCrop(224),
-                                 transforms.RandomHorizontalFlip(),
-                                 transforms.ToTensor(),
-                                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
-    "val": transforms.Compose([transforms.Resize(256),
-                               transforms.CenterCrop(224),
-                               transforms.ToTensor(),
-                               transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
+    print(args)
+    print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
+    tb_writer = SummaryWriter()
+    if os.path.exists("./weights") is False:
+        os.makedirs("./weights")
 
+    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
-data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-image_path = data_root + "/data_set/flower_data/"  # flower data set path
+    data_transform = {
+        "train": transforms.Compose([transforms.RandomResizedCrop(224),
+                                     transforms.RandomHorizontalFlip(),
+                                     transforms.ToTensor(),
+                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
+        "val": transforms.Compose([transforms.Resize(256),
+                                   transforms.CenterCrop(224),
+                                   transforms.ToTensor(),
+                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
-train_dataset = datasets.ImageFolder(root=image_path+"train",
-                                     transform=data_transform["train"])
-train_num = len(train_dataset)
+    # 实例化训练数据集
+    train_data_set = MyDataSet(images_path=train_images_path,
+                               images_class=train_images_label,
+                               transform=data_transform["train"])
 
-# {'daisy':0, 'dandelion':1, 'roses':2, 'sunflower':3, 'tulips':4}
-flower_list = train_dataset.class_to_idx
-cla_dict = dict((val, key) for key, val in flower_list.items())
-# write dict into json file
-json_str = json.dumps(cla_dict, indent=4)
-with open('class_indices.json', 'w') as json_file:
-    json_file.write(json_str)
+    # 实例化验证数据集
+    val_data_set = MyDataSet(images_path=val_images_path,
+                             images_class=val_images_label,
+                             transform=data_transform["val"])
 
-batch_size = 16
-train_loader = torch.utils.data.DataLoader(train_dataset,
-                                           batch_size=batch_size, shuffle=True,
-                                           num_workers=0)
+    batch_size = args.batch_size
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    print('Using {} dataloader workers every process'.format(nw))
+    train_loader = torch.utils.data.DataLoader(train_data_set,
+                                               batch_size=batch_size,
+                                               shuffle=True,
+                                               pin_memory=True,
+                                               num_workers=nw,
+                                               collate_fn=train_data_set.collate_fn)
 
-validate_dataset = datasets.ImageFolder(root=image_path + "val",
-                                        transform=data_transform["val"])
-val_num = len(validate_dataset)
-validate_loader = torch.utils.data.DataLoader(validate_dataset,
-                                              batch_size=batch_size, shuffle=False,
-                                              num_workers=0)
+    val_loader = torch.utils.data.DataLoader(val_data_set,
+                                             batch_size=batch_size,
+                                             shuffle=False,
+                                             pin_memory=True,
+                                             num_workers=nw,
+                                             collate_fn=val_data_set.collate_fn)
 
-net = resnet34()
-# load pretrain weights
-# model_weight_path = "./resnet34-pre.pth"
-# missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path), strict=False)
-# for param in net.parameters():
-#     param.requires_grad = False
-# change fc layer structure
-inchannel = net.fc.in_features
-net.fc = nn.Linear(inchannel, 5)
-net.to(device)
+    # 如果存在预训练权重则载入
+    model = resnet34(num_classes=args.num_classes).to(device)
+    if os.path.exists(args.weights):
+        weights_dict = torch.load(args.weights, map_location=device)
+        load_weights_dict = {k: v for k, v in weights_dict.items()
+                             if model.state_dict()[k].numel() == v.numel()}
+        model.load_state_dict(load_weights_dict, strict=False)
 
-loss_function = nn.CrossEntropyLoss()
-optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    # 是否冻结权重
+    if args.freeze_layers:
+        for name, para in model.named_parameters():
+            # 除最后的全连接层外，其他权重全部冻结
+            if "fc" not in name:
+                para.requires_grad_(False)
 
-best_acc = 0.0
-save_path = './resNet34.pth'
-for epoch in range(3):
-    # train
-    net.train()
-    running_loss = 0.0
-    for step, data in enumerate(train_loader, start=0):
-        images, labels = data
-        optimizer.zero_grad()
-        logits = net(images.to(device))
-        loss = loss_function(logits, labels.to(device))
-        loss.backward()
-        optimizer.step()
+    pg = [p for p in model.parameters() if p.requires_grad]
+    optimizer = optim.Adam(pg, lr=args.lr)
 
-        # print statistics
-        running_loss += loss.item()
-        # print train process
-        rate = (step+1)/len(train_loader)
-        a = "*" * int(rate * 50)
-        b = "." * int((1 - rate) * 50)
-        print("\rtrain loss: {:^3.0f}%[{}->{}]{:.4f}".format(int(rate*100), a, b, loss), end="")
-    print()
+    for epoch in range(args.epochs):
+        # train
+        mean_loss = train_one_epoch(model=model,
+                                    optimizer=optimizer,
+                                    data_loader=train_loader,
+                                    device=device,
+                                    epoch=epoch)
 
-    # validate
-    net.eval()
-    acc = 0.0  # accumulate accurate number / epoch
-    with torch.no_grad():
-        for val_data in validate_loader:
-            val_images, val_labels = val_data
-            outputs = net(val_images.to(device))  # eval model only have last output layer
-            # loss = loss_function(outputs, test_labels)
-            predict_y = torch.max(outputs, dim=1)[1]
-            acc += (predict_y == val_labels.to(device)).sum().item()
-        val_accurate = acc / val_num
-        if val_accurate > best_acc:
-            best_acc = val_accurate
-            torch.save(net.state_dict(), save_path)
-        print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
-              (epoch + 1, running_loss / step, val_accurate))
+        # validate
+        sum_num = evaluate(model=model,
+                           data_loader=val_loader,
+                           device=device)
+        acc = sum_num / len(val_data_set)
+        print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
+        tags = ["loss", "accuracy"]
+        tb_writer.add_scalar(tags[0], mean_loss, epoch)
+        tb_writer.add_scalar(tags[1], acc, epoch)
 
-print('Finished Training')
+        torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
 
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--num_classes', type=int, default=5)
+    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--batch-size', type=int, default=16)
+    parser.add_argument('--lr', type=float, default=0.0001)
+
+    # 数据集所在根目录
+    # http://download.tensorflow.org/example_images/flower_photos.tgz
+    parser.add_argument('--data-path', type=str, default="/home/wz/data_set/flower_data/flower_photos")
+
+    # resnet34 官方权重下载地址
+    # https://download.pytorch.org/models/resnet34-333f7ec4.pth
+    parser.add_argument('--weights', type=str, default='resNet34.pth',
+                        help='initial weights path')
+    parser.add_argument('--freeze-layers', type=bool, default=False)
+    parser.add_argument('--device', default='cuda', help='device id (i.e. 0 or 0,1 or cpu)')
+
+    opt = parser.parse_args()
+
+    main(opt)

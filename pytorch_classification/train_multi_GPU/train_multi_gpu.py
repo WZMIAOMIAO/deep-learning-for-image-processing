@@ -3,7 +3,6 @@ import argparse
 
 import torch
 import torch.optim as optim
-import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
@@ -12,9 +11,6 @@ from my_dataset import MyDataSet
 from utils import read_split_data, plot_data_loader_image
 from multi_train_utils.distributed_utils import init_distributed_mode, dist
 from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
-
-# http://download.tensorflow.org/example_images/flower_photos.tgz
-root = "/home/w180662/my_project/my_github/data_set/flower_data/flower_photos"  # 数据集所在根目录
 
 
 def main(args):
@@ -29,7 +25,7 @@ def main(args):
     batch_size = args.batch_size
     num_classes = args.num_classes
     weights_path = args.weights
-    lr = args.lr
+    args.lr *= args.world_size  # 学习率要根据并行GPU的数量进行倍增
 
     if rank == 0:  # 在第一个进程中打印信息，并实例化tensorboard
         print(args)
@@ -38,7 +34,7 @@ def main(args):
         if os.path.exists("./weights") is False:
             os.makedirs("./weights")
 
-    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root)
+    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -98,7 +94,8 @@ def main(args):
             torch.save(model.state_dict(), "./initial_weights.pt")
 
         dist.barrier()
-        model.load_state_dict(torch.load("./initial_weights.pt"))
+        # 这里有个坑，一定要指定map_location参数，否则会导致第一块GPU占用更多资源，且训练速度慢近一倍
+        model.load_state_dict(torch.load("./initial_weights.pt", map_location=device))
 
     # 是否冻结权重
     if args.freeze_layers:
@@ -114,7 +111,7 @@ def main(args):
 
     # optimizer
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(pg, lr=lr)
+    optimizer = optim.Adam(pg, lr=args.lr)
 
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
@@ -131,6 +128,7 @@ def main(args):
         acc = sum_num / val_sampler.total_size
 
         if rank == 0:
+            print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
             tags = ["loss", "accuracy"]
             tb_writer.add_scalar(tags[0], mean_loss, epoch)
             tb_writer.add_scalar(tags[1], acc, epoch)
@@ -143,7 +141,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', type=int, default=5)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--lr', type=float, default=0.005)
+    parser.add_argument('--lr', type=float, default=0.0001)
+
+    # 数据集所在根目录
+    # http://download.tensorflow.org/example_images/flower_photos.tgz
+    parser.add_argument('--data-path', type=str, default="/home/wz/data_set/flower_data/flower_photos")
+
+    # resnet34 官方权重下载地址
+    # https://download.pytorch.org/models/resnet34-333f7ec4.pth
     parser.add_argument('--weights', type=str, default='resNet34.pth',
                         help='initial weights path')
     parser.add_argument('--freeze-layers', type=bool, default=False)
