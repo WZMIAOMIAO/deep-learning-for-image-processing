@@ -5,3 +5,9 @@
 
 ## 训练时间对比
 ![training time](./training_time.png)
+
+## 是否使用SyncBatchNorm
+![syncbn](./syncbn.png)
+
+## 单GPU与多GPU训练曲线
+![accuracy](./accuracy.png)

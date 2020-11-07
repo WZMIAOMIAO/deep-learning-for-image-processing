@@ -1,10 +1,12 @@
 import os
+import math
 import argparse
 
 import torch
+import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
-import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 
 from model import resnet34, resnet101
 from my_dataset import MyDataSet
@@ -76,7 +78,10 @@ def main(args):
                 para.requires_grad_(False)
 
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(pg, lr=args.lr)
+    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=0.005)
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     for epoch in range(args.epochs):
         # train
@@ -86,15 +91,18 @@ def main(args):
                                     device=device,
                                     epoch=epoch)
 
+        scheduler.step()
+
         # validate
         sum_num = evaluate(model=model,
                            data_loader=val_loader,
                            device=device)
         acc = sum_num / len(val_data_set)
         print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
-        tags = ["loss", "accuracy"]
+        tags = ["loss", "accuracy", "learning_rate"]
         tb_writer.add_scalar(tags[0], mean_loss, epoch)
         tb_writer.add_scalar(tags[1], acc, epoch)
+        tb_writer.add_scalar(tags[2], optimizer.param_groups[0]["lr"], epoch)
 
         torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
 
@@ -104,7 +112,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', type=int, default=5)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--lr', type=float, default=0.0001)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lrf', type=float, default=0.1)
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
