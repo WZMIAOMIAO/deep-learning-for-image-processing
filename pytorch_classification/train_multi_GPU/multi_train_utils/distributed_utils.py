@@ -23,9 +23,13 @@ def init_distributed_mode(args):
     args.dist_backend = 'nccl'
     print('| distributed init (rank {}): {}'.format(
         args.rank, args.dist_url), flush=True)
-    torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-                                         world_size=args.world_size, rank=args.rank)
-    torch.distributed.barrier()
+    dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+                            world_size=args.world_size, rank=args.rank)
+    dist.barrier()
+
+
+def cleanup():
+    dist.destroy_process_group()
 
 
 def is_dist_avail_and_initialized():
@@ -64,4 +68,3 @@ def reduce_value(value, average=True):
             value /= word_size
 
         return value
-

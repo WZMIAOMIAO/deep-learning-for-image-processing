@@ -1,5 +1,6 @@
 import os
 import math
+import tempfile
 import argparse
 
 import torch
@@ -11,7 +12,7 @@ from torchvision import transforms
 from model import resnet34
 from my_dataset import MyDataSet
 from utils import read_split_data, plot_data_loader_image
-from multi_train_utils.distributed_utils import init_distributed_mode, dist
+from multi_train_utils.distributed_utils import init_distributed_mode, dist, cleanup
 from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
 
 
@@ -91,13 +92,14 @@ def main(args):
                              if model.state_dict()[k].numel() == v.numel()}
         model.load_state_dict(load_weights_dict, strict=False)
     else:
+        checkpoint_path = os.path.join(tempfile.gettempdir(), "initial_weights.pt")
         # 如果不存在预训练权重，需要将第一个进程中的权重保存，然后其他进程载入，保持初始化权重一致
         if rank == 0:
-            torch.save(model.state_dict(), "./initial_weights.pt")
+            torch.save(model.state_dict(), checkpoint_path)
 
         dist.barrier()
-        # 这里有个坑，一定要指定map_location参数，否则会导致第一块GPU占用更多资源，且训练速度慢近一倍
-        model.load_state_dict(torch.load("./initial_weights.pt", map_location=device))
+        # 这里注意，一定要指定map_location参数，否则会导致第一块GPU占用更多资源
+        model.load_state_dict(torch.load(checkpoint_path, map_location=device))
 
     # 是否冻结权重
     if args.freeze_layers:
@@ -106,8 +108,10 @@ def main(args):
             if "fc" not in name:
                 para.requires_grad_(False)
     else:
-        # 使用SyncBatchNorm后训练会更耗时
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
+        # 只有训练带有BN结构的网络时使用SyncBatchNorm采用意义
+        if args.syncBN:
+            # 使用SyncBatchNorm后训练会更耗时
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
 
     # 转为DDP模型
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
@@ -144,6 +148,12 @@ def main(args):
 
             torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
 
+    # 删除临时缓存文件
+    if rank == 0 and os.path.exists(weights_path) is False:
+        os.remove(checkpoint_path)
+
+    cleanup()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -152,6 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.1)
+    # 是否启用SyncBatchNorm
+    parser.add_argument('--syncBN', type=bool, default=True)
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz

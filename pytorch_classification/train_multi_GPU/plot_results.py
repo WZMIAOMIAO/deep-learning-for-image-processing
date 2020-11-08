@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
 
 x = [0, 1, 2, 3]
-y = [8, 5, 3, 1.5]
+y = [9, 5.5, 3, 2]
 
 plt.bar(x, y, align='center')
 plt.xticks(range(len(x)), ['One-GPU', '2 GPUs', '4 GPUs', '8 GPUs'])
 plt.ylim((0, 10))
 for i, v in enumerate(y):
     plt.text(x=i, y=v + 0.1, s=str(v) + ' s', ha='center')
-plt.xlabel('Training time per epoch (second)')
-plt.ylabel('Using number of GPU device')
+plt.xlabel('Using number of GPU device')
+plt.ylabel('Training time per epoch (second)')
 plt.show()
 plt.close()
 
