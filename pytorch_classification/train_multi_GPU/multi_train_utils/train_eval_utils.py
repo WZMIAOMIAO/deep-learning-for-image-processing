@@ -23,7 +23,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
 
         loss = loss_function(pred, labels.to(device))
         loss.backward()
-        loss = reduce_value(loss, average=False)
+        loss = reduce_value(loss, average=True)
         mean_loss = (mean_loss * step + loss.detach()) / (step + 1)  # update mean losses
 
         # 在进程0中打印平均loss
