@@ -4,6 +4,7 @@ import tempfile
 import argparse
 
 import torch
+import torch.multiprocessing as mp
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
@@ -16,12 +17,28 @@ from multi_train_utils.distributed_utils import init_distributed_mode, dist, cle
 from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
 
 
-def main(args):
+def main_fun(rank, world_size, args):
     if torch.cuda.is_available() is False:
         raise EnvironmentError("not find GPU device for training.")
 
-    # 初始化各进程环境
-    init_distributed_mode(args=args)
+    # 初始化各进程环境 start
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
+
+    args.rank = rank
+    args.world_size = world_size
+    args.gpu = rank
+
+    args.distributed = True
+
+    torch.cuda.set_device(args.gpu)
+    args.dist_backend = 'nccl'
+    print('| distributed init (rank {}): {}'.format(
+        args.rank, args.dist_url), flush=True)
+    dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+                            world_size=args.world_size, rank=args.rank)
+    dist.barrier()
+    # 初始化各进程环境 end
 
     rank = args.rank
     device = torch.device(args.device)
@@ -149,8 +166,9 @@ def main(args):
             torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
 
     # 删除临时缓存文件
-    if rank == 0 and os.path.exists(weights_path) is False:
-        os.remove(checkpoint_path)
+    if rank == 0:
+        if os.path.exists(checkpoint_path) is True:
+            os.remove(checkpoint_path)
 
     cleanup()
 
@@ -176,10 +194,13 @@ if __name__ == '__main__':
     parser.add_argument('--freeze-layers', type=bool, default=False)
     # 不要改该参数，系统会自动分配
     parser.add_argument('--device', default='cuda', help='device id (i.e. 0 or 0,1 or cpu)')
-    # 开启的进程数(注意不是线程),不用设置该参数，会根据nproc_per_node自动设置
+    # 开启的进程数(注意不是线程),在单机中指使用GPU的数量
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
     opt = parser.parse_args()
 
-    main(opt)
+    mp.spawn(main_fun,
+             args=(opt.world_size, opt),
+             nprocs=opt.world_size,
+             join=True)
