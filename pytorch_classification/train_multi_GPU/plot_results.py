@@ -1,3 +1,4 @@
+import math
 import matplotlib.pyplot as plt
 
 x = [0, 1, 2, 3]
@@ -52,3 +53,43 @@ plt.ylabel('Accuracy')
 plt.legend()
 plt.show()
 plt.close()
+
+
+# epochs = 30
+# lrf = 0.1
+# lf0 = lambda x: math.cos(x * math.pi / epochs)
+# lf1 = lambda x: 1 + math.cos(x * math.pi / epochs)
+# lf2 = lambda x: (1 + math.cos(x * math.pi / epochs)) / 2
+# lf3 = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf
+# x = range(epochs)
+# y0 = [lf0(epoch) for epoch in x]
+# y1 = [lf1(epoch) for epoch in x]
+# y2 = [lf2(epoch) for epoch in x]
+# y3 = [lf3(epoch) for epoch in x]
+# plt.subplot(2, 2, 1)
+# plt.plot(x, y0)
+# plt.hlines(1, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.hlines(-1, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.xlim((0, epochs-1))
+#
+# plt.subplot(2, 2, 2)
+# plt.plot(x, y1)
+# plt.hlines(2, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.hlines(0, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.xlim((0, epochs-1))
+#
+# plt.subplot(2, 2, 3)
+# plt.plot(x, y2)
+# plt.hlines(1, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.hlines(0, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.xlim((0, epochs-1))
+#
+# plt.subplot(2, 2, 4)
+# plt.plot(x, y3)
+# plt.hlines(1, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.hlines(lrf, 0, epochs-1, colors="r", linestyles="dashed")
+# plt.text(epochs-1, y3[-1], "{}".format(round(y3[-1], 1)))
+# plt.xlim((0, epochs-1))
+#
+# plt.show()
+# plt.close()

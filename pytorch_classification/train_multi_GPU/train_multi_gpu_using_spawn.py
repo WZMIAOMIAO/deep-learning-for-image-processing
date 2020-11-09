@@ -13,7 +13,7 @@ from torchvision import transforms
 from model import resnet34
 from my_dataset import MyDataSet
 from utils import read_split_data, plot_data_loader_image
-from multi_train_utils.distributed_utils import init_distributed_mode, dist, cleanup
+from multi_train_utils.distributed_utils import dist, cleanup
 from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
 
 
