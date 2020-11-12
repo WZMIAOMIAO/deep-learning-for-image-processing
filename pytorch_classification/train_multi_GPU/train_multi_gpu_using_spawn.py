@@ -84,9 +84,9 @@ def main_fun(rank, world_size, args):
     train_batch_sampler = torch.utils.data.BatchSampler(
         train_sampler, batch_size, drop_last=True)
 
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
-    if rank == 0:
-        print('Using {} dataloader workers every process'.format(nw))
+    # 0 means that the data will be loaded in the main process.
+    nw = 0  # number of workers
+
     train_loader = torch.utils.data.DataLoader(train_data_set,
                                                batch_sampler=train_batch_sampler,
                                                pin_memory=True,

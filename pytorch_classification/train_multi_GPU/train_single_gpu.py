@@ -15,7 +15,7 @@ from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
 
 
 def main(args):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
     print(args)
     print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
