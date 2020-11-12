@@ -58,13 +58,13 @@ def is_main_process():
 
 
 def reduce_value(value, average=True):
-    word_size = get_world_size()
-    if word_size < 2:  # 单GPU的情况
+    world_size = get_world_size()
+    if world_size < 2:  # 单GPU的情况
         return value
 
     with torch.no_grad():
         dist.all_reduce(value)
         if average:
-            value /= word_size
+            value /= world_size
 
         return value
