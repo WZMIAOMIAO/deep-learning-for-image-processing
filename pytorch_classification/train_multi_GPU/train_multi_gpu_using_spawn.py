@@ -5,6 +5,7 @@ import argparse
 
 import torch
 import torch.multiprocessing as mp
+from torch.multiprocessing import Process
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
@@ -84,8 +85,9 @@ def main_fun(rank, world_size, args):
     train_batch_sampler = torch.utils.data.BatchSampler(
         train_sampler, batch_size, drop_last=True)
 
-    # 0 means that the data will be loaded in the main process.
-    nw = 0  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    if rank == 0:
+        print('Using {} dataloader workers every process'.format(nw))
 
     train_loader = torch.utils.data.DataLoader(train_data_set,
                                                batch_sampler=train_batch_sampler,
@@ -200,7 +202,20 @@ if __name__ == '__main__':
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
     opt = parser.parse_args()
 
-    mp.spawn(main_fun,
-             args=(opt.world_size, opt),
-             nprocs=opt.world_size,
-             join=True)
+    # when using mp.spawn, if I set number of works greater 1,
+    # before each epoch training and validation will wait about 10 seconds
+
+    # mp.spawn(main_fun,
+    #          args=(opt.world_size, opt),
+    #          nprocs=opt.world_size,
+    #          join=True)
+
+    world_size = opt.world_size
+    processes = []
+    for rank in range(world_size):
+        p = Process(target=main_fun, args=(rank, world_size, opt))
+        p.start()
+        processes.append(p)
+    for p in processes:
+        p.join()
+
