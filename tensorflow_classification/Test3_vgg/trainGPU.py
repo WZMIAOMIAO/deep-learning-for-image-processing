@@ -73,7 +73,7 @@ def main():
     train_dataset = train_dataset.shuffle(buffer_size=train_num)\
                                  .map(process_path, num_parallel_calls=AUTOTUNE)\
                                  .repeat().batch(batch_size).prefetch(AUTOTUNE)
-    
+
     # load train dataset
     val_dataset = tf.data.Dataset.from_tensor_slices((val_image_list, val_label_list))
     val_dataset = val_dataset.map(process_path, num_parallel_calls=tf.data.experimental.AUTOTUNE)\

@@ -45,7 +45,7 @@ def main():
 
     val_data_gen = validation_image_generator.flow_from_directory(directory=validation_dir,
                                                                   batch_size=batch_size,
-                                                                  shuffle=True,
+                                                                  shuffle=False,
                                                                   target_size=(im_height, im_width),
                                                                   class_mode='categorical')
     total_val = val_data_gen.n
