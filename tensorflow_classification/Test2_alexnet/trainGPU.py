@@ -67,7 +67,7 @@ def main():
         return image, label
 
     AUTOTUNE = tf.data.experimental.AUTOTUNE
-    
+
     # load train dataset
     train_dataset = tf.data.Dataset.from_tensor_slices((train_image_list, train_label_list))
     train_dataset = train_dataset.shuffle(buffer_size=train_num)\
@@ -95,7 +95,6 @@ def main():
     test_loss = tf.keras.metrics.Mean(name='test_loss')
     test_accuracy = tf.keras.metrics.CategoricalAccuracy(name='test_accuracy')
 
-
     @tf.function
     def train_step(images, labels):
         with tf.GradientTape() as tape:
@@ -107,7 +106,6 @@ def main():
         train_loss(loss)
         train_accuracy(labels, predictions)
 
-
     @tf.function
     def test_step(images, labels):
         predictions = model(images, training=False)
@@ -115,7 +113,6 @@ def main():
 
         test_loss(t_loss)
         test_accuracy(labels, predictions)
-
 
     best_test_loss = float('inf')
     train_step_num = train_num // batch_size
