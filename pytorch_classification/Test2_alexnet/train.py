@@ -41,7 +41,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size, shuffle=True,
                                                num_workers=0)
-    
+
     validate_dataset = datasets.ImageFolder(root=image_path + "/val",
                                             transform=data_transform["val"])
     val_num = len(validate_dataset)
