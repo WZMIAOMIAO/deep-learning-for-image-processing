@@ -57,7 +57,7 @@ def main():
     random.shuffle(val_image_list)
     val_num = len(val_image_list)
     val_label_list = [class_dict[path.split(os.path.sep)[-2]] for path in val_image_list]
-    
+
     def process_train_img(img_path, label):
         label = tf.one_hot(label, depth=class_num)
         image = tf.io.read_file(img_path)
