@@ -46,7 +46,7 @@ def main():
     im_width = 224
     batch_size = 32
     epochs = 10
-    
+
     def pre_function(img: np.ndarray):
         # from PIL import Image as im
         # import numpy as np
