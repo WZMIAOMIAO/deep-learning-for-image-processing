@@ -159,7 +159,7 @@ def main():
     # voc信息转yolo，并将图像文件复制到相应文件夹
     translate_info(val_file_names, save_file_root, class_dict, "val")
 
-    # 创建my_class.txt文件
+    # 创建my_data_label.names文件
     create_class_names(class_dict)
 
 
