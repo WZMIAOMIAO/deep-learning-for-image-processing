@@ -44,7 +44,7 @@ def rename_var(ckpt_path, new_ckpt_path, num_classes=5):
 
 
 except_list = ['global_step', 'MobilenetV2/Logits/Conv2d_1c_1x1/biases', 'MobilenetV2/Logits/Conv2d_1c_1x1/weights']
-ckpt_path = './pretain_model/mobilenet_v2_1.0_224.ckpt'
+ckpt_path = './pretrain_model/mobilenet_v2_1.0_224.ckpt'
 new_ckpt_path = './pretrain_weights.ckpt'
 num_classes = 5
 rename_var(ckpt_path, new_ckpt_path, num_classes)
