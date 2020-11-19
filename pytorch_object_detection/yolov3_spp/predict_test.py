@@ -62,6 +62,10 @@ def main():
         t3 = time.time()
         print(t3 - t2)
 
+        if pred is None:
+            print("No target detected.")
+            exit(0)
+
         # process detections
         pred[:, :4] = utils.scale_coords(img.shape[2:], pred[:, :4], img_o.shape).round()
         print(pred.shape)
