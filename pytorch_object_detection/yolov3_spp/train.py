@@ -107,7 +107,8 @@ def train(hyp):
         # load optimizer
         if ckpt["optimizer"] is not None:
             optimizer.load_state_dict(ckpt["optimizer"])
-            best_map = ckpt["best_map"]
+            if "best_map" in ckpt.keys():
+                best_map = ckpt["best_map"]
 
         # load results
         if ckpt.get("training_results") is not None:
@@ -265,7 +266,7 @@ if __name__ == '__main__':
     parser.add_argument('--savebest', type=bool, default=False, help='only save best checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--weights', type=str, default='weights/yolov3-spp-ultralytics-512.pt',
+    parser.add_argument('--weights', type=str, default='weights/yolov3spp-voc-512.pth',
                         help='initial weights path')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
