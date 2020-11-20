@@ -110,7 +110,7 @@ cfg_path = "./cfg/yolov3-spp.cfg"
 * ```yolov3-spp-ultralytics-416.pt```: 链接: https://pan.baidu.com/s/1cK3USHKxDx-d5dONij52lA  密码: r3vm
 * ```yolov3-spp-ultralytics-512.pt```: 链接: https://pan.baidu.com/s/1k5yeTZZNv8Xqf0uBXnUK-g  密码: e3k1
 * ```yolov3-spp-ultralytics-608.pt```: 链接: https://pan.baidu.com/s/1GI8BA0wxeWMC0cjrC01G7Q  密码: ma3t
-* ```yolov3spp-voc-512.pth``` **(这是我在视频演示训练中得到的权重)**: 链接: https://pan.baidu.com/s/1fzXPFYvPy95Q9f5IR5Voqg  密码: ct2n
+* ```yolov3spp-voc-512.pt``` **(这是我在视频演示训练中得到的权重)**: 链接: https://pan.baidu.com/s/1JJAElFSVbV1lrcJhQTeoGw  密码: b1e3
  
  
 ## 6 数据集，本例程使用的是PASCAL VOC2012数据集
