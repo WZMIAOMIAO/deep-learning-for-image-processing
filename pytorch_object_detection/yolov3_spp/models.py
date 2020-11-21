@@ -7,22 +7,25 @@ from utils.parse_config import *
 ONNX_EXPORT = False
 
 
-def create_modules(modules_defs: list, img_size, cfg):
+def create_modules(modules_defs: list, img_size):
     """
     Constructs module list of layer blocks from module configuration in module_defs
-    :param modules_defs:
+    :param modules_defs: 通过.cfg文件解析得到的每个层结构的列表
     :param img_size:
-    :param cfg:
+    :param cfg: .cfg文件的路径
     :return:
     """
 
     img_size = [img_size] * 2 if isinstance(img_size, int) else img_size
+    # 删除解析cfg列表中的第一个配置(对应[net]的配置)
     modules_defs.pop(0)  # cfg training hyperparams (unused)
     output_filters = [3]  # input channels
     module_list = nn.ModuleList()
+    # 统计哪些特征层的输出会被后续的层使用到(可能是特征融合，也可能是拼接)
     routs = []  # list of layers which rout to deeper layers
     yolo_index = -1
 
+    # 遍历搭建每个层结构
     for i, mdef in enumerate(modules_defs):
         modules = nn.Sequential()
 
@@ -37,10 +40,9 @@ def create_modules(modules_defs: list, img_size, cfg):
                                                        kernel_size=k,
                                                        stride=stride,
                                                        padding=k // 2 if mdef["pad"] else 0,
-                                                       groups=mdef["groups"] if "groups" in mdef else 1,
                                                        bias=not bn))
             else:
-                pass
+                raise TypeError("conv2d filter size must be int type.")
 
             if bn:
                 modules.add_module("BatchNorm2d", nn.BatchNorm2d(filters))
@@ -59,12 +61,7 @@ def create_modules(modules_defs: list, img_size, cfg):
         elif mdef["type"] == "maxpool":
             k = mdef["size"]  # kernel size
             stride = mdef["stride"]
-            maxpool = nn.MaxPool2d(kernel_size=k, stride=stride, padding=(k - 1) // 2)
-            if k == 2 and stride == 1:  # yolov3-tiny
-                modules.add_module("ZerosPad2d", nn.ZeroPad2d((0, 1, 0, 1)))
-                modules.add_module("MaxPool2d", maxpool)
-            else:
-                modules = maxpool
+            modules = nn.MaxPool2d(kernel_size=k, stride=stride, padding=(k - 1) // 2)
 
         elif mdef["type"] == "upsample":
             if ONNX_EXPORT:  # explicitly state size, avoid scale_factor
@@ -73,7 +70,7 @@ def create_modules(modules_defs: list, img_size, cfg):
             else:
                 modules = nn.Upsample(scale_factor=mdef["stride"])
 
-        elif mdef["type"] == "route":  # [-2],  [-1,-3,-5,-6]
+        elif mdef["type"] == "route":  # [-2],  [-1,-3,-5,-6], [-1, 61]
             layers = mdef["layers"]
             filters = sum([output_filters[l + 1 if l > 0 else l] for l in layers])
             routs.extend([i + l if l < 0 else l for l in layers])
@@ -82,41 +79,29 @@ def create_modules(modules_defs: list, img_size, cfg):
         elif mdef["type"] == "shortcut":
             layers = mdef["from"]
             filters = output_filters[-1]
-            routs.extend([i + l if l < 0 else l for l in layers])
+            # routs.extend([i + l if l < 0 else l for l in layers])
+            routs.append(i + layers[0])
             modules = WeightedFeatureFusion(layers=layers, weight="weights_type" in mdef)
 
-        elif mdef["type"] == "reorg3d":
-            pass
-
         elif mdef["type"] == "yolo":
-            yolo_index += 1
-            stride = [32, 16, 8]
-            if any(x in cfg for x in ["panet", "yolo4", "cd53"]):
-                stride = list(reversed(stride))
-            layers = mdef["from"] if "from" in mdef else []
+            yolo_index += 1  # 记录是第几个yolo_layer [0, 1, 2]
+            stride = [32, 16, 8]  # 预测特征层对应原图的缩放比例
+
             modules = YOLOLayer(anchors=mdef["anchors"][mdef["mask"]],  # anchor list
                                 nc=mdef["classes"],  # number of classes
                                 img_size=img_size,
-                                yolo_index=yolo_index,
-                                layers=layers,
                                 stride=stride[yolo_index])
 
             # Initialize preceding Conv2d() bias (https://arxiv.org/pdf/1708.02002.pdf section 3.3)
             try:
-                j = layers[yolo_index] if 'from' in mdef else -1
-                # If previous layer is a dropout layer, get the one before
-                if module_list[j].__class__.__name__ == 'Dropout':
-                    j -= 1
-                bias_ = module_list[j][0].bias  # shape(255,)
-                bias = bias_[:modules.no * modules.na].view(modules.na, -1)  # shape(3,85)
+                j = -1
+                bias_ = module_list[j][0].bias  # shape(255,) 索引0对应Sequential中的Conv2d
+                bias = bias_.view(modules.na, -1)  # shape(3, 85)
                 bias[:, 4] += -4.5  # obj
                 bias[:, 5:] += math.log(0.6 / (modules.nc - 0.99))  # cls (sigmoid(p) = 1/nc)
                 module_list[j][0].bias = torch.nn.Parameter(bias_, requires_grad=bias_.requires_grad)
-            except:
-                print('WARNING: smart bias initialization failure.')
-        elif mdef["type"] == "dropout":
-            perc = float(mdef["probability"])
-            modules = nn.Dropout(p=perc)
+            except Exception as e:
+                print('WARNING: smart bias initialization failure.', e)
         else:
             print("Warning: Unrecognized Layer Type: " + mdef["type"])
 
@@ -124,7 +109,7 @@ def create_modules(modules_defs: list, img_size, cfg):
         module_list.append(modules)
         output_filters.append(filters)
 
-    routs_binary = [False] * (i + 1)
+    routs_binary = [False] * len(modules_defs)
     for i in routs:
         routs_binary[i] = True
     return module_list, routs_binary
@@ -134,19 +119,20 @@ class YOLOLayer(nn.Module):
     """
     对YOLO的输出进行处理
     """
-    def __init__(self, anchors, nc, img_size, yolo_index, layers, stride):
+    def __init__(self, anchors, nc, img_size, stride):
         super(YOLOLayer, self).__init__()
         self.anchors = torch.Tensor(anchors)
-        self.index = yolo_index  # index of this layer in layers
-        self.layers = layers  # model output layer indices
         self.stride = stride  # layer stride 特征图上一步对应原图上的步距 [32, 16, 8]
-        self.nl = len(layers)  # number of output layers (3)
         self.na = len(anchors)  # number of anchors (3)
         self.nc = nc  # number of classes (80)
-        self.no = nc + 5  # number of outputs (85)
-        self.nx, self.ny, self.ng = 0, 0, 0  # initialize number of x, y gridpoints
+        self.no = nc + 5  # number of outputs (85: x, y, w, h, obj, cls1, ...)
+        self.nx, self.ny, self.ng = 0, 0, (0, 0)  # initialize number of x, y gridpoints
+        # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
+        # batch_size, na, grid_h, grid_w, wh,
+        # 值为1的维度对应的值不是固定值，后续操作可根据broadcast广播机制自动扩充
         self.anchor_wh = self.anchor_vec.view(1, self.na, 1, 1, 2)
+        self.grid = None
 
         if ONNX_EXPORT:
             self.training = False
@@ -154,7 +140,7 @@ class YOLOLayer(nn.Module):
 
     def create_grids(self, ng=(13, 13), device="cpu"):
         """
-        生成grids
+        更新grids信息并生成新的grids参数
         :param ng: 特征图大小
         :param device:
         :return:
@@ -166,41 +152,24 @@ class YOLOLayer(nn.Module):
         if not self.training:  # 训练模式不需要回归到最终预测boxes
             yv, xv = torch.meshgrid([torch.arange(self.ny, device=device),
                                      torch.arange(self.nx, device=device)])
+            # batch_size, na, grid_h, grid_w, wh
             self.grid = torch.stack((xv, yv), 2).view((1, 1, self.ny, self.nx, 2)).float()
 
         if self.anchor_vec.device != device:
             self.anchor_vec = self.anchor_vec.to(device)
             self.anchor_wh = self.anchor_wh.to(device)
 
-    def forward(self, p, out):
-        ASFF = False  # https://arxiv.org/abs/1911.09516
-        if ASFF:
-            i, n = self.index, self.nl  # index in layers, number of layers
-            p = out[self.layers[i]]
-            bs, _, ny, nx = p.shape  # bs, 255, 13, 13
-            if (self.nx, self.ny) != (nx, ny):
-                self.create_grids((nx, ny), p.device)
-
-            # outputs and weights
-            # w = F.softmax(p[:, -n:], 1)  # normalized weights
-            w = torch.sigmoid(p[:, -n:]) * (2 / n)  # sigmoid weights (faster)
-            # w = w / w.sum(1).unsqueeze(1)  # normalize across layer dimension
-
-            # weighted ASFF sum
-            p = out[self.layers[i]][:, :-n] * w[:, i:i + 1]
-            for j in range(n):
-                if j != i:
-                    p += w[:, j:j + 1] * \
-                         F.interpolate(out[self.layers[j]][:, :-n], size=[ny, nx], mode='bilinear', align_corners=False)
-
-        elif ONNX_EXPORT:
+    def forward(self, p):
+        if ONNX_EXPORT:
             bs = 1  # batch size
         else:
             bs, _, ny, nx = p.shape  # batch_size, predict_param(255), grid(13), grid(13)
-            if (self.nx, self.ny) != (nx, ny) or hasattr(self, "grid") is False:  # fix no grid bug
+            if (self.nx, self.ny) != (nx, ny) or self.grid is None:  # fix no grid bug
                 self.create_grids((nx, ny), p.device)
 
-        # p.view(batch_size, 255, 13, 13) -> (batch_size, 3, 13, 13, 85)  # (bs, anchors, grid, grid, classes + xywh)
+        # view: (batch_size, 255, 13, 13) -> (batch_size, 3, 85, 13, 13)
+        # permute: (batch_size, 3, 85, 13, 13) -> (batch_size, 3, 13, 13, 85)
+        # [bs, anchor, grid, grid, xywh + obj + classes]
         p = p.view(bs, self.na, self.no, self.ny, self.nx).permute(0, 1, 3, 4, 2).contiguous()  # prediction
 
         if self.training:
@@ -223,6 +192,7 @@ class YOLOLayer(nn.Module):
             p[:, 5:] = p[:, 5:self.no] * p[:, 4:5]
             return p
         else:  # inference
+            # [bs, anchor, grid, grid, xywh + obj + classes]
             io = p.clone()  # inference output
             io[..., :2] = torch.sigmoid(io[..., :2]) + self.grid  # xy 计算在feature map上的xy坐标
             io[..., 2:4] = torch.exp(io[..., 2:4]) * self.anchor_wh  # wh yolo method 计算在feature map上的wh
@@ -236,50 +206,28 @@ class Darknet(nn.Module):
 
     def __init__(self, cfg, img_size=(416, 416), verbose=False):
         super(Darknet, self).__init__()
+        # 这里传入的img_size只在导出ONNX模型时起作用
         self.input_size = [img_size] * 2 if isinstance(img_size, int) else img_size
+        # 解析网络对应的.cfg文件
         self.module_defs = parse_model_cfg(cfg)
-        self.module_list, self.routs = create_modules(self.module_defs, img_size, cfg)
+        # 根据解析的网络结构一层一层去搭建
+        self.module_list, self.routs = create_modules(self.module_defs, img_size)
+        # 获取所有YOLOLayer层的索引
         self.yolo_layers = get_yolo_layers(self)
 
-        # Darknet Header https://github.com/AlexeyAB/darknet/issues/2914#issuecomment-496675346
-        self.version = np.array([0, 2, 5], dtype=np.int32)  # (int32) version info: major, minor, revision
-        self.seen = np.array([0], dtype=np.int64)  # (int64) number of images seen during training
+        # 打印下模型的信息，如果verbose为True则打印详细信息
         self.info(verbose) if not ONNX_EXPORT else None  # print model description
 
-    def forward(self, x, augment=False, verbose=False):
-        if not augment:
-            return self.forward_once(x)
-        else:  # Augment images (inference and test only) https://github.com/ultralytics/yolov3/issues/931
-            img_size = x.shape[-2:]  # height, width
-            s = [0.83, 0.67]  # scales
-            y = []
-            for i, xi in enumerate((x,
-                                    torch_utils.scale_img(x.flip(3), s[0], same_shape=False),  # flip-lr and scale
-                                    torch_utils.scale_img(x, s[1], same_shape=False),  # scale
-                                    )):
-                y.append(self.forward_once(xi)[0])
-            y[1][..., :4] /= s[0]  # scale
-            y[1][..., 0] = img_size[1] - y[1][..., 0]  # flip lr
-            y[2][..., :4] /= s[1]  # scale
+    def forward(self, x, verbose=False):
+        return self.forward_once(x, verbose=verbose)
 
-            y = torch.cat(y, 1)
-            return y, None
-
-    def forward_once(self, x, augment=False, verbose=False):
-        img_size = x.shape[-2:]  # height, width
+    def forward_once(self, x, verbose=False):
+        # yolo_out收集每个yolo_layer层的输出
+        # out收集每个模块的输出
         yolo_out, out = [], []
         if verbose:
             print('0', x.shape)
             str = ""
-
-        # Augment images (inference and test only)
-        if augment:  # https://github.com/ultralytics/yolov3/issues/931
-            nb = x.shape[0]  # batch size
-            s = [0.83, 0.67]
-            x = torch.cat((x,
-                           torch_utils.scale_img(x.flip(3), s[0]),  # flip-lr and scale
-                           torch_utils.scale_img(x, s[1]),  # scale
-                           ), 0)
 
         for i, module in enumerate(self.module_list):
             name = module.__class__.__name__
@@ -290,7 +238,7 @@ class Darknet(nn.Module):
                     str = ' >> ' + ' + '.join(['layer %g %s' % x for x in zip(l, sh)])
                 x = module(x, out)  # WeightedFeatureFusion(), FeatureConcat()
             elif name == "YOLOLayer":
-                yolo_out.append(module(x, out))
+                yolo_out.append(module(x))
             else:  # run module directly, i.e. mtype = 'convolutional', 'upsample', 'maxpool', 'batchnorm2d' etc.
                 x = module(x)
 
@@ -325,12 +273,6 @@ class Darknet(nn.Module):
         else:  # inference or test
             x, p = zip(*yolo_out)  # inference output, training output
             x = torch.cat(x, 1)  # cat yolo outputs
-            if augment:  # de-augment results
-                x = torch.split(x, nb, dim=0)
-                x[1][..., :4] /= s[0]  # scale
-                x[1][..., 0] = img_size[1] - x[1][..., 0]  # flip lr
-                x[2][..., :4] /= s[1]  # scale
-                x = torch.cat(x, 1)
 
             return x, p
 
@@ -343,13 +285,13 @@ class Darknet(nn.Module):
         torch_utils.model_info(self, verbose)
 
 
-def get_yolo_layers(model):
+def get_yolo_layers(self):
     """
     获取网络中三个"YOLOLayer"模块对应的索引
-    :param model:
+    :param self:
     :return:
     """
-    return [i for i, m in enumerate(model.module_list) if m.__class__.__name__ == 'YOLOLayer']  # [89, 101, 113]
+    return [i for i, m in enumerate(self.module_list) if m.__class__.__name__ == 'YOLOLayer']  # [89, 101, 113]
 
 
 
