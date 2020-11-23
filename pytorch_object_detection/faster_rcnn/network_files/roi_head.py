@@ -1,5 +1,4 @@
 import torch
-import torchvision
 import torch.nn.functional as F
 from network_files import boxes as box_ops, det_utils
 from torch import nn, Tensor
@@ -32,7 +31,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     # the corresponding ground truth labels, to be used with
     # advanced indexing
     # 返回标签类别大于0的索引
-    sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
+    sampled_pos_inds_subset = torch.nonzero(torch.gt(labels, 0)).squeeze(1)
 
     # 返回标签类别大于0位置的类别信息
     labels_pos = labels[sampled_pos_inds_subset]
@@ -61,41 +60,41 @@ class RoIHeads(torch.nn.Module):
     }
 
     def __init__(self,
-                 box_roi_pool,
-                 box_head,
-                 box_predictor,
+                 box_roi_pool,   # Multi-scale RoIAlign pooling
+                 box_head,       # TwoMLPHead
+                 box_predictor,  # FastRCNNPredictor
                  # Faster R-CNN training
-                 fg_iou_thresh, bg_iou_thresh,
-                 batch_size_per_image, positive_fraction,
-                 bbox_reg_weights,
+                 fg_iou_thresh, bg_iou_thresh,  # default: 0.5, 0.5
+                 batch_size_per_image, positive_fraction,  # default: 512, 0.25
+                 bbox_reg_weights,  # None
                  # Faster R-CNN inference
-                 score_thresh,
-                 nms_thresh,
-                 detection_per_img):
+                 score_thresh,        # default: 0.05
+                 nms_thresh,          # default: 0.5
+                 detection_per_img):  # default: 100
         super(RoIHeads, self).__init__()
 
         self.box_similarity = box_ops.box_iou
         # assign ground-truth boxes for each proposal
         self.proposal_matcher = det_utils.Matcher(
-            fg_iou_thresh,  # 0.5
-            bg_iou_thresh,  # 0.5
+            fg_iou_thresh,  # default: 0.5
+            bg_iou_thresh,  # default: 0.5
             allow_low_quality_matches=False)
 
         self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
-            batch_size_per_image,  # 512
-            positive_fraction)     # 0.25
+            batch_size_per_image,  # default: 512
+            positive_fraction)     # default: 0.25
 
         if bbox_reg_weights is None:
             bbox_reg_weights = (10., 10., 5., 5.)
         self.box_coder = det_utils.BoxCoder(bbox_reg_weights)
 
-        self.box_roi_pool = box_roi_pool
-        self.box_head = box_head
-        self.box_predictor = box_predictor
+        self.box_roi_pool = box_roi_pool    # Multi-scale RoIAlign pooling
+        self.box_head = box_head            # TwoMLPHead
+        self.box_predictor = box_predictor  # FastRCNNPredictor
 
-        self.score_thresh = score_thresh
-        self.nms_thresh = nms_thresh
-        self.detection_per_img = detection_per_img
+        self.score_thresh = score_thresh  # default: 0.05
+        self.nms_thresh = nms_thresh      # default: 0.5
+        self.detection_per_img = detection_per_img  # default: 100
 
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
         # type: (List[Tensor], List[Tensor], List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
@@ -314,7 +313,8 @@ class RoIHeads(torch.nn.Module):
 
             # remove low scoring boxes
             # 移除低概率目标，self.scores_thresh=0.05
-            inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
+            # gt: Computes input > other element-wise.
+            inds = torch.nonzero(torch.gt(scores, self.score_thresh)).squeeze(1)
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 
             # remove empty boxes
@@ -367,7 +367,7 @@ class RoIHeads(torch.nn.Module):
             regression_targets = None
             matched_idxs = None
 
-        # 将采集样本通过roi_pooling层
+        # 将采集样本通过Multi-scale RoIAlign pooling层
         box_features = self.box_roi_pool(features, proposals, image_shapes)
         # 通过roi_pooling后的两层全连接层
         box_features = self.box_head(box_features)
