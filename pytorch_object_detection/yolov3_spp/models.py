@@ -202,8 +202,9 @@ class YOLOLayer(nn.Module):
 
 
 class Darknet(nn.Module):
-    # YOLOv3 object detection model
-
+    """
+    YOLOv3 spp object detection model
+    """
     def __init__(self, cfg, img_size=(416, 416), verbose=False):
         super(Darknet, self).__init__()
         # 这里传入的img_size只在导出ONNX模型时起作用

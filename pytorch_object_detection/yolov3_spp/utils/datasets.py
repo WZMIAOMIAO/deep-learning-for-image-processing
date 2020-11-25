@@ -50,80 +50,107 @@ def exif_size(img):
 
 
 class LoadImageAndLabels(Dataset):  # for training/testing
-    def __init__(self, path, img_size=416, batch_size=16, augment=False, hyp=None,
-                 rect=False, image_weights=False, cache_images=False,
+    def __init__(self,
+                 path,   # 指向data/my_train_data.txt路径或data/my_val_data.txt路径
+                 # 这里设置的是预处理后输出的图片尺寸
+                 # 当为训练集时，设置的是训练过程中(开启多尺度)的最大尺寸
+                 # 当为验证集时，设置的是最终使用的网络大小
+                 img_size=416,
+                 batch_size=16,
+                 augment=False,  # 训练集设置为True(augment_hsv)，验证集设置为False
+                 hyp=None,  # 超参数字典，其中包含图像增强会使用到的超参数
+                 rect=False,  # 是否使用rectangular training
+                 cache_images=False,  # 是否缓存图片到内存中
                  single_cls=False, pad=0.0, rank=-1):
 
         try:
             path = str(Path(path))
             # parent = str(Path(path).parent) + os.sep
             if os.path.isfile(path):  # file
+                # 读取对应my_train/val_data.txt文件，读取每一行的图片路劲信息
                 with open(path, "r") as f:
                     f = f.read().splitlines()
-            elif os.path.isdir(path):  # folder
-                f = glob.iglob(path + os.sep + "*.*")
             else:
                 raise Exception("%s does not exist" % path)
 
-            # local to global path
+            # 检查每张图片后缀格式是否在支持的列表中，保存支持的图像路径
+            # img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']
             self.img_files = [x for x in f if os.path.splitext(x)[-1].lower() in img_formats]
-        except:
-            raise Exception("Error loading data from %s. See %s" % (path, help_url))
+        except Exception as e:
+            raise FileNotFoundError("Error loading data from {}. {}".format(path, e))
 
+        # 如果图片列表中没有图片，则报错
         n = len(self.img_files)
         assert n > 0, "No images found in %s. See %s" % (path, help_url)
 
         # batch index
+        # 将数据划分到一个个batch中
         bi = np.floor(np.arange(n) / batch_size).astype(np.int)
+        # 记录数据集划分后的总batch数
         nb = bi[-1] + 1  # number of batches
 
-        self.n = n  # number of images
-        self.batch = bi  # batch index of image
-        self.img_size = img_size
-        self.augment = augment
-        self.hyp = hyp
-        self.image_weights = image_weights
-        self.rect = False if image_weights else rect
+        self.n = n  # number of images 图像总数目
+        self.batch = bi  # batch index of image 记录哪些图片属于哪个batch
+        self.img_size = img_size  # 这里设置的是预处理后输出的图片尺寸
+        self.augment = augment  # 是否启用augment_hsv
+        self.hyp = hyp  # 超参数字典，其中包含图像增强会使用到的超参数
+        self.rect = rect  # 是否使用rectangular training
+        # 注意: 开启rect后，mosaic就默认关闭
         self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
 
         # Define labels
+        # 遍历设置图像对应的label路径
+        # (./my_yolo_dataset/train/images/2009_004012.jpg) -> (./my_yolo_dataset/train/labels/2009_004012.txt)
         self.label_files = [x.replace("images", "labels").replace(os.path.splitext(x)[-1], ".txt")
                             for x in self.img_files]
 
         # Read image shapes (wh)
-        sp = path.replace(".txt", "") + ".shapes"  # shapefile path
+        # 查看data文件下是否缓存有对应数据集的.shapes文件，里面存储了每张图像的width, height
+        sp = path.replace(".txt", ".shapes")  # shapefile path
         try:
             with open(sp, "r") as f:  # read existing shapefile
                 s = [x.split() for x in f.read().splitlines()]
                 # 判断现有的shape文件中的行数(图像个数)是否与当前数据集中图像个数相等
                 # 如果不相等则认为是不同的数据集，故重新生成shape文件
                 assert len(s) == n, "shapefile out of aync"
-        except:
+        except Exception as e:
+            # print("read {} failed [{}], rebuild {}.".format(sp, e, sp))
             # tqdm库会显示处理的进度
-            s = [exif_size(Image.open(f)) for f in tqdm(self.img_files, desc="Reading image shapes")]
+            # 读取每张图片的size信息
+            if rank in [-1, 0]:
+                image_files = tqdm(self.img_files, desc="Reading image shapes")
+            else:
+                image_files = self.img_files
+            s = [exif_size(Image.open(f)) for f in image_files]
             # 将所有图片的shape信息保存在.shape文件中
             np.savetxt(sp, s, fmt="%g")  # overwrite existing (if any)
 
+        # 记录每张图像的原始尺寸
         self.shapes = np.array(s, dtype=np.float64)
 
         # Rectangular Training https://github.com/ultralytics/yolov3/issues/232
         # 如果为ture，训练网络时，会使用类似原图像比例的矩形(让最长边为img_size)，而不是img_size x img_size
+        # 注意: 开启rect后，mosaic就默认关闭
         if self.rect:
             # Sort by aspect ratio
             s = self.shapes  # wh
+            # 计算每个图片的高/宽比
             ar = s[:, 1] / s[:, 0]  # aspect ratio
             # argsort函数返回的是数组值从小到大的索引值
-            # 按照长宽比例进行排序
+            # 按照高宽比例进行排序，这样后面划分的每个batch中的图像就拥有类似的高宽比
             irect = ar.argsort()
+            # 根据排序后的顺序重新设置图像顺序、标签顺序以及shape顺序
             self.img_files = [self.img_files[i] for i in irect]
             self.label_files = [self.label_files[i] for i in irect]
             self.shapes = s[irect]  # wh
             ar = ar[irect]
 
             # set training image shapes
+            # 计算每个batch采用的统一尺度
             shapes = [[1, 1]] * nb  # nb: number of batches
             for i in range(nb):
                 ari = ar[bi == i]  # bi: batch index
+                # 获取第i个batch中，最小和最大高宽比
                 mini, maxi = ari.min(), ari.max()
 
                 # 如果高/宽小于1(w > h)，将w设为img_size
@@ -132,29 +159,28 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                 # 如果高/宽大于1(w < h)，将h设置为img_size
                 elif mini > 1:
                     shapes[i] = [1, 1 / mini]
-            # 计算每个batch输入网络的shape值
+            # 计算每个batch输入网络的shape值(向上设置为32的整数倍)
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / 32. + pad).astype(np.int) * 32
 
         # cache labels
-        self.imgs = [None] * n
-        # label: [class, x, y, w, h]
+        self.imgs = [None] * n  # n为图像总数
+        # label: [class, x, y, w, h] 其中的xywh都为相对值
         self.labels = [np.zeros((0, 5), dtype=np.float32)] * n
-        create_datasubset, extract_bounding_boxes, labels_loaded = False, False, False
-        nm, nf, ne, ns, nd = 0, 0, 0, 0, 0  # number mission, found, empty, datasunset, duplicate
+        extract_bounding_boxes, labels_loaded = False, False
+        nm, nf, ne, nd = 0, 0, 0, 0  # number mission, found, empty, duplicate
         # 这里分别命名是为了防止出现rect为False/True时混用导致计算的mAP错误
         # 当rect为True时会对self.images和self.labels进行从新排序
         if rect is True:
             np_labels_path = str(Path(self.label_files[0]).parent) + ".rect.npy"  # saved labels in *.npy file
         else:
             np_labels_path = str(Path(self.label_files[0]).parent) + ".norect.npy"
+
         if os.path.isfile(np_labels_path):
-            s = np_labels_path  # print string
             x = np.load(np_labels_path, allow_pickle=True)
             if len(x) == n:
+                # 如果载入的缓存标签个数与当前计算的图像数目相同则认为是同一数据集，直接读缓存
                 self.labels = x
                 labels_loaded = True
-        else:
-            s = path.replace("images", "labels")
 
         # 处理进度条只在第一个进程中显示
         if rank in [-1, 0]:
@@ -162,19 +188,25 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         else:
             pbar = self.label_files
 
+        # 遍历载入标签文件
         for i, file in enumerate(pbar):
             if labels_loaded is True:
+                # 如果存在缓存直接从缓存读取
                 l = self.labels[i]
             else:
+                # 从文件读取标签信息
                 try:
                     with open(file, "r") as f:
+                        # 读取每一行label，并按空格划分数据
                         l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)
-                except:
+                except Exception as e:
+                    print("An error occurred while loading the file {}: {}".format(file, e))
                     nm += 1  # file missing
                     continue
 
             # 如果标注信息不为空的话
             if l.shape[0]:
+                # 标签信息每行必须是五个值[class, x, y, w, h]
                 assert l.shape[1] == 5, "> 5 label columns: %s" % file
                 assert (l >= 0).all(), "negative labels: %s" % file
                 assert (l[:, 1:] <= 1).all(), "non-normalized or out of bounds coordinate labels: %s" % file
@@ -184,19 +216,9 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                     nd += 1
                 if single_cls:
                     l[:, 0] = 0  # force dataset into single-class mode
+
                 self.labels[i] = l
                 nf += 1  # file found
-
-                # create subdataset (a smaller dataset)
-                if create_datasubset and ns < 1E4:
-                    if ns == 0:
-                        create_folder(path="./datasubset")
-                        os.makedirs("./datasubset/images")
-                    exclude_classes = 43
-                    if exclude_classes not in l[:, 0]:
-                        ns += 1
-                        with open("./datasubset/images.txt", "a") as f:
-                            f.write(self.img_files[i] + "\n")
 
                 # Extract object detection boxes for a second stage classifier
                 if extract_bounding_boxes:
@@ -213,7 +235,7 @@ class LoadImageAndLabels(Dataset):  # for training/testing
                         b = x[1:] * [w, h, w, h]  # box
                         # 将宽和高设置为宽和高中的最大值
                         b[2:] = b[2:].max()  # rectangle to square
-                        # 在宽和高方向添加padding
+                        # 放大裁剪目标的宽高
                         b[2:] = b[2:] * 1.3 + 30  # pad
                         # 将坐标格式从 x,y,w,h -> xmin,ymin,xmax,ymax
                         b = xywh2xyxy(b.reshape(-1, 4)).revel().astype(np.int)
@@ -227,9 +249,10 @@ class LoadImageAndLabels(Dataset):  # for training/testing
 
             # 处理进度条只在第一个进程中显示
             if rank in [-1, 0]:
-                pbar.desc = "Caching labels %s (%g found, %g missing, %g empty, %g duplicate, for %g images)" % (
-                    s, nf, nm, ne, nd, n)
-        assert nf > 0 or n == 20288, "No labels found in %s. See %s" % (os.path.dirname(file) + os.sep, help_url)
+                # 更新进度条描述信息
+                pbar.desc = "Caching labels (%g found, %g missing, %g empty, %g duplicate, for %g images)" % (
+                    nf, nm, ne, nd, n)
+        assert nf > 0, "No labels found in %s." % os.path.dirname(self.label_files[0]) + os.sep
 
         # 如果标签信息没有被保存成numpy的格式，且训练样本数大于1000则将标签信息保存成numpy的格式
         if not labels_loaded and n > 1000:
@@ -239,12 +262,17 @@ class LoadImageAndLabels(Dataset):  # for training/testing
         # Cache images into memory for faster training (Warning: large datasets may exceed system RAM)
         if cache_images:  # if training
             gb = 0  # Gigabytes of cached images 用于记录缓存图像占用RAM大小
-            pbar = tqdm(range(len(self.img_files)), desc="Caching images")
+            if rank in [-1, 0]:
+                pbar = tqdm(range(len(self.img_files)), desc="Caching images")
+            else:
+                pbar = range(len(self.img_files))
+
             self.img_hw0, self.img_hw = [None] * n, [None] * n
             for i in pbar:  # max 10k images
                 self.imgs[i], self.img_hw0[i], self.img_hw[i] = load_image(self, i)  # img, hw_original, hw_resized
                 gb += self.imgs[i].nbytes  # 用于记录缓存图像占用RAM大小
-                pbar.desc = "Caching images (%.1fGB)" % (gb / 1E9)
+                if rank in [-1, 0]:
+                    pbar.desc = "Caching images (%.1fGB)" % (gb / 1E9)
 
         # Detect corrupted images https://medium.com/joelthchao/programmatically-detect-corrupted-image-8c1b2006c3d3
         detect_corrupted_images = False
@@ -253,16 +281,13 @@ class LoadImageAndLabels(Dataset):  # for training/testing
             for file in tqdm(self.img_files, desc="Detecting corrupted images"):
                 try:
                     _ = io.imread(file)
-                except:
-                    print("Corrupted image detected: %s" % file)
+                except Exception as e:
+                    print("Corrupted image detected: {}, {}".format(file, e))
 
     def __len__(self):
         return len(self.img_files)
 
     def __getitem__(self, index):
-        if self.image_weights:
-            index = self.indices[index]
-
         hyp = self.hyp
         if self.mosaic:
             # load mosaic
@@ -375,6 +400,7 @@ def load_image(self, index):
         img = cv2.imread(path)  # BGR
         assert img is not None, "Image Not Found " + path
         h0, w0 = img.shape[:2]  # orig hw
+        # img_size 设置的是预处理后输出的图片尺寸
         r = self.img_size / max(h0, w0)  # resize image to img_size
         if r != 1:  # always resize down, only resize up if training with augmentation
             interp = cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR
