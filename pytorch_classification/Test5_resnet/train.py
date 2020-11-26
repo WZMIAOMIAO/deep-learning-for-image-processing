@@ -10,7 +10,7 @@ from model import resnet34, resnet101
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(device)
+    print("using {} device.".format(device))
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -23,9 +23,9 @@ def main():
                                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = data_root + "/data_set/flower_data/"  # flower data set path
-
-    train_dataset = datasets.ImageFolder(root=image_path+"train",
+    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    assert os.path.exists(image_path), "{} path does not exist.".format(image_path)
+    train_dataset = datasets.ImageFolder(root=os.path.join(image_path, "train"),
                                          transform=data_transform["train"])
     train_num = len(train_dataset)
 
@@ -42,22 +42,27 @@ def main():
                                                batch_size=batch_size, shuffle=True,
                                                num_workers=0)
 
-    validate_dataset = datasets.ImageFolder(root=image_path + "val",
+    validate_dataset = datasets.ImageFolder(root=os.path.join(image_path, "val"),
                                             transform=data_transform["val"])
     val_num = len(validate_dataset)
     validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                                   batch_size=batch_size, shuffle=False,
                                                   num_workers=0)
 
+    print("using {} images for training, {} images fot validation.".format(train_num,
+                                                                           val_num))
+    
     net = resnet34()
     # load pretrain weights
+    # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = "./resnet34-pre.pth"
+    assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
     missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path), strict=False)
     # for param in net.parameters():
     #     param.requires_grad = False
     # change fc layer structure
-    inchannel = net.fc.in_features
-    net.fc = nn.Linear(inchannel, 5)
+    in_channel = net.fc.in_features
+    net.fc = nn.Linear(in_channel, 5)
     net.to(device)
 
     loss_function = nn.CrossEntropyLoss()
