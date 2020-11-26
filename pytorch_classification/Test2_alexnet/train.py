@@ -12,7 +12,7 @@ import time
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(device)
+    print("using {} device.".format(device))
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -24,8 +24,9 @@ def main():
                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])}
 
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = data_root + "/data_set/flower_data/"  # flower data set path
-    train_dataset = datasets.ImageFolder(root=image_path + "/train",
+    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    assert os.path.exists(image_path), "{} path does not exist.".format(image_path)
+    train_dataset = datasets.ImageFolder(root=os.path.join(image_path, "train"),
                                          transform=data_transform["train"])
     train_num = len(train_dataset)
 
@@ -42,13 +43,15 @@ def main():
                                                batch_size=batch_size, shuffle=True,
                                                num_workers=0)
 
-    validate_dataset = datasets.ImageFolder(root=image_path + "/val",
+    validate_dataset = datasets.ImageFolder(root=os.path.join(image_path, "val"),
                                             transform=data_transform["val"])
     val_num = len(validate_dataset)
     validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                                   batch_size=4, shuffle=False,
                                                   num_workers=0)
 
+    print("using {} images for training, {} images fot validation.".format(train_num,
+                                                                           val_num))
     # test_data_iter = iter(validate_loader)
     # test_image, test_label = test_data_iter.next()
     #

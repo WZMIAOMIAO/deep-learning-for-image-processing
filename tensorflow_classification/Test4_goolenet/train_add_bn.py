@@ -9,9 +9,11 @@ import numpy as np
 
 def main():
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = data_root + "/data_set/flower_data/"  # flower data set path
-    train_dir = image_path + "train"
-    validation_dir = image_path + "val"
+    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    train_dir = os.path.join(image_path, "train")
+    validation_dir = os.path.join(image_path, "val")
+    assert os.path.exists(train_dir), "cannot find {}".format(train_dir)
+    assert os.path.exists(validation_dir), "cannot find {}".format(validation_dir)
 
     # create direction for saving weights
     if not os.path.exists("save_weights"):
@@ -59,10 +61,15 @@ def main():
                                                                   target_size=(im_height, im_width),
                                                                   class_mode='categorical')
     total_val = val_data_gen.n
+    print("using {} images for training, {} images for validation.".format(total_train,
+                                                                           total_val))
 
     model = InceptionV1(im_height=im_height, im_width=im_width, class_num=5, aux_logits=True)
     # model.build((batch_size, 224, 224, 3))  # when using subclass model
-    model.load_weights("pretrain_weights.ckpt")
+
+    pre_weights_path = './pretrain_weights.ckpt'
+    assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
+    model.load_weights(pre_weights_path)
     model.summary()
 
     # using keras low level api for training
