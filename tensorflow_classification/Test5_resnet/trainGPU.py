@@ -21,9 +21,11 @@ def main():
             exit(-1)
 
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = data_root + "/data_set/flower_data/"  # flower data set path
-    train_dir = image_path + "train"
-    validation_dir = image_path + "val"
+    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    train_dir = os.path.join(image_path, "train")
+    validation_dir = os.path.join(image_path, "val")
+    assert os.path.exists(train_dir), "cannot find {}".format(train_dir)
+    assert os.path.exists(validation_dir), "cannot find {}".format(validation_dir)
 
     # create direction for saving weights
     if not os.path.exists("save_weights"):
@@ -35,7 +37,7 @@ def main():
     epochs = 30
 
     # class dict
-    data_class = [cla for cla in os.listdir(train_dir) if ".txt" not in cla]
+    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(data_root, cla))]
     class_num = len(data_class)
     class_dict = dict((value, index) for index, value in enumerate(data_class))
 
@@ -50,13 +52,19 @@ def main():
     train_image_list = glob.glob(train_dir+"/*/*.jpg")
     random.shuffle(train_image_list)
     train_num = len(train_image_list)
+    assert train_num > 0, "cannot find any .jpg file in {}".format(train_dir)
     train_label_list = [class_dict[path.split(os.path.sep)[-2]] for path in train_image_list]
 
     # load validation images list
     val_image_list = glob.glob(validation_dir+"/*/*.jpg")
     random.shuffle(val_image_list)
     val_num = len(val_image_list)
+    assert val_num > 0, "cannot find any .jpg file in {}".format(validation_dir)
     val_label_list = [class_dict[path.split(os.path.sep)[-2]] for path in val_image_list]
+
+    print("using {} images for training, {} images for validation.".format(train_num,
+                                                                           val_num))
+
 
     def process_train_img(img_path, label):
         label = tf.one_hot(label, depth=class_num)
