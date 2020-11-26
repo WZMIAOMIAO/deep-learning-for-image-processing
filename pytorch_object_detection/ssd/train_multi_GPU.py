@@ -136,6 +136,10 @@ def main(args):
             train_sampler.set_epoch(epoch)
         utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
         lr_scheduler.step()
+
+        # evaluate after every epoch
+        utils.evaluate(model, data_loader_test, device=device)
+
         if args.output_dir:
             # 只在主节点上执行保存权重操作
             save_on_master({
@@ -145,9 +149,6 @@ def main(args):
                 'args': args,
                 'epoch': epoch},
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
-
-        # evaluate after every epoch
-        utils.evaluate(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
