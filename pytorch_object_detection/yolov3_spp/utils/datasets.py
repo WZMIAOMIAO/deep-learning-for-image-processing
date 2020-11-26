@@ -49,7 +49,7 @@ def exif_size(img):
     return s
 
 
-class LoadImageAndLabels(Dataset):  # for training/testing
+class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self,
                  path,   # 指向data/my_train_data.txt路径或data/my_val_data.txt路径
                  # 这里设置的是预处理后输出的图片尺寸

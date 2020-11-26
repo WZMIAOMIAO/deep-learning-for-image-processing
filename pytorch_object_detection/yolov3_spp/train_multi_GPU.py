@@ -157,19 +157,19 @@ def main(opt, hyp):
     # 训练集的图像尺寸指定为multi_scale_range中最大的尺寸
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
     with torch_distributed_zero_first(opt.rank):
-        train_dataset = LoadImageAndLabels(train_path, imgsz_train, batch_size,
-                                           augment=True,
-                                           hyp=hyp,  # augmentation hyperparameters
-                                           rect=opt.rect,  # rectangular training
-                                           cache_images=opt.cache_images,
-                                           single_cls=opt.single_cls,
-                                           rank=opt.rank)
+        train_dataset = LoadImagesAndLabels(train_path, imgsz_train, batch_size,
+                                            augment=True,
+                                            hyp=hyp,  # augmentation hyperparameters
+                                            rect=opt.rect,  # rectangular training
+                                            cache_images=opt.cache_images,
+                                            single_cls=opt.single_cls,
+                                            rank=opt.rank)
         # 验证集的图像尺寸指定为img_size(512)
-        val_dataset = LoadImageAndLabels(test_path, imgsz_test, batch_size,
-                                         hyp=hyp,
-                                         cache_images=opt.cache_images,
-                                         single_cls=opt.single_cls,
-                                         rank=opt.rank)
+        val_dataset = LoadImagesAndLabels(test_path, imgsz_test, batch_size,
+                                          hyp=hyp,
+                                          cache_images=opt.cache_images,
+                                          single_cls=opt.single_cls,
+                                          rank=opt.rank)
 
     # 给每个rank对应的进程分配训练的样本索引
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)

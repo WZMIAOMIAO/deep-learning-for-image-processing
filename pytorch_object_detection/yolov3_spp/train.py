@@ -144,19 +144,19 @@ def train(hyp):
 
     # dataset
     # 训练集的图像尺寸指定为multi_scale_range中最大的尺寸
-    train_dataset = LoadImageAndLabels(train_path, imgsz_train, batch_size,
-                                       augment=True,
-                                       hyp=hyp,  # augmentation hyperparameters
-                                       rect=opt.rect,  # rectangular training
-                                       cache_images=opt.cache_images,
-                                       single_cls=opt.single_cls)
+    train_dataset = LoadImagesAndLabels(train_path, imgsz_train, batch_size,
+                                        augment=True,
+                                        hyp=hyp,  # augmentation hyperparameters
+                                        rect=opt.rect,  # rectangular training
+                                        cache_images=opt.cache_images,
+                                        single_cls=opt.single_cls)
 
     # 验证集的图像尺寸指定为img_size(512)
-    val_dataset = LoadImageAndLabels(test_path, imgsz_test, batch_size,
-                                     hyp=hyp,
-                                     rect=True,  # 将每个batch的图像调整到合适大小，可减少运算量(并不是512x512标准尺寸)
-                                     cache_images=opt.cache_images,
-                                     single_cls=opt.single_cls)
+    val_dataset = LoadImagesAndLabels(test_path, imgsz_test, batch_size,
+                                      hyp=hyp,
+                                      rect=True,  # 将每个batch的图像调整到合适大小，可减少运算量(并不是512x512标准尺寸)
+                                      cache_images=opt.cache_images,
+                                      single_cls=opt.single_cls)
 
     # dataloader
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
