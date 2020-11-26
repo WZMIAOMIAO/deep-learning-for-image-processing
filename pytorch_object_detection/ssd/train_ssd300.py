@@ -110,9 +110,8 @@ def main(parser_data):
     learning_rate = []
     val_map = []
 
-    val_data = None
-    # 如果电脑内存充裕，可提前加载验证集数据，以免每次验证时都要重新加载一次数据，节省时间
-    # val_data = get_coco_api_from_dataset(val_data_loader.dataset)
+    # 提前加载验证集数据，以免每次验证时都要重新加载一次数据，节省时间
+    val_data = get_coco_api_from_dataset(val_data_loader.dataset)
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
         utils.train_one_epoch(model=model, optimizer=optimizer,
                               data_loader=train_data_loader,
@@ -157,7 +156,7 @@ if __name__ == '__main__':
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录
-    parser.add_argument('--data-path', default='../', help='dataset')
+    parser.add_argument('--data-path', default='./', help='dataset')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
