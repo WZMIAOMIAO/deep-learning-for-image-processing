@@ -36,7 +36,7 @@ def main():
     epochs = 30
 
     # class dict
-    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(data_root, cla))]
+    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, cla))]
     class_num = len(data_class)
     class_dict = dict((value, index) for index, value in enumerate(data_class))
 
@@ -71,7 +71,8 @@ def main():
         image = tf.image.convert_image_dtype(image, tf.float32)
         image = tf.image.resize(image, [im_height, im_width])
         image = tf.image.random_flip_left_right(image)
-        image = (image - 0.5) / 0.5
+        # image = (image - 0.5) / 0.5
+        image = (image - 0.5) * 2.0
         return image, label
 
     def process_val_img(img_path, label):
@@ -80,7 +81,8 @@ def main():
         image = tf.image.decode_jpeg(image)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image = tf.image.resize(image, [im_height, im_width])
-        image = (image - 0.5) / 0.5
+        # image = (image - 0.5) / 0.5
+        image = (image - 0.5) * 2.0
         return image, label
 
     AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -98,6 +100,12 @@ def main():
 
     # 实例化模型
     model = MobileNetV2(num_classes=5)
+    pre_weights_path = './pretrain_weights.ckpt'
+    assert len(glob.glob(pre_weights_path + "*")), "cannot find {}".format(pre_weights_path)
+    model.load_weights(pre_weights_path)
+    for layer_t in model.layers[:-1]:
+        layer_t.trainable = False
+
     model.summary()
 
     # using keras low level api for training
