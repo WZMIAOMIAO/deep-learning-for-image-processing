@@ -122,8 +122,8 @@ def _resnet(block, blocks_num, im_width=224, im_height=224, num_classes=1000, in
     return model
 
 
-def resnet34(im_width=224, im_height=224, num_classes=1000):
-    return _resnet(BasicBlock, [3, 4, 6, 3], im_width, im_height, num_classes)
+def resnet34(im_width=224, im_height=224, num_classes=1000, include_top=True):
+    return _resnet(BasicBlock, [3, 4, 6, 3], im_width, im_height, num_classes, include_top)
 
 
 def resnet50(im_width=224, im_height=224, num_classes=1000, include_top=True):
