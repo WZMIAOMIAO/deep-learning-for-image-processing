@@ -1,11 +1,14 @@
+import os
+import json
+
 import torch
 from torchvision import transforms, datasets
-import json
-import os
-from model import MobileNetV2
 import numpy as np
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
+
+from model import MobileNetV2
 
 
 class ConfusionMatrix(object):
@@ -39,9 +42,9 @@ class ConfusionMatrix(object):
             FP = np.sum(self.matrix[i, :]) - TP
             FN = np.sum(self.matrix[:, i]) - TP
             TN = np.sum(self.matrix) - TP - FP - FN
-            Precision = round(TP / (TP + FP), 3)
-            Recall = round(TP / (TP + FN), 3)
-            Specificity = round(TN / (TN + FP), 3)
+            Precision = round(TP / (TP + FP), 3) if TP + FP != 0 else 0.
+            Recall = round(TP / (TP + FN), 3) if TP + FN != 0 else 0.
+            Specificity = round(TN / (TN + FP), 3) if TN + FP != 0 else 0.
             table.add_row([self.labels[i], Precision, Recall, Specificity])
         print(table)
 
@@ -111,7 +114,7 @@ if __name__ == '__main__':
     confusion = ConfusionMatrix(num_classes=5, labels=labels)
     net.eval()
     with torch.no_grad():
-        for val_data in validate_loader:
+        for val_data in tqdm(validate_loader):
             val_images, val_labels = val_data
             outputs = net(val_images.to(device))
             outputs = torch.softmax(outputs, dim=1)

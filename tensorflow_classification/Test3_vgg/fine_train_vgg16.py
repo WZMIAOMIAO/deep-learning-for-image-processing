@@ -4,6 +4,7 @@ from model import vgg
 import tensorflow as tf
 import json
 import os
+import glob
 
 
 def main():
@@ -68,7 +69,7 @@ def main():
     model = vgg("vgg16", 224, 224, 5)
 
     pre_weights_path = './pretrain_weights.ckpt'
-    assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
+    assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)
     model.load_weights(pre_weights_path)
     for layer_t in model.layers:
         if layer_t.name == 'feature':

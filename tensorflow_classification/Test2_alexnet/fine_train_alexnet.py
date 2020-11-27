@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import json
 import os
+import glob
 from tensorflow.keras import layers, models, Model, Sequential
 
 
@@ -94,7 +95,7 @@ def main():
     model = AlexNet_pytorch(im_height=im_height, im_width=im_width, class_num=5)
 
     pre_weights_path = './pretrain_weights.ckpt'
-    assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
+    assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)
     model.load_weights(pre_weights_path)
     for layer_t in model.layers:
         if 'conv2d' in layer_t.name:
