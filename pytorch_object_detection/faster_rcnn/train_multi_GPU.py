@@ -1,20 +1,24 @@
-import torch
-import train_utils.train_eval_utils as utils
 import time
 import os
 import datetime
-from my_dataset import VOC2012DataSet
+
+import torch
+
 import transforms
-from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from my_dataset import VOC2012DataSet
 from backbone.resnet50_fpn_model import resnet50_fpn_backbone
 from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
-import torch.multiprocessing as mp
+import train_utils.train_eval_utils as utils
+from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from train_utils.distributed_utils import init_distributed_mode, save_on_master, mkdir
 
 
 def create_model(num_classes):
     backbone = resnet50_fpn_backbone()
+    # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
+    # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
     weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
@@ -33,7 +37,7 @@ def create_model(num_classes):
 def main(args):
     print(args)
     # mp.spawn(main_worker, args=(args,), nprocs=args.world_size, join=True)
-    utils.init_distributed_mode(args)
+    init_distributed_mode(args)
 
     device = torch.device(args.device)
 
@@ -47,6 +51,10 @@ def main(args):
     }
 
     VOC_root = args.data_path
+    # check voc root
+    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+
     # load train data set
     train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
 
@@ -71,12 +79,12 @@ def main(args):
 
     data_loader = torch.utils.data.DataLoader(
         train_data_set, batch_sampler=train_batch_sampler, num_workers=args.workers,
-        collate_fn=utils.collate_fn)
+        collate_fn=train_data_set.collate_fn)
 
     data_loader_test = torch.utils.data.DataLoader(
         val_data_set, batch_size=1,
         sampler=test_sampler, num_workers=args.workers,
-        collate_fn=utils.collate_fn)
+        collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
     model = create_model(num_classes=21)
@@ -118,7 +126,7 @@ def main(args):
         lr_scheduler.step()
         if args.output_dir:
             # 只在主节点上执行保存权重操作
-            utils.save_on_master({
+            save_on_master({
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
@@ -135,7 +143,13 @@ def main(args):
 
 
 if __name__ == "__main__":
+    version = torch.version.__version__[:5]  # example: 1.6.0
+    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
+    if version < "1.6.0":
+        raise EnvironmentError("pytorch version must be 1.6.0 or above")
+
     import argparse
+
     parser = argparse.ArgumentParser(
         description=__doc__)
 
@@ -157,7 +171,7 @@ if __name__ == "__main__":
     # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.02 / 8 * num_GPU
     parser.add_argument('--lr', default=0.02, type=float,
                         help='initial learning rate, 0.02 is the default value for training '
-                        'on 8 gpus and 2 images_per_gpu')
+                             'on 8 gpus and 2 images_per_gpu')
     # SGD的momentum参数
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
@@ -195,6 +209,6 @@ if __name__ == "__main__":
 
     # 如果指定了保存文件地址，检查文件夹是否存在，若不存在，则创建
     if args.output_dir:
-        utils.mkdir(args.output_dir)
+        mkdir(args.output_dir)
 
     main(args)

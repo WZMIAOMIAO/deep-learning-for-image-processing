@@ -1,9 +1,8 @@
 import json
-import tempfile
+import copy
+from collections import defaultdict
 
 import numpy as np
-import copy
-import time
 import torch
 import torch._six
 
@@ -11,9 +10,7 @@ from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
 import pycocotools.mask as mask_util
 
-from collections import defaultdict
-
-from train_utils import train_eval_utils as utils
+from train_utils.distributed_utils import all_gather
 
 
 class CocoEvaluator(object):
@@ -77,11 +74,6 @@ class CocoEvaluator(object):
 
             # xmin, ymin, xmax, ymax
             boxes = prediction["boxes"]
-            # 将box的相对坐标信息（0-1）转为绝对值坐标
-            height_width = prediction["height_width"]
-            # height_width = [300, 300]
-            boxes[:, [0, 2]] = boxes[:, [0, 2]] * height_width[1]
-            boxes[:, [1, 3]] = boxes[:, [1, 3]] * height_width[0]
             boxes = convert_to_xywh(boxes)
             boxes = boxes.tolist()
             scores = prediction["scores"].tolist()
@@ -168,8 +160,8 @@ def convert_to_xywh(boxes):
 
 
 def merge(img_ids, eval_imgs):
-    all_img_ids = utils.all_gather(img_ids)
-    all_eval_imgs = utils.all_gather(eval_imgs)
+    all_img_ids = all_gather(img_ids)
+    all_eval_imgs = all_gather(eval_imgs)
 
     merged_img_ids = []
     for p in all_img_ids:

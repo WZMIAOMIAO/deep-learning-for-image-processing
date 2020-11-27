@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 import torch
 import torchvision
 import torch.utils.data
@@ -12,7 +14,7 @@ def convert_to_coco_api(ds):
     categories = set()
     for img_idx in range(len(ds)):
         # find better way to get target
-        img, targets = ds[img_idx]
+        targets = ds.coco_index(img_idx)
         image_id = targets["image_id"].item()
         img_dict = {}
         img_dict['id'] = image_id
@@ -21,7 +23,11 @@ def convert_to_coco_api(ds):
         img_dict['height'] = targets["height_width"][0]
         img_dict['width'] = targets["height_width"][1]
         dataset['images'].append(img_dict)
+
+        # xmin, ymin, xmax, ymax
         bboxes = targets["boxes"]
+
+        # (xmin, ymin, xmax, ymax) to (xmin, ymin, w, h)
         bboxes[:, 2:] -= bboxes[:, :2]
         # 将box的相对坐标信息（0-1）转为绝对值坐标
         bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * img_dict["width"]

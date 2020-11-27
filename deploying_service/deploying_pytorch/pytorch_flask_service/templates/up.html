@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML5上传图片并预览</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+</head>
+<body>
+<!--<h3>请选择图片文件：PNG/JPG/JPEG/SVG/GIF</h3>-->
+<div style="text-align: left;margin-left:500px;margin-top:100px;" >
+    <div style="float:left;">
+        <a href="javascript:;" class="file">选择文件
+            <input type="file" name="file" id="file0"><br>
+        </a>
+        <img src="" id="img0" style="margin-top:20px;width: 35rem;height: 30rem;">
+    </div>
+    <div style="float:left;margin-left:50px;">
+        <input type="button" id="b0" onclick="test()" value="预测">
+        <pre  id="out" style="width:320px;height:50px;line-height: 50px;margin-top:20px;"></pre>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $("#file0").change(function(){
+        var objUrl = getObjectURL(this.files[0]) ;//获取文件信息
+        console.log("objUrl = "+objUrl);
+        if (objUrl) {
+            $("#img0").attr("src", objUrl);
+        }
+    });
+
+    function test() {
+        var fileobj = $("#file0")[0].files[0];
+        console.log(fileobj);
+        var form = new FormData();
+        form.append("file", fileobj);
+        var out='';
+        var flower='';
+        $.ajax({
+            type: 'POST',
+            url: "predict",
+            data: form,
+            async: false,       //同步执行
+            processData: false, // 告诉jquery要传输data对象
+            contentType: false, //告诉jquery不需要增加请求头对于contentType的设置
+            success: function (arg) {
+            console.log(arg)
+            out = arg.result;
+        },error:function(){
+                console.log("后台处理错误");
+            }
+    });
+
+        out.forEach(e=>{
+            flower+=`<div style="border-bottom: 1px solid #CCCCCC;line-height: 60px;font-size:16px;">${e}</div>`
+        });
+
+        document.getElementById("out").innerHTML=flower;
+
+    }
+
+    function getObjectURL(file) {
+        var url = null;
+        if(window.createObjectURL!=undefined) {
+            url = window.createObjectURL(file) ;
+        }else if (window.URL!=undefined) { // mozilla(firefox)
+            url = window.URL.createObjectURL(file) ;
+        }else if (window.webkitURL!=undefined) { // webkit or chrome
+            url = window.webkitURL.createObjectURL(file) ;
+        }
+        return url ;
+    }
+</script>
+<style>
+    .file {
+        position: relative;
+        /*display: inline-block;*/
+        background: #CCC ;
+        border: 1px solid #CCC;
+        padding: 4px 4px;
+        overflow: hidden;
+        text-decoration: none;
+        text-indent: 0;
+        width:100px;
+        height:30px;
+        line-height: 30px;
+        border-radius: 5px;
+        color: #333;
+        font-size: 13px;
+
+    }
+    .file input {
+        position: absolute;
+        font-size: 13px;
+        right: 0;
+        top: 0;
+        opacity: 0;
+        border: 1px solid #333;
+        padding: 4px 4px;
+        overflow: hidden;
+        text-indent: 0;
+        width:100px;
+        height:30px;
+        line-height: 30px;
+        border-radius: 5px;
+        color: #FFFFFF;
+
+    }
+    #b0{
+        background: #1899FF;
+        border: 1px solid #CCC;
+        padding: 4px 10px;
+        overflow: hidden;
+        text-indent: 0;
+        width:60px;
+        height:28px;
+        line-height: 20px;
+        border-radius: 5px;
+        color: #FFFFFF;
+        font-size: 13px;
+    }
+
+    /*.gradient{*/
+
+        /*filter:alpha(opacity=100 finishopacity=50 style=1 startx=0,starty=0,finishx=0,finishy=150) progid:DXImageTransform.Microsoft.gradient(startcolorstr=#fff,endcolorstr=#ccc,gradientType=0);*/
+        /*-ms-filter:alpha(opacity=100 finishopacity=50 style=1 startx=0,starty=0,finishx=0,finishy=150) progid:DXImageTransform.Microsoft.gradient(startcolorstr=#fff,endcolorstr=#ccc,gradientType=0);!*IE8*!*/
+        /*background:#1899FF; !* 一些不支持背景渐变的浏览器 *!*/
+        /*background:-moz-linear-gradient(top, #fff, #1899FF);*/
+        /*background:-webkit-gradient(linear, 0 0, 0 bottom, from(#fff), to(#ccc));*/
+        /*background:-o-linear-gradient(top, #fff, #ccc);*/
+    /*}*/
+</style>
+</body>
+</html>
+
+

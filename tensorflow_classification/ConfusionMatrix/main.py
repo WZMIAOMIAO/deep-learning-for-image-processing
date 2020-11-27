@@ -1,12 +1,16 @@
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import matplotlib.pyplot as plt
-from model import MobileNetV2
-import tensorflow as tf
-import json
 import os
 import math
+import json
+import glob
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+import tensorflow as tf
 import numpy as np
+from tqdm import tqdm
 from prettytable import PrettyTable
+
+from model import MobileNetV2
 
 
 class ConfusionMatrix(object):
@@ -40,9 +44,9 @@ class ConfusionMatrix(object):
             FP = np.sum(self.matrix[i, :]) - TP
             FN = np.sum(self.matrix[:, i]) - TP
             TN = np.sum(self.matrix) - TP - FP - FN
-            Precision = round(TP / (TP + FP), 3)
-            Recall = round(TP / (TP + FN), 3)
-            Specificity = round(TN / (TN + FP), 3)
+            Precision = round(TP / (TP + FP), 3) if TP + FP != 0 else 0.
+            Recall = round(TP / (TP + FN), 3) if TP + FN != 0 else 0.
+            Specificity = round(TN / (TN + FP), 3) if TN + FP != 0 else 0.
             table.add_row([self.labels[i], Precision, Recall, Specificity])
         print(table)
 
@@ -77,8 +81,9 @@ class ConfusionMatrix(object):
 
 if __name__ == '__main__':
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = data_root + "/data_set/flower_data/"  # flower data set path
-    validation_dir = image_path + "val"
+    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    validation_dir = os.path.join(image_path, "val")
+    assert os.path.exists(validation_dir), "cannot find {}".format(validation_dir)
 
     im_height = 224
     im_width = 224
@@ -106,21 +111,21 @@ if __name__ == '__main__':
 
     model = MobileNetV2(num_classes=5)
     # feature.build((None, 224, 224, 3))  # when using subclass model
-    model.load_weights('MobileNetV2.ckpt')
+    pre_weights_path = './myMobileNet.ckpt'
+    assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)
+    model.load_weights(pre_weights_path)
 
     # read class_indict
-    try:
-        json_file = open('./class_indices.json', 'r')
-        class_indict = json.load(json_file)
-    except Exception as e:
-        print(e)
-        exit(-1)
+    label_path = './class_indices.json'
+    assert os.path.exists(label_path), "cannot find {}".format(label_path)
+    json_file = open(label_path, 'r')
+    class_indict = json.load(json_file)
 
     labels = [label for _, label in class_indict.items()]
     confusion = ConfusionMatrix(num_classes=5, labels=labels)
 
     # validate
-    for step in range(math.ceil(total_val / batch_size)):
+    for step in tqdm(range(math.ceil(total_val / batch_size))):
         val_images, val_labels = next(val_data_gen)
         results = model.predict_on_batch(val_images)
         results = tf.keras.layers.Softmax()(results).numpy()

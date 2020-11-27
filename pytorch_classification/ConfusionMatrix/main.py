@@ -1,11 +1,14 @@
+import os
+import json
+
 import torch
 from torchvision import transforms, datasets
-import json
-import os
-from model import MobileNetV2
 import numpy as np
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
+
+from model import MobileNetV2
 
 
 class ConfusionMatrix(object):
@@ -39,9 +42,9 @@ class ConfusionMatrix(object):
             FP = np.sum(self.matrix[i, :]) - TP
             FN = np.sum(self.matrix[:, i]) - TP
             TN = np.sum(self.matrix) - TP - FP - FN
-            Precision = round(TP / (TP + FP), 3)
-            Recall = round(TP / (TP + FN), 3)
-            Specificity = round(TN / (TN + FP), 3)
+            Precision = round(TP / (TP + FP), 3) if TP + FP != 0 else 0.
+            Recall = round(TP / (TP + FN), 3) if TP + FN != 0 else 0.
+            Specificity = round(TN / (TN + FP), 3) if TN + FP != 0 else 0.
             table.add_row([self.labels[i], Precision, Recall, Specificity])
         print(table)
 
@@ -84,9 +87,10 @@ if __name__ == '__main__':
                                          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = data_root + "/data_set/flower_data/"  # flower data set path
+    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    assert os.path.exists(image_path), "data path {} does not exist.".format(image_path)
 
-    validate_dataset = datasets.ImageFolder(root=image_path + "val",
+    validate_dataset = datasets.ImageFolder(root=os.path.join(image_path, "val"),
                                             transform=data_transform)
 
     batch_size = 16
@@ -96,22 +100,21 @@ if __name__ == '__main__':
     net = MobileNetV2(num_classes=5)
     # load pretrain weights
     model_weight_path = "./MobileNetV2.pth"
+    assert os.path.exists(model_weight_path), "cannot find {} file".format(model_weight_path)
     net.load_state_dict(torch.load(model_weight_path, map_location=device))
     net.to(device)
 
     # read class_indict
-    try:
-        json_file = open('./class_indices.json', 'r')
-        class_indict = json.load(json_file)
-    except Exception as e:
-        print(e)
-        exit(-1)
+    json_label_path = './class_indices.json'
+    assert os.path.exists(json_label_path), "cannot find {} file".format(json_label_path)
+    json_file = open(json_label_path, 'r')
+    class_indict = json.load(json_file)
 
     labels = [label for _, label in class_indict.items()]
     confusion = ConfusionMatrix(num_classes=5, labels=labels)
     net.eval()
     with torch.no_grad():
-        for val_data in validate_loader:
+        for val_data in tqdm(validate_loader):
             val_images, val_labels = val_data
             outputs = net(val_images.to(device))
             outputs = torch.softmax(outputs, dim=1)

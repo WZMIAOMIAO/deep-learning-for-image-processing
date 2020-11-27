@@ -1,5 +1,4 @@
 import torch
-import torchvision
 import torch.nn.functional as F
 from network_files import boxes as box_ops, det_utils
 from torch import nn, Tensor
@@ -7,7 +6,7 @@ from torch.jit.annotations import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
-    # type: (Tensor, Tensor, List[Tensor], List[Tensor])
+    # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
     """
     Computes the loss for Faster R-CNN.
 
@@ -32,7 +31,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     # the corresponding ground truth labels, to be used with
     # advanced indexing
     # 返回标签类别大于0的索引
-    sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
+    sampled_pos_inds_subset = torch.nonzero(torch.gt(labels, 0)).squeeze(1)
 
     # 返回标签类别大于0位置的类别信息
     labels_pos = labels[sampled_pos_inds_subset]
@@ -61,44 +60,44 @@ class RoIHeads(torch.nn.Module):
     }
 
     def __init__(self,
-                 box_roi_pool,
-                 box_head,
-                 box_predictor,
+                 box_roi_pool,   # Multi-scale RoIAlign pooling
+                 box_head,       # TwoMLPHead
+                 box_predictor,  # FastRCNNPredictor
                  # Faster R-CNN training
-                 fg_iou_thresh, bg_iou_thresh,
-                 batch_size_per_image, positive_fraction,
-                 bbox_reg_weights,
+                 fg_iou_thresh, bg_iou_thresh,  # default: 0.5, 0.5
+                 batch_size_per_image, positive_fraction,  # default: 512, 0.25
+                 bbox_reg_weights,  # None
                  # Faster R-CNN inference
-                 score_thresh,
-                 nms_thresh,
-                 detection_per_img):
+                 score_thresh,        # default: 0.05
+                 nms_thresh,          # default: 0.5
+                 detection_per_img):  # default: 100
         super(RoIHeads, self).__init__()
 
         self.box_similarity = box_ops.box_iou
         # assign ground-truth boxes for each proposal
         self.proposal_matcher = det_utils.Matcher(
-            fg_iou_thresh,  # 0.5
-            bg_iou_thresh,  # 0.5
+            fg_iou_thresh,  # default: 0.5
+            bg_iou_thresh,  # default: 0.5
             allow_low_quality_matches=False)
 
         self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
-            batch_size_per_image,  # 512
-            positive_fraction)     # 0.25
+            batch_size_per_image,  # default: 512
+            positive_fraction)     # default: 0.25
 
         if bbox_reg_weights is None:
             bbox_reg_weights = (10., 10., 5., 5.)
         self.box_coder = det_utils.BoxCoder(bbox_reg_weights)
 
-        self.box_roi_pool = box_roi_pool
-        self.box_head = box_head
-        self.box_predictor = box_predictor
+        self.box_roi_pool = box_roi_pool    # Multi-scale RoIAlign pooling
+        self.box_head = box_head            # TwoMLPHead
+        self.box_predictor = box_predictor  # FastRCNNPredictor
 
-        self.score_thresh = score_thresh
-        self.nms_thresh = nms_thresh
-        self.detection_per_img = detection_per_img
+        self.score_thresh = score_thresh  # default: 0.05
+        self.nms_thresh = nms_thresh      # default: 0.5
+        self.detection_per_img = detection_per_img  # default: 100
 
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
-        # type: (List[Tensor], List[Tensor], List[Tensor])
+        # type: (List[Tensor], List[Tensor], List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
         为每个proposal匹配对应的gt_box，并划分到正负样本中
         Args:
@@ -141,19 +140,19 @@ class RoIHeads(torch.nn.Module):
                 # label background (below the low threshold)
                 # 将gt索引为-1的类别设置为0，即背景，负样本
                 bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD  # -1
-                labels_in_image[bg_inds] = torch.tensor(0)
+                labels_in_image[bg_inds] = 0
 
                 # label ignore proposals (between low and high threshold)
                 # 将gt索引为-2的类别设置为-1, 即废弃样本
                 ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS  # -2
-                labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
+                labels_in_image[ignore_inds] = -1  # -1 is ignored by sampler
 
             matched_idxs.append(clamped_matched_idxs_in_image)
             labels.append(labels_in_image)
         return matched_idxs, labels
 
     def subsample(self, labels):
-        # type: (List[Tensor])
+        # type: (List[Tensor]) -> List[Tensor]
         # BalancedPositiveNegativeSampler
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
         sampled_inds = []
@@ -165,7 +164,7 @@ class RoIHeads(torch.nn.Module):
         return sampled_inds
 
     def add_gt_proposals(self, proposals, gt_boxes):
-        # type: (List[Tensor], List[Tensor])
+        # type: (List[Tensor], List[Tensor]) -> List[Tensor]
         """
         将gt_boxes拼接到proposal后面
         Args:
@@ -181,21 +180,17 @@ class RoIHeads(torch.nn.Module):
         ]
         return proposals
 
-    def DELTEME_all(self, the_list):
-        # type: (List[bool])
-        for i in the_list:
-            if not i:
-                return False
-        return True
-
     def check_targets(self, targets):
-        # type: (Optional[List[Dict[str, Tensor]]])
+        # type: (Optional[List[Dict[str, Tensor]]]) -> None
         assert targets is not None
-        assert self.DELTEME_all(["boxes" in t for t in targets])
-        assert self.DELTEME_all(["labels" in t for t in targets])
+        assert all(["boxes" in t for t in targets])
+        assert all(["labels" in t for t in targets])
 
-    def select_training_samples(self, proposals, targets):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
+    def select_training_samples(self,
+                                proposals,  # type: List[Tensor]
+                                targets     # type: Optional[List[Dict[str, Tensor]]]
+                                ):
+        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
         """
         划分正负样本，统计对应gt的标签以及边界框回归信息
         list元素个数为batch_size
@@ -250,8 +245,13 @@ class RoIHeads(torch.nn.Module):
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
         return proposals, matched_idxs, labels, regression_targets
 
-    def postprocess_detections(self, class_logits, box_regression, proposals, image_shapes):
-        # type: (Tensor, Tensor, List[Tensor], List[Tuple[int, int]])
+    def postprocess_detections(self,
+                               class_logits,    # type: Tensor
+                               box_regression,  # type: Tensor
+                               proposals,       # type: List[Tensor]
+                               image_shapes     # type: List[Tuple[int, int]]
+                               ):
+        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]
         """
         对网络的预测数据进行后处理，包括
         （1）根据proposal以及预测的回归参数计算出最终bbox坐标
@@ -313,7 +313,8 @@ class RoIHeads(torch.nn.Module):
 
             # remove low scoring boxes
             # 移除低概率目标，self.scores_thresh=0.05
-            inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
+            # gt: Computes input > other element-wise.
+            inds = torch.nonzero(torch.gt(scores, self.score_thresh)).squeeze(1)
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 
             # remove empty boxes
@@ -336,8 +337,13 @@ class RoIHeads(torch.nn.Module):
 
         return all_boxes, all_scores, all_labels
 
-    def forward(self, features, proposals, image_shapes, targets=None):
-        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]], Optional[List[Dict[str, Tensor]]])
+    def forward(self,
+                features,       # type: Dict[str, Tensor]
+                proposals,      # type: List[Tensor]
+                image_shapes,   # type: List[Tuple[int, int]]
+                targets=None    # type: Optional[List[Dict[str, Tensor]]]
+                ):
+        # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
         Arguments:
             features (List[Tensor])
@@ -361,7 +367,7 @@ class RoIHeads(torch.nn.Module):
             regression_targets = None
             matched_idxs = None
 
-        # 将采集样本通过roi_pooling层
+        # 将采集样本通过Multi-scale RoIAlign pooling层
         box_features = self.box_roi_pool(features, proposals, image_shapes)
         # 通过roi_pooling后的两层全连接层
         box_features = self.box_head(box_features)

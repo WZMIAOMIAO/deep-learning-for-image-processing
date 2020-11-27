@@ -1,8 +1,10 @@
-from src.ssd_model import SSD300, Backbone
+import os
+
 import torch
+
 import transform
 from my_dataset import VOC2012DataSet
-import os
+from src.ssd_model import SSD300, Backbone
 import train_utils.train_eval_utils as utils
 from train_utils.coco_utils import get_coco_api_from_dataset
 
@@ -15,6 +17,8 @@ def create_model(num_classes=21, device=torch.device('cpu')):
 
     # https://ngc.nvidia.com/catalog/models -> search ssd -> download FP32
     pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
+    if os.path.exists(pre_ssd_path) is False:
+        raise FileNotFoundError("nvidia_ssdpyt_fp32.pt not find in {}".format(pre_ssd_path))
     pre_model_dict = torch.load(pre_ssd_path, map_location=device)
     pre_weights_dict = pre_model_dict["model"]
 
@@ -36,7 +40,7 @@ def create_model(num_classes=21, device=torch.device('cpu')):
 
 def main(parser_data):
     device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
-    print(device)
+    print("Using {} device training.".format(device.type))
 
     if not os.path.exists("save_weights"):
         os.mkdir("save_weights")
@@ -55,20 +59,31 @@ def main(parser_data):
     }
 
     VOC_root = parser_data.data_path
+    # check voc root
+    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+
     train_dataset = VOC2012DataSet(VOC_root, data_transform['train'], train_set='train.txt')
     # 注意训练时，batch_size必须大于1
+    batch_size = parser_data.batch_size
+    assert batch_size > 1, "batch size must be greater than 1"
+    # 防止最后一个batch_size=1，如果最后一个batch_size=1就舍去
+    drop_last = True if len(train_dataset) % batch_size == 1 else False
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    print('Using %g dataloader workers' % nw)
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
-                                                    batch_size=8,
+                                                    batch_size=batch_size,
                                                     shuffle=True,
-                                                    num_workers=4,
-                                                    collate_fn=utils.collate_fn)
+                                                    num_workers=nw,
+                                                    collate_fn=train_dataset.collate_fn,
+                                                    drop_last=drop_last)
 
     val_dataset = VOC2012DataSet(VOC_root, data_transform['val'], train_set='val.txt')
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
-                                                  batch_size=1,
+                                                  batch_size=batch_size,
                                                   shuffle=False,
-                                                  num_workers=0,
-                                                  collate_fn=utils.collate_fn)
+                                                  num_workers=nw,
+                                                  collate_fn=train_dataset.collate_fn)
 
     model = create_model(num_classes=21, device=device)
     model.to(device)
@@ -95,9 +110,8 @@ def main(parser_data):
     learning_rate = []
     val_map = []
 
-    val_data = None
-    # 如果电脑内存充裕，可提前加载验证集数据，以免每次验证时都要重新加载一次数据，节省时间
-    # val_data = get_coco_api_from_dataset(val_data_loader.dataset)
+    # 提前加载验证集数据，以免每次验证时都要重新加载一次数据，节省时间
+    val_data = get_coco_api_from_dataset(val_data_loader.dataset)
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
         utils.train_one_epoch(model=model, optimizer=optimizer,
                               data_loader=train_data_loader,
@@ -152,6 +166,9 @@ if __name__ == '__main__':
     # 训练的总epoch数
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
+    # 训练的batch size
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
+                        help='batch size when training.')
 
     args = parser.parse_args()
     print(args)
