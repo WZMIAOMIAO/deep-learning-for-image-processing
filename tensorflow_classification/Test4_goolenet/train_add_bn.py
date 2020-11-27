@@ -4,6 +4,7 @@ from model_add_bn import InceptionV1
 import tensorflow as tf
 import json
 import os
+import glob
 import numpy as np
 
 
@@ -68,7 +69,7 @@ def main():
     # model.build((batch_size, 224, 224, 3))  # when using subclass model
 
     pre_weights_path = './pretrain_weights.ckpt'
-    assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
+    assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)
     model.load_weights(pre_weights_path)
     model.summary()
 

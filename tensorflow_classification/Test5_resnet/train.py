@@ -4,6 +4,7 @@ from model import resnet50
 import tensorflow as tf
 import json
 import os
+import glob
 import PIL.Image as im
 import numpy as np
 
@@ -69,7 +70,7 @@ def main():
     # feature.build((None, 224, 224, 3))  # when using subclass model
 
     pre_weights_path = './pretrain_weights.ckpt'
-    assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
+    assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)
     feature.load_weights(pre_weights_path)
     feature.trainable = False
     feature.summary()

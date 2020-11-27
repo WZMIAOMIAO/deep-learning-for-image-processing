@@ -65,7 +65,6 @@ def main():
     print("using {} images for training, {} images for validation.".format(train_num,
                                                                            val_num))
 
-
     def process_train_img(img_path, label):
         label = tf.one_hot(label, depth=class_num)
         image = tf.io.read_file(img_path)
