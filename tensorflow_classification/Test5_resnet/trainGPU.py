@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from model import resnet34
+from model import resnet50
 import tensorflow as tf
 import json
 import os
@@ -33,11 +33,16 @@ def main():
 
     im_height = 224
     im_width = 224
+
+    _R_MEAN = 123.68
+    _G_MEAN = 116.78
+    _B_MEAN = 103.94
+
     batch_size = 32
     epochs = 30
 
     # class dict
-    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(data_root, cla))]
+    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, cla))]
     class_num = len(data_class)
     class_dict = dict((value, index) for index, value in enumerate(data_class))
 
@@ -49,6 +54,7 @@ def main():
         json_file.write(json_str)
 
     # load train images list
+    random.seed(0)
     train_image_list = glob.glob(train_dir+"/*/*.jpg")
     random.shuffle(train_image_list)
     train_num = len(train_image_list)
@@ -69,19 +75,23 @@ def main():
         label = tf.one_hot(label, depth=class_num)
         image = tf.io.read_file(img_path)
         image = tf.image.decode_jpeg(image)
-        image = tf.image.convert_image_dtype(image, tf.float32)
+        # image = tf.image.convert_image_dtype(image, tf.float32)
+        image = tf.cast(image, tf.float32)
         image = tf.image.resize(image, [im_height, im_width])
         image = tf.image.random_flip_left_right(image)
-        image = (image - 0.5) / 0.5
+        # image = (image - 0.5) / 0.5
+        image = image - [_R_MEAN, _G_MEAN, _B_MEAN]
         return image, label
 
     def process_val_img(img_path, label):
         label = tf.one_hot(label, depth=class_num)
         image = tf.io.read_file(img_path)
         image = tf.image.decode_jpeg(image)
-        image = tf.image.convert_image_dtype(image, tf.float32)
+        # image = tf.image.convert_image_dtype(image, tf.float32)
+        image = tf.cast(image, tf.float32)
         image = tf.image.resize(image, [im_height, im_width])
-        image = (image - 0.5) / 0.5
+        # image = (image - 0.5) / 0.5
+        image = image - [_R_MEAN, _G_MEAN, _B_MEAN]
         return image, label
 
     AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -98,7 +108,20 @@ def main():
                              .repeat().batch(batch_size)
 
     # 实例化模型
-    model = resnet34(num_classes=5)
+    feature = resnet50(num_classes=5, include_top=False)
+    pre_weights_path = './pretrain_weights.ckpt'
+    assert len(glob.glob(pre_weights_path + "*")), "cannot find {}".format(pre_weights_path)
+    feature.load_weights(pre_weights_path)
+    feature.trainable = False
+
+    model = tf.keras.Sequential([feature,
+                                 tf.keras.layers.GlobalAvgPool2D(),
+                                 tf.keras.layers.Dropout(rate=0.5),
+                                 tf.keras.layers.Dense(1024, activation="relu"),
+                                 tf.keras.layers.Dropout(rate=0.5),
+                                 tf.keras.layers.Dense(5),
+                                 tf.keras.layers.Softmax()])
+
     model.summary()
 
     # using keras low level api for training

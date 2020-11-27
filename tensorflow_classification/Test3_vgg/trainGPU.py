@@ -37,7 +37,7 @@ def main():
     epochs = 10
 
     # class dict
-    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(data_root, cla))]
+    data_class = [cla for cla in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, cla))]
     class_num = len(data_class)
     class_dict = dict((value, index) for index, value in enumerate(data_class))
 
