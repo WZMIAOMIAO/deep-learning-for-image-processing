@@ -39,16 +39,19 @@ def main():
         json_file.write(json_str)
 
     batch_size = 32
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    print('Using {} dataloader workers every process'.format(nw))
+
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size, shuffle=True,
-                                               num_workers=0)
+                                               num_workers=nw)
 
     validate_dataset = datasets.ImageFolder(root=os.path.join(image_path, "val"),
                                             transform=data_transform["val"])
     val_num = len(validate_dataset)
     validate_loader = torch.utils.data.DataLoader(validate_dataset,
                                                   batch_size=4, shuffle=False,
-                                                  num_workers=0)
+                                                  num_workers=nw)
 
     print("using {} images for training, {} images fot validation.".format(train_num,
                                                                            val_num))
