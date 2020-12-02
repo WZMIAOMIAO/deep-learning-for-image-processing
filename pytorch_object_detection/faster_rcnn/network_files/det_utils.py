@@ -4,7 +4,6 @@ from torch.jit.annotations import List, Tuple
 from torch import Tensor
 
 
-@torch.jit.script
 class BalancedPositiveNegativeSampler(object):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
@@ -85,7 +84,7 @@ class BalancedPositiveNegativeSampler(object):
         return pos_idx, neg_idx
 
 
-@torch.jit.script
+@torch.jit._script_if_tracing
 def encode_boxes(reference_boxes, proposals, weights):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """
@@ -137,7 +136,6 @@ def encode_boxes(reference_boxes, proposals, weights):
     return targets
 
 
-@torch.jit.script
 class BoxCoder(object):
     """
     This class encodes and decodes a set of bounding boxes into
@@ -263,7 +261,6 @@ class BoxCoder(object):
         return pred_boxes
 
 
-@torch.jit.script
 class Matcher(object):
     BELOW_LOW_THRESHOLD = -1
     BETWEEN_THRESHOLDS = -2
