@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from network_files import boxes as box_ops, det_utils
-from torch import nn, Tensor
+from torch import Tensor
 from torch.jit.annotations import Optional, List, Dict, Tuple
 
 
@@ -31,7 +31,8 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     # the corresponding ground truth labels, to be used with
     # advanced indexing
     # 返回标签类别大于0的索引
-    sampled_pos_inds_subset = torch.nonzero(torch.gt(labels, 0)).squeeze(1)
+    # sampled_pos_inds_subset = torch.nonzero(torch.gt(labels, 0)).squeeze(1)
+    sampled_pos_inds_subset = torch.where(torch.gt(labels, 0))[0]
 
     # 返回标签类别大于0位置的类别信息
     labels_pos = labels[sampled_pos_inds_subset]
@@ -159,7 +160,8 @@ class RoIHeads(torch.nn.Module):
         # 遍历每张图片的正负样本索引
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(zip(sampled_pos_inds, sampled_neg_inds)):
             # 记录所有采集样本索引（包括正样本和负样本）
-            img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
+            # img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
+            img_sampled_inds = torch.where(pos_inds_img | neg_inds_img)[0]
             sampled_inds.append(img_sampled_inds)
         return sampled_inds
 
@@ -314,7 +316,8 @@ class RoIHeads(torch.nn.Module):
             # remove low scoring boxes
             # 移除低概率目标，self.scores_thresh=0.05
             # gt: Computes input > other element-wise.
-            inds = torch.nonzero(torch.gt(scores, self.score_thresh)).squeeze(1)
+            # inds = torch.nonzero(torch.gt(scores, self.score_thresh)).squeeze(1)
+            inds = torch.where(torch.gt(scores, self.score_thresh))[0]
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 
             # remove empty boxes

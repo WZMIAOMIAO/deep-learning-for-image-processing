@@ -42,9 +42,11 @@ class BalancedPositiveNegativeSampler(object):
         # 遍历每张图像的matched_idxs
         for matched_idxs_per_image in matched_idxs:
             # >= 1的为正样本, nonzero返回非零元素索引
-            positive = torch.nonzero(matched_idxs_per_image >= 1).squeeze(1)
+            # positive = torch.nonzero(matched_idxs_per_image >= 1).squeeze(1)
+            positive = torch.where(torch.ge(matched_idxs_per_image, 1))[0]
             # = 0的为负样本
-            negative = torch.nonzero(matched_idxs_per_image == 0).squeeze(1)
+            # negative = torch.nonzero(matched_idxs_per_image == 0).squeeze(1)
+            negative = torch.where(torch.eq(matched_idxs_per_image, 0))[0]
 
             # 指定正样本的数量
             num_pos = int(self.batch_size_per_image * self.positive_fraction)
@@ -362,8 +364,11 @@ class Matcher(object):
 
         # Find highest quality match available, even if it is low, including ties
         # 寻找每个gt boxes与其iou最大的anchor索引，一个gt匹配到的最大iou可能有多个anchor
-        gt_pred_pairs_of_highest_quality = torch.nonzero(
-            match_quality_matrix == highest_quality_foreach_gt[:, None]
+        # gt_pred_pairs_of_highest_quality = torch.nonzero(
+        #     match_quality_matrix == highest_quality_foreach_gt[:, None]
+        # )
+        gt_pred_pairs_of_highest_quality = torch.where(
+            torch.eq(match_quality_matrix, highest_quality_foreach_gt[:, None])
         )
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
@@ -380,7 +385,8 @@ class Matcher(object):
         # Note how gt items 1, 2, 3, and 5 each have two ties
 
         # gt_pred_pairs_of_highest_quality[:, 0]代表是对应的gt index(不需要)
-        pre_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
+        # pre_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
+        pre_inds_to_update = gt_pred_pairs_of_highest_quality[1]
         # 保留该anchor匹配gt最大iou的索引，即使iou低于设定的阈值
         matches[pre_inds_to_update] = all_matches[pre_inds_to_update]
 
@@ -391,7 +397,8 @@ def smooth_l1_loss(input, target, beta: float = 1. / 9, size_average: bool = Tru
     the extra beta parameter
     """
     n = torch.abs(input - target)
-    cond = n < beta
+    # cond = n < beta
+    cond = torch.lt(n, beta)
     loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
     if size_average:
         return loss.mean()

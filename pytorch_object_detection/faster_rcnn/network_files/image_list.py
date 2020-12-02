@@ -13,7 +13,7 @@ class ImageList(object):
     """
 
     def __init__(self, tensors, image_sizes):
-        # type: (Tensor, List[Tuple[int, int]])
+        # type: (Tensor, List[Tuple[int, int]]) -> None
         """
         Arguments:
             tensors (tensor) padding后的图像数据
@@ -23,7 +23,7 @@ class ImageList(object):
         self.image_sizes = image_sizes
 
     def to(self, device):
-        # type: (Device) # noqa
+        # type: (Device) -> ImageList # noqa
         cast_tensor = self.tensors.to(device)
         return ImageList(cast_tensor, self.image_sizes)
 
