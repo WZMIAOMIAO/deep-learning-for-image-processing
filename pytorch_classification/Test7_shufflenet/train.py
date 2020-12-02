@@ -118,8 +118,8 @@ if __name__ == '__main__':
     # http://download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str, default="/home/wz/data_set/flower_data/flower_photos")
 
-    # resnet34 官方权重下载地址
-    # https://download.pytorch.org/models/resnet34-333f7ec4.pth
+    # shufflenetv2_x1.0 官方权重下载地址
+    # https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth
     parser.add_argument('--weights', type=str, default='shufflenetv2_x1.pth',
                         help='initial weights path')
     parser.add_argument('--freeze-layers', type=bool, default=True)
