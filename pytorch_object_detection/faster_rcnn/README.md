@@ -6,6 +6,7 @@
   Windows:pip install pycocotools-windows(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
+* 详细环境配置见```requirements.txt```
 
 ## 文件结构：
 ```
@@ -17,7 +18,7 @@
 * ├── train_resnet50_fpn.py: 以resnet50+FPN做为backbone进行训练
 * ├── train_multi_GPU.py: 针对使用多GPU的用户使用
 * ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
-* ├── pascal_voc_classes.json: pascal_voc标签文件
+* └── pascal_voc_classes.json: pascal_voc标签文件
 ```
 
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：

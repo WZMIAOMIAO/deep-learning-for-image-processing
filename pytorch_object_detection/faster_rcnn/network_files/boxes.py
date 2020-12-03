@@ -97,9 +97,11 @@ def remove_small_boxes(boxes, min_size):
             larger than min_size
     """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]  # 预测boxes的宽和高
-    keep = (ws >= min_size) & (hs >= min_size)  # 当满足宽，高都大于给定阈值时为True
+    # keep = (ws >= min_size) & (hs >= min_size)  # 当满足宽，高都大于给定阈值时为True
+    keep = torch.logical_and(torch.ge(ws, min_size), torch.ge(hs, min_size))
     # nonzero(): Returns a tensor containing the indices of all non-zero elements of input
-    keep = keep.nonzero().squeeze(1)
+    # keep = keep.nonzero().squeeze(1)
+    keep = torch.where(keep)[0]
     return keep
 
 
