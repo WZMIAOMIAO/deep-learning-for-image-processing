@@ -531,8 +531,10 @@ class RegionProposalNetwork(torch.nn.Module):
         # 按照给定的batch_size_per_image, positive_fraction选择正负样本
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
         # 将一个batch中的所有正负样本List(Tensor)分别拼接在一起，并获取非零位置的索引
-        sampled_pos_inds = torch.nonzero(torch.cat(sampled_pos_inds, dim=0)).squeeze(1)
-        sampled_neg_inds = torch.nonzero(torch.cat(sampled_neg_inds, dim=0)).squeeze(1)
+        # sampled_pos_inds = torch.nonzero(torch.cat(sampled_pos_inds, dim=0)).squeeze(1)
+        sampled_pos_inds = torch.where(torch.cat(sampled_pos_inds, dim=0))[0]
+        # sampled_neg_inds = torch.nonzero(torch.cat(sampled_neg_inds, dim=0)).squeeze(1)
+        sampled_neg_inds = torch.where(torch.cat(sampled_neg_inds, dim=0))[0]
 
         # 将所有正负样本索引拼接在一起
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)

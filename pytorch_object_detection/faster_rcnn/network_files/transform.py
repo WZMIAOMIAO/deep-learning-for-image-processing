@@ -1,6 +1,5 @@
 import torch
 from torch import nn, Tensor
-import random
 import math
 from network_files.image_list import ImageList
 from torch.jit.annotations import List, Tuple, Dict, Optional
@@ -78,7 +77,8 @@ class GeneralizedRCNNTransform(nn.Module):
         # image[None]操作是在最前面添加batch维度[C, H, W] -> [1, C, H, W]
         # bilinear只支持4D Tensor
         image = torch.nn.functional.interpolate(
-            image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
+            image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
+            align_corners=False)[0]
 
         if target is None:
             return image, target
