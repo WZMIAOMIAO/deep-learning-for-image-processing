@@ -90,7 +90,6 @@ def main():
         with torch.no_grad():
             for val_data in validate_loader:
                 val_images, val_labels = val_data
-                optimizer.zero_grad()
                 outputs = net(val_images.to(device))
                 predict_y = torch.max(outputs, dim=1)[1]
                 acc += (predict_y == val_labels.to(device)).sum().item()
