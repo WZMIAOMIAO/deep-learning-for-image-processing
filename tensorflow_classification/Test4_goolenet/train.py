@@ -1,9 +1,12 @@
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import matplotlib.pyplot as plt
-from model import GoogLeNet
-import tensorflow as tf
-import json
 import os
+import json
+
+import tensorflow as tf
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+from model import GoogLeNet
 
 
 def main():
@@ -105,7 +108,7 @@ def main():
         test_loss.reset_states()  # clear history info
         test_accuracy.reset_states()  # clear history info
 
-        for step in range(total_train // batch_size):
+        for step in tqdm(range(total_train // batch_size)):
             images, labels = next(train_data_gen)
             train_step(images, labels)
 
