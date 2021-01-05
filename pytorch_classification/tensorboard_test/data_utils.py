@@ -182,7 +182,7 @@ def plot_class_preds(net,
         preds = preds.cpu().numpy()
 
     # width, height
-    fig = plt.figure(figsize=(num_imgs * 3, 4), dpi=100)
+    fig = plt.figure(figsize=(num_imgs * 2.5, 3), dpi=100)
     for i in range(num_imgs):
         # 1：子图共1行，num_imgs:子图共num_imgs列，当前绘制第i+1个子图
         ax = fig.add_subplot(1, num_imgs, i+1, xticks=[], yticks=[])
