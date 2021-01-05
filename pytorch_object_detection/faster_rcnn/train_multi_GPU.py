@@ -56,10 +56,12 @@ def main(args):
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
 
     # load train data set
-    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], True)
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
+    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], False)
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
+    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
 
     print("Creating data loaders")
     if args.distributed:
