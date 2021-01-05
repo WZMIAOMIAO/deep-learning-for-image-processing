@@ -113,12 +113,12 @@ def plot_class_preds(net,
                      transform,
                      num_plot: int = 5,
                      device="cpu"):
-    if os.path.exists(images_dir):
+    if not os.path.exists(images_dir):
         print("not found {} path, ignore add figure.".format(images_dir))
         return None
 
     label_path = os.path.join(images_dir, "label.txt")
-    if os.path.exists(label_path):
+    if not os.path.exists(label_path):
         print("not found {} file, ignore add figure".format(label_path))
         return None
 
