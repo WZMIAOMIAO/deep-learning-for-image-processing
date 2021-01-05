@@ -175,7 +175,7 @@ def plot_class_preds(net,
     images = torch.stack(images, dim=0).to(device)
 
     # inference
-    with torch.no_grad:
+    with torch.no_grad():
         output = net(images)
         probs, preds = torch.max(torch.softmax(output, dim=1), dim=1)
         probs = probs.cpu().numpy()
