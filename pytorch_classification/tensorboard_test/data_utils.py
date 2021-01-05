@@ -113,12 +113,12 @@ def plot_class_preds(net,
                      transform,
                      num_plot: int = 5,
                      device="cpu"):
-    if os.path.exists(images_dir):
+    if not os.path.exists(images_dir):
         print("not found {} path, ignore add figure.".format(images_dir))
         return None
 
     label_path = os.path.join(images_dir, "label.txt")
-    if os.path.exists(label_path):
+    if not os.path.exists(label_path):
         print("not found {} file, ignore add figure".format(label_path))
         return None
 
@@ -175,14 +175,14 @@ def plot_class_preds(net,
     images = torch.stack(images, dim=0).to(device)
 
     # inference
-    with torch.no_grad:
+    with torch.no_grad():
         output = net(images)
         probs, preds = torch.max(torch.softmax(output, dim=1), dim=1)
         probs = probs.cpu().numpy()
         preds = preds.cpu().numpy()
 
     # width, height
-    fig = plt.figure(figsize=(num_imgs * 3, 4), dpi=100)
+    fig = plt.figure(figsize=(num_imgs * 2.5, 3), dpi=100)
     for i in range(num_imgs):
         # 1：子图共1行，num_imgs:子图共num_imgs列，当前绘制第i+1个子图
         ax = fig.add_subplot(1, num_imgs, i+1, xticks=[], yticks=[])
