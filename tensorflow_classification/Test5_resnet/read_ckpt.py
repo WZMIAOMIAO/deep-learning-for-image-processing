@@ -1,3 +1,7 @@
+"""
+可直接下载我转好的权重
+链接: https://pan.baidu.com/s/1tLe9ahTMIwQAX7do_S59Zg  密码: u199
+"""
 import tensorflow as tf
 
 
