@@ -2,7 +2,7 @@ import torch
 from torch import nn, Tensor
 import math
 from network_files.image_list import ImageList
-from torch.jit.annotations import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional
 import torchvision
 
 
@@ -35,15 +35,15 @@ class GeneralizedRCNNTransform(nn.Module):
         # [:, None, None]: shape [3] -> [3, 1, 1]
         return (image - mean[:, None, None]) / std[:, None, None]
 
-    def torch_choice(self, l):
+    def torch_choice(self, k):
         # type: (List[int]) -> int
         """
         Implements `random.choice` via torch ops so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
         is fixed.
         """
-        index = int(torch.empty(1).uniform_(0., float(len(l))).item())
-        return l[index]
+        index = int(torch.empty(1).uniform_(0., float(len(k))).item())
+        return k[index]
 
     def resize(self, image, target):
         # type: (Tensor, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]

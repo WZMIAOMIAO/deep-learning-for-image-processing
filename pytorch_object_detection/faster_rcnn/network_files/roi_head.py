@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from network_files import boxes as box_ops, det_utils
 from torch import Tensor
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):

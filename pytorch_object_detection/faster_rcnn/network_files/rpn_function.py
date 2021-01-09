@@ -1,10 +1,10 @@
 import torch
 import torchvision
 from torch.nn import functional as F
-from torch import nn, Tensor, device, dtype
+from torch import nn, Tensor
 from network_files import boxes as box_ops
 from network_files import det_utils
-from torch.jit.annotations import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple
 from network_files.image_list import ImageList
 
 
@@ -62,8 +62,8 @@ class AnchorsGenerator(nn.Module):
         self.cell_anchors = None
         self._cache = {}
 
-    def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device=device("cpu")):
-        # type: (List[int], List[float], dtype, device) -> Tensor
+    def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device=torch.device("cpu")):
+        # type: (List[int], List[float], torch.dtype, torch.device) -> Tensor
         """
         compute anchor sizes
         Arguments:
@@ -89,7 +89,7 @@ class AnchorsGenerator(nn.Module):
         return base_anchors.round()  # round 四舍五入
 
     def set_cell_anchors(self, dtype, device):
-        # type: (int, device) -> None
+        # type: (torch.dtype, torch.device) -> None
         if self.cell_anchors is not None:
             cell_anchors = self.cell_anchors
             assert cell_anchors is not None

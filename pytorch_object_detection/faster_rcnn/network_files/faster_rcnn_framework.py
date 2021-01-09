@@ -4,7 +4,7 @@ from collections import OrderedDict
 from network_files.rpn_function import AnchorsGenerator, RPNHead, RegionProposalNetwork
 from network_files.roi_head import RoIHeads
 from torchvision.ops import MultiScaleRoIAlign
-from torch.jit.annotations import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict, Optional
 from torch import Tensor
 import torch.nn.functional as F
 import warnings
