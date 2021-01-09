@@ -1,11 +1,10 @@
 import torch
 import torchvision
 from torch.nn import functional as F
-from torch import nn
+from torch import nn, Tensor, device, dtype
 from network_files import boxes as box_ops
 from network_files import det_utils
 from torch.jit.annotations import List, Optional, Dict, Tuple
-from torch import Tensor
 from network_files.image_list import ImageList
 
 
@@ -63,8 +62,8 @@ class AnchorsGenerator(nn.Module):
         self.cell_anchors = None
         self._cache = {}
 
-    def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device="cpu"):
-        # type: (List[int], List[float], int, Device) -> Tensor
+    def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device=device("cpu")):
+        # type: (List[int], List[float], dtype, device) -> Tensor
         """
         compute anchor sizes
         Arguments:
@@ -90,7 +89,7 @@ class AnchorsGenerator(nn.Module):
         return base_anchors.round()  # round 四舍五入
 
     def set_cell_anchors(self, dtype, device):
-        # type: (int, Device) -> None
+        # type: (int, device) -> None
         if self.cell_anchors is not None:
             cell_anchors = self.cell_anchors
             assert cell_anchors is not None
@@ -114,7 +113,7 @@ class AnchorsGenerator(nn.Module):
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
     # output g[i] anchors that are s[i] distance apart in direction i, with the same dimensions as a.
     def grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[Tensor]]) -> List(Tensor)
+        # type: (List[List[int]], List[List[Tensor]]) -> List[Tensor]
         """
         anchors position in grid coordinate axis map into origin image
         计算预测特征图对应原始图像上的所有anchors的坐标
@@ -158,7 +157,7 @@ class AnchorsGenerator(nn.Module):
         return anchors  # List[Tensor(all_num_anchors, 4)]
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[Tensor]]) -> List(Tensor)
+        # type: (List[List[int]], List[List[Tensor]]) -> List[Tensor]
         """将计算得到的所有anchors信息进行缓存"""
         key = str(grid_sizes) + str(strides)
         # self._cache是字典类型
@@ -169,7 +168,7 @@ class AnchorsGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list, feature_maps):
-        # type: (ImageList, List[Tensor]) -> List(Tensor)
+        # type: (ImageList, List[Tensor]) -> List[Tensor]
         # 获取每个预测特征层的尺寸(height, width)
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
 

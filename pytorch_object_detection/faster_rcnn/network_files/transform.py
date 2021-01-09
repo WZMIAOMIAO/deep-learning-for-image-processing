@@ -85,7 +85,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
         bbox = target["boxes"]
         # 根据图像的缩放比例来缩放bbox
-        bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
+        bbox = resize_boxes(bbox, [h, w], image.shape[-2:])
         target["boxes"] = bbox
 
         return image, target
