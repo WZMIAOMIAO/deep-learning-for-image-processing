@@ -1,8 +1,10 @@
-import torch
-import torch.nn.functional as F
-from network_files import boxes as box_ops, det_utils
-from torch import Tensor
 from typing import Optional, List, Dict, Tuple
+
+import torch
+from torch import Tensor
+import torch.nn.functional as F
+
+from network_files import boxes as box_ops, det_utils
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):

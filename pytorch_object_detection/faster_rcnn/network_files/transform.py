@@ -1,9 +1,11 @@
+import math
+from typing import List, Tuple, Dict, Optional
+
 import torch
 from torch import nn, Tensor
-import math
-from network_files.image_list import ImageList
-from typing import List, Tuple, Dict, Optional
 import torchvision
+
+from network_files.image_list import ImageList
 
 
 class GeneralizedRCNNTransform(nn.Module):

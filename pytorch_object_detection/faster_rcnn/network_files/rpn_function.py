@@ -1,10 +1,12 @@
-import torch
-import torchvision
-from torch.nn import functional as F
-from torch import nn, Tensor
-from network_files import boxes as box_ops
-from network_files import det_utils
 from typing import List, Optional, Dict, Tuple
+
+import torch
+from torch import nn, Tensor
+from torch.nn import functional as F
+import torchvision
+
+from network_files import det_utils
+from network_files import boxes as box_ops
 from network_files.image_list import ImageList
 
 

@@ -1,14 +1,15 @@
-import torch
-from torch import nn
-from collections import OrderedDict
-from network_files.rpn_function import AnchorsGenerator, RPNHead, RegionProposalNetwork
-from network_files.roi_head import RoIHeads
-from torchvision.ops import MultiScaleRoIAlign
-from typing import Tuple, List, Dict, Optional
-from torch import Tensor
-import torch.nn.functional as F
 import warnings
+from collections import OrderedDict
+from typing import Tuple, List, Dict, Optional
+
+import torch
+from torch import nn, Tensor
+import torch.nn.functional as F
+from torchvision.ops import MultiScaleRoIAlign
+
+from network_files.roi_head import RoIHeads
 from network_files.transform import GeneralizedRCNNTransform
+from network_files.rpn_function import AnchorsGenerator, RPNHead, RegionProposalNetwork
 
 
 class FasterRCNNBase(nn.Module):
