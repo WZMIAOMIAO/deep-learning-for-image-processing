@@ -1,5 +1,5 @@
 import torch
-from torch.jit.annotations import Tuple
+from typing import Tuple
 from torch import Tensor
 import torchvision
 

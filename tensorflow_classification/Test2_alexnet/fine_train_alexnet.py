@@ -5,10 +5,10 @@ import tensorflow as tf
 import json
 import os
 import glob
-from tensorflow.keras import layers, models, Model, Sequential
+from tensorflow.keras import layers, models
 
 
-def AlexNet_pytorch(im_height=224, im_width=224, class_num=1000):
+def AlexNet_pytorch(im_height=224, im_width=224, num_classes=1000):
     # tensorflow中的tensor通道排序是NHWC
     input_image = layers.Input(shape=(im_height, im_width, 3), dtype="float32")  # output(None, 224, 224, 3)
     x = layers.ZeroPadding2D(((2, 1), (2, 1)))(input_image)                      # output(None, 227, 227, 3)
@@ -26,7 +26,7 @@ def AlexNet_pytorch(im_height=224, im_width=224, class_num=1000):
     x = layers.Dense(4096, activation="relu")(x)    # output(None, 4096)
     x = layers.Dropout(0.5)(x)
     x = layers.Dense(4096, activation="relu")(x)    # output(None, 4096)
-    x = layers.Dense(class_num)(x)                  # output(None, 5)
+    x = layers.Dense(num_classes)(x)                  # output(None, 5)
     predict = layers.Softmax()(x)
 
     model = models.Model(inputs=input_image, outputs=predict)
@@ -92,7 +92,7 @@ def main():
     print("using {} images for training, {} images for validation.".format(total_train,
                                                                            total_val))
 
-    model = AlexNet_pytorch(im_height=im_height, im_width=im_width, class_num=5)
+    model = AlexNet_pytorch(im_height=im_height, im_width=im_width, num_classes=5)
 
     pre_weights_path = './pretrain_weights.ckpt'
     assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)

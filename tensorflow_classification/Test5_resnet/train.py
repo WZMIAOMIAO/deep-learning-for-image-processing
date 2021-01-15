@@ -1,12 +1,12 @@
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import matplotlib.pyplot as plt
-from model import resnet50
-import tensorflow as tf
-import json
 import os
 import glob
-import PIL.Image as im
-import numpy as np
+import json
+
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tqdm import tqdm
+
+from model import resnet50
 
 
 def main():
@@ -21,6 +21,7 @@ def main():
     im_width = 224
     batch_size = 16
     epochs = 20
+    num_classes = 5
 
     _R_MEAN = 123.68
     _G_MEAN = 116.78
@@ -70,7 +71,7 @@ def main():
     # feature.build((None, 224, 224, 3))  # when using subclass model
 
     # 直接下载我转好的权重
-    # 链接: https://pan.baidu.com/s/1tLe9ahTMIwQAX7do_S59Zg  密码: u199
+    # download weights 链接: https://pan.baidu.com/s/1tLe9ahTMIwQAX7do_S59Zg  密码: u199
     pre_weights_path = './pretrain_weights.ckpt'
     assert len(glob.glob(pre_weights_path+"*")), "cannot find {}".format(pre_weights_path)
     feature.load_weights(pre_weights_path)
@@ -82,7 +83,7 @@ def main():
                                  tf.keras.layers.Dropout(rate=0.5),
                                  tf.keras.layers.Dense(1024, activation="relu"),
                                  tf.keras.layers.Dropout(rate=0.5),
-                                 tf.keras.layers.Dense(5),
+                                 tf.keras.layers.Dense(num_classes),
                                  tf.keras.layers.Softmax()])
     # model.build((None, 224, 224, 3))
     model.summary()
@@ -94,8 +95,8 @@ def main():
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
 
-    test_loss = tf.keras.metrics.Mean(name='test_loss')
-    test_accuracy = tf.keras.metrics.CategoricalAccuracy(name='test_accuracy')
+    val_loss = tf.keras.metrics.Mean(name='val_loss')
+    val_accuracy = tf.keras.metrics.CategoricalAccuracy(name='val_accuracy')
 
     @tf.function
     def train_step(images, labels):
@@ -109,46 +110,46 @@ def main():
         train_accuracy(labels, output)
 
     @tf.function
-    def test_step(images, labels):
+    def val_step(images, labels):
         output = model(images, training=False)
-        t_loss = loss_object(labels, output)
+        loss = loss_object(labels, output)
 
-        test_loss(t_loss)
-        test_accuracy(labels, output)
+        val_loss(loss)
+        val_accuracy(labels, output)
 
     best_test_loss = float('inf')
-    for epoch in range(1, epochs + 1):
+    for epoch in range(epochs):
         train_loss.reset_states()  # clear history info
         train_accuracy.reset_states()  # clear history info
-        test_loss.reset_states()  # clear history info
-        test_accuracy.reset_states()  # clear history info
+        val_loss.reset_states()  # clear history info
+        val_accuracy.reset_states()  # clear history info
 
         # train
-        for step in range(total_train // batch_size):
+        train_bar = tqdm(range(total_train // batch_size))
+        for step in train_bar:
             images, labels = next(train_data_gen)
             train_step(images, labels)
 
             # print train process
-            rate = (step + 1) / (total_train // batch_size)
-            a = "*" * int(rate * 50)
-            b = "." * int((1 - rate) * 50)
-            acc = train_accuracy.result().numpy()
-            print("\r[{}]train acc: {:^3.0f}%[{}->{}]{:.4f}".format(epoch, int(rate * 100), a, b, acc), end="")
-        print()
+            train_bar.desc = "train epoch[{}/{}] loss:{:.3f}, acc:{:.3f}".format(epoch + 1,
+                                                                                 epochs,
+                                                                                 train_loss.result(),
+                                                                                 train_accuracy.result())
 
         # validate
-        for step in range(total_val // batch_size):
+        val_bar = tqdm(range(total_val // batch_size), colour='green')
+        for step in val_bar:
             test_images, test_labels = next(val_data_gen)
-            test_step(test_images, test_labels)
+            val_step(test_images, test_labels)
 
-        template = 'Epoch {}, Loss: {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}'
-        print(template.format(epoch,
-                              train_loss.result(),
-                              train_accuracy.result() * 100,
-                              test_loss.result(),
-                              test_accuracy.result() * 100))
-        if test_loss.result() < best_test_loss:
-            best_test_loss = test_loss.result()
+            # print val process
+            val_bar.desc = "valid epoch[{}/{}] loss:{:.3f}, acc:{:.3f}".format(epoch + 1,
+                                                                               epochs,
+                                                                               val_loss.result(),
+                                                                               val_accuracy.result())
+
+        if val_loss.result() < best_test_loss:
+            best_test_loss = val_loss.result()
             model.save_weights("./save_weights/resNet_50.ckpt", save_format="tf")
 
 

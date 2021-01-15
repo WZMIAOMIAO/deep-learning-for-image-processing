@@ -5,7 +5,7 @@
 import tensorflow as tf
 
 
-def rename_var(ckpt_path, new_ckpt_path, num_classes=5):
+def rename_var(ckpt_path, new_ckpt_path, num_classes, except_list):
     with tf.Graph().as_default(), tf.compat.v1.Session().as_default() as sess:
         var_list = tf.train.list_variables(ckpt_path)
         new_var_list = []
@@ -32,8 +32,13 @@ def rename_var(ckpt_path, new_ckpt_path, num_classes=5):
         saver.save(sess, save_path=new_ckpt_path, write_meta_graph=False, write_state=False)
 
 
-except_list = ['global_step', 'resnet_v1_50/mean_rgb', 'resnet_v1_50/logits/biases', 'resnet_v1_50/logits/weights']
-ckpt_path = './resnet_v1_50.ckpt'
-new_ckpt_path = './pretrain_weights.ckpt'
-num_classes = 5
-rename_var(ckpt_path, new_ckpt_path, num_classes)
+def main():
+    except_list = ['global_step', 'resnet_v1_50/mean_rgb', 'resnet_v1_50/logits/biases', 'resnet_v1_50/logits/weights']
+    ckpt_path = './resnet_v1_50.ckpt'
+    new_ckpt_path = './pretrain_weights.ckpt'
+    num_classes = 5
+    rename_var(ckpt_path, new_ckpt_path, num_classes, except_list)
+
+
+if __name__ == '__main__':
+    main()

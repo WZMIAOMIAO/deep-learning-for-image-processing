@@ -1,6 +1,6 @@
 import torch
 import math
-from torch.jit.annotations import List, Tuple
+from typing import List, Tuple
 from torch import Tensor
 
 
@@ -94,6 +94,7 @@ def encode_boxes(reference_boxes, proposals, weights):
     Arguments:
         reference_boxes (Tensor): reference boxes(gt)
         proposals (Tensor): boxes to be encoded(anchors)
+        weights:
     """
 
     # perform some unpacking to make it JIT-fusion friendly
