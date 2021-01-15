@@ -118,7 +118,7 @@ def main():
         val_accuracy(labels, output)
 
     best_test_loss = float('inf')
-    for epoch in range(1, epochs + 1):
+    for epoch in range(epochs):
         train_loss.reset_states()  # clear history info
         train_accuracy.reset_states()  # clear history info
         val_loss.reset_states()  # clear history info
