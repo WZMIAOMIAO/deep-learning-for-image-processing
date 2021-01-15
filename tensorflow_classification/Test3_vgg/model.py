@@ -1,7 +1,7 @@
 from tensorflow.keras import layers, models, Model, Sequential
 
 
-def VGG(feature, im_height=224, im_width=224, class_num=1000):
+def VGG(feature, im_height=224, im_width=224, num_classes=1000):
     # tensorflow中的tensor通道排序是NHWC
     input_image = layers.Input(shape=(im_height, im_width, 3), dtype="float32")
     x = feature(input_image)
@@ -10,7 +10,7 @@ def VGG(feature, im_height=224, im_width=224, class_num=1000):
     x = layers.Dense(2048, activation='relu')(x)
     x = layers.Dropout(rate=0.5)(x)
     x = layers.Dense(2048, activation='relu')(x)
-    x = layers.Dense(class_num)(x)
+    x = layers.Dense(num_classes)(x)
     output = layers.Softmax()(x)
     model = models.Model(inputs=input_image, outputs=output)
     return model
@@ -35,11 +35,8 @@ cfgs = {
 }
 
 
-def vgg(model_name="vgg16", im_height=224, im_width=224, class_num=1000):
-    try:
-        cfg = cfgs[model_name]
-    except:
-        print("Warning: model number {} not in cfgs dict!".format(model_name))
-        exit(-1)
-    model = VGG(features(cfg), im_height=im_height, im_width=im_width, class_num=class_num)
+def vgg(model_name="vgg16", im_height=224, im_width=224, num_classes=1000):
+    assert model_name in cfgs.keys(), "not support model {}".format(model_name)
+    cfg = cfgs[model_name]
+    model = VGG(features(cfg), im_height=im_height, im_width=im_width, num_classes=num_classes)
     return model
