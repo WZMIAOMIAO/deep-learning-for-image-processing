@@ -1,11 +1,13 @@
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import matplotlib.pyplot as plt
-from model_add_bn import InceptionV1
-import tensorflow as tf
-import json
 import os
+import json
 import glob
+
 import numpy as np
+from tqdm import tqdm
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+from model_add_bn import InceptionV1
 
 
 def main():
@@ -80,8 +82,8 @@ def main():
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
 
-    test_loss = tf.keras.metrics.Mean(name='test_loss')
-    test_accuracy = tf.keras.metrics.CategoricalAccuracy(name='test_accuracy')
+    val_loss = tf.keras.metrics.Mean(name='val_loss')
+    val_accuracy = tf.keras.metrics.CategoricalAccuracy(name='val_accuracy')
 
     @tf.function
     def train_step(images, labels):
@@ -98,37 +100,47 @@ def main():
         train_accuracy(labels, output)
 
     @tf.function
-    def test_step(images, labels):
+    def val_step(images, labels):
         _, _, output = model(images, training=False)
-        t_loss = loss_object(labels, output)
+        loss = loss_object(labels, output)
 
-        test_loss(t_loss)
-        test_accuracy(labels, output)
+        val_loss(loss)
+        val_accuracy(labels, output)
 
-    best_test_loss = float('inf')
-    for epoch in range(1, epochs + 1):
+    best_val_loss = float('inf')
+    for epoch in range(epochs):
         train_loss.reset_states()  # clear history info
         train_accuracy.reset_states()  # clear history info
-        test_loss.reset_states()  # clear history info
-        test_accuracy.reset_states()  # clear history info
+        val_loss.reset_states()  # clear history info
+        val_accuracy.reset_states()  # clear history info
 
-        for step in range(total_train // batch_size):
+        # train
+        train_bar = tqdm(range(total_train // batch_size))
+        for step in train_bar:
             images, labels = next(train_data_gen)
             train_step(images, labels)
 
-        for step in range(total_val // batch_size):
-            test_images, test_labels = next(val_data_gen)
-            test_step(test_images, test_labels)
+            # print train process
+            train_bar.desc = "train epoch[{}/{}] loss:{:.3f}, acc:{:.3f}".format(epoch + 1,
+                                                                                 epochs,
+                                                                                 train_loss.result(),
+                                                                                 train_accuracy.result())
 
-        template = 'Epoch {}, Loss: {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}'
-        print(template.format(epoch,
-                              train_loss.result(),
-                              train_accuracy.result() * 100,
-                              test_loss.result(),
-                              test_accuracy.result() * 100))
-        if test_loss.result() < best_test_loss:
-            best_test_loss = test_loss.result()
-            model.save_weights("./save_weights/myInceptionV1.h5")
+        # validate
+        val_bar = tqdm(range(total_val // batch_size), colour='green')
+        for step in val_bar:
+            val_images, val_labels = next(val_data_gen)
+            val_step(val_images, val_labels)
+
+            # print val process
+            val_bar.desc = "valid epoch[{}/{}] loss:{:.3f}, acc:{:.3f}".format(epoch + 1,
+                                                                               epochs,
+                                                                               val_loss.result(),
+                                                                               val_accuracy.result())
+
+        if val_loss.result() < best_val_loss:
+            best_val_loss = val_loss.result()
+            model.save_weights("./save_weights/myInceptionV1.ckpt")
 
 
 if __name__ == '__main__':
