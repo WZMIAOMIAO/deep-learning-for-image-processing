@@ -10,7 +10,7 @@ class MyModel(Model):
         self.d1 = Dense(128, activation='relu')
         self.d2 = Dense(10, activation='softmax')
 
-    def call(self, x):
+    def call(self, x, **kwargs):
         x = self.conv1(x)      # input[batch, 28, 28, 1] output[batch, 26, 26, 32]
         x = self.flatten(x)    # output [batch, 21632]
         x = self.d1(x)         # output [batch, 128]
