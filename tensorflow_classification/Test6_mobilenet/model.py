@@ -25,7 +25,7 @@ class ConvBNReLU(layers.Layer):
         self.bn = layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name='BatchNorm')
         self.activation = layers.ReLU(max_value=6.0)
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(self, inputs, training=False):
         x = self.conv(inputs)
         x = self.bn(x, training=training)
         x = self.activation(x)
@@ -42,6 +42,7 @@ class InvertedResidual(layers.Layer):
         if expand_ratio != 1:
             # 1x1 pointwise conv
             layer_list.append(ConvBNReLU(out_channel=self.hidden_channel, kernel_size=1, name='expand'))
+
         layer_list.extend([
             # 3x3 depthwise conv
             layers.DepthwiseConv2D(kernel_size=3, padding='SAME', strides=stride,
@@ -55,14 +56,19 @@ class InvertedResidual(layers.Layer):
         ])
         self.main_branch = Sequential(layer_list, name='expanded_conv')
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs, training=False):
         if self.use_shortcut:
-            return inputs + self.main_branch(inputs)
+            return inputs + self.main_branch(inputs, training=training)
         else:
             return self.main_branch(inputs)
 
 
-def MobileNetV2(im_height=224, im_width=224, num_classes=1000, alpha=1.0, round_nearest=8):
+def MobileNetV2(im_height=224,
+                im_width=224,
+                num_classes=1000,
+                alpha=1.0,
+                round_nearest=8,
+                include_top=True):
     block = InvertedResidual
     input_channel = _make_divisible(32 * alpha, round_nearest)
     last_channel = _make_divisible(1280 * alpha, round_nearest)
@@ -81,18 +87,24 @@ def MobileNetV2(im_height=224, im_width=224, num_classes=1000, alpha=1.0, round_
     # conv1
     x = ConvBNReLU(input_channel, stride=2, name='Conv')(input_image)
     # building inverted residual residual blockes
-    for t, c, n, s in inverted_residual_setting:
+    for idx, (t, c, n, s) in enumerate(inverted_residual_setting):
         output_channel = _make_divisible(c * alpha, round_nearest)
         for i in range(n):
             stride = s if i == 0 else 1
-            x = block(x.shape[-1], output_channel, stride, expand_ratio=t)(x)
+            x = block(x.shape[-1],
+                      output_channel,
+                      stride,
+                      expand_ratio=t)(x)
     # building last several layers
     x = ConvBNReLU(last_channel, kernel_size=1, name='Conv_1')(x)
 
-    # building classifier
-    x = layers.GlobalAveragePooling2D()(x)  # pool + flatten
-    x = layers.Dropout(0.2)(x)
-    output = layers.Dense(num_classes, name='Logits')(x)
+    if include_top is True:
+        # building classifier
+        x = layers.GlobalAveragePooling2D()(x)  # pool + flatten
+        x = layers.Dropout(0.2)(x)
+        output = layers.Dense(num_classes, name='Logits')(x)
+    else:
+        output = x
 
     model = Model(inputs=input_image, outputs=output)
     return model

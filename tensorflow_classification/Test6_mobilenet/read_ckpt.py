@@ -1,7 +1,11 @@
+"""
+建议直接下载使用我转好的权重
+链接: https://pan.baidu.com/s/1YgFoIKHqooMrTQg_IqI2hA  密码: 2qht
+"""
 import tensorflow as tf
 
 
-def rename_var(ckpt_path, new_ckpt_path, num_classes=5):
+def rename_var(ckpt_path, new_ckpt_path, num_classes, except_list):
     with tf.Graph().as_default(), tf.compat.v1.Session().as_default() as sess:
         var_list = tf.train.list_variables(ckpt_path)
         new_var_list = []
@@ -43,8 +47,13 @@ def rename_var(ckpt_path, new_ckpt_path, num_classes=5):
         saver.save(sess, save_path=new_ckpt_path, write_meta_graph=False, write_state=False)
 
 
-except_list = ['global_step', 'MobilenetV2/Logits/Conv2d_1c_1x1/biases', 'MobilenetV2/Logits/Conv2d_1c_1x1/weights']
-ckpt_path = './pretrain_model/mobilenet_v2_1.0_224.ckpt'
-new_ckpt_path = './pretrain_weights.ckpt'
-num_classes = 5
-rename_var(ckpt_path, new_ckpt_path, num_classes)
+def main():
+    except_list = ['global_step', 'MobilenetV2/Logits/Conv2d_1c_1x1/biases', 'MobilenetV2/Logits/Conv2d_1c_1x1/weights']
+    ckpt_path = './pretrain_model/mobilenet_v2_1.0_224.ckpt'
+    new_ckpt_path = './pretrain_weights.ckpt'
+    num_classes = 5
+    rename_var(ckpt_path, new_ckpt_path, num_classes, except_list)
+
+
+if __name__ == '__main__':
+    main()
