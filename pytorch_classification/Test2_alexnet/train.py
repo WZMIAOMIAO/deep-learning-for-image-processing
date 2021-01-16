@@ -1,13 +1,15 @@
+import os
+import json
+
 import torch
 import torch.nn as nn
 from torchvision import transforms, datasets, utils
 import matplotlib.pyplot as plt
 import numpy as np
 import torch.optim as optim
+from tqdm import tqdm
+
 from model import AlexNet
-import os
-import json
-import time
 
 
 def main():
@@ -74,14 +76,16 @@ def main():
     # pata = list(net.parameters())
     optimizer = optim.Adam(net.parameters(), lr=0.0002)
 
+    epochs = 10
     save_path = './AlexNet.pth'
     best_acc = 0.0
-    for epoch in range(10):
+    train_steps = len(train_loader)
+    for epoch in range(epochs):
         # train
         net.train()
         running_loss = 0.0
-        t1 = time.perf_counter()
-        for step, data in enumerate(train_loader, start=0):
+        train_bar = tqdm(train_loader)
+        for step, data in enumerate(train_bar):
             images, labels = data
             optimizer.zero_grad()
             outputs = net(images.to(device))
@@ -91,29 +95,29 @@ def main():
 
             # print statistics
             running_loss += loss.item()
-            # print train process
-            rate = (step + 1) / len(train_loader)
-            a = "*" * int(rate * 50)
-            b = "." * int((1 - rate) * 50)
-            print("\rtrain loss: {:^3.0f}%[{}->{}]{:.3f}".format(int(rate * 100), a, b, loss), end="")
-        print()
-        print(time.perf_counter()-t1)
+
+            train_bar.desc = "train epoch[{}/{}] loss:{:.3f}".format(epoch + 1,
+                                                                     epochs,
+                                                                     loss)
 
         # validate
         net.eval()
         acc = 0.0  # accumulate accurate number / epoch
         with torch.no_grad():
-            for val_data in validate_loader:
+            val_bar = tqdm(validate_loader, colour='green')
+            for val_data in val_bar:
                 val_images, val_labels = val_data
                 outputs = net(val_images.to(device))
                 predict_y = torch.max(outputs, dim=1)[1]
-                acc += (predict_y == val_labels.to(device)).sum().item()
-            val_accurate = acc / val_num
-            if val_accurate > best_acc:
-                best_acc = val_accurate
-                torch.save(net.state_dict(), save_path)
-            print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
-                  (epoch + 1, running_loss / step, val_accurate))
+                acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
+
+        val_accurate = acc / val_num
+        print('[epoch %d] train_loss: %.3f  val_accuracy: %.3f' %
+              (epoch + 1, running_loss / train_steps, val_accurate))
+
+        if val_accurate > best_acc:
+            best_acc = val_accurate
+            torch.save(net.state_dict(), save_path)
 
     print('Finished Training')
 
