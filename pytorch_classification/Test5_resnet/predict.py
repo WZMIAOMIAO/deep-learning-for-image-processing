@@ -41,8 +41,7 @@ def main():
     # load model weights
     weights_path = "./resNet34.pth"
     assert os.path.exists(weights_path), "file: '{}' dose not exist.".format(weights_path)
-    model_weight_path = weights_path
-    model.load_state_dict(torch.load(model_weight_path, map_location=device))
+    model.load_state_dict(torch.load(weights_path, map_location=device))
 
     # prediction
     model.eval()
