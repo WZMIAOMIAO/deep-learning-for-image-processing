@@ -4,7 +4,6 @@ import json
 import torch
 from PIL import Image
 from torchvision import transforms
-import matplotlib.pyplot as plt
 
 from model import resnet34
 
@@ -19,14 +18,16 @@ def main():
          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     # load image
-    img_path = "../tulip.jpg"
-    assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
-    img = Image.open(img_path)
-    plt.imshow(img)
-    # [N, C, H, W]
-    img = data_transform(img)
-    # expand batch dimension
-    img = torch.unsqueeze(img, dim=0)
+    img_path_list = ["../tulip.jpg", "../rose.jpg"]
+    img_list = []
+    for img_path in img_path_list:
+        assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
+        img = Image.open(img_path)
+        img = data_transform(img)
+        img_list.append(img)
+
+    # batch img
+    batch_img = torch.stack(img_list, dim=0)
 
     # read class_indict
     json_path = './class_indices.json'
@@ -47,15 +48,14 @@ def main():
     model.eval()
     with torch.no_grad():
         # predict class
-        output = torch.squeeze(model(img.to(device))).cpu()
-        predict = torch.softmax(output, dim=0)
-        predict_cla = torch.argmax(predict).numpy()
+        output = model(batch_img.to(device)).cpu()
+        predict = torch.softmax(output, dim=1)
+        probs, classes = torch.max(predict, dim=1)
 
-    print_res = "class: {}   prob: {:.3}".format(class_indict[str(predict_cla)],
-                                                 predict[predict_cla].numpy())
-    plt.title(print_res)
-    print(print_res)
-    plt.show()
+        for idx, (pro, cla) in enumerate(zip(probs, classes)):
+            print("image: {}  class: {}  prob: {:.3}".format(img_path_list[idx],
+                                                             class_indict[str(cla.numpy())],
+                                                             pro.numpy()))
 
 
 if __name__ == '__main__':

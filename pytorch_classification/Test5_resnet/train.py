@@ -1,11 +1,13 @@
+import os
+import json
+
 import torch
 import torch.nn as nn
-from torchvision import transforms, datasets
-import json
-import matplotlib.pyplot as plt
-import os
 import torch.optim as optim
-from model import resnet34, resnet101
+from torchvision import transforms, datasets
+from tqdm import tqdm
+
+from model import resnet34
 
 
 def main():
@@ -63,6 +65,7 @@ def main():
     missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path), strict=False)
     # for param in net.parameters():
     #     param.requires_grad = False
+
     # change fc layer structure
     in_channel = net.fc.in_features
     net.fc = nn.Linear(in_channel, 5)
@@ -71,13 +74,16 @@ def main():
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
+    epochs = 3
     best_acc = 0.0
     save_path = './resNet34.pth'
-    for epoch in range(3):
+    train_steps = len(train_loader)
+    for epoch in range(epochs):
         # train
         net.train()
         running_loss = 0.0
-        for step, data in enumerate(train_loader, start=0):
+        train_bar = tqdm(train_loader)
+        for step, data in enumerate(train_bar):
             images, labels = data
             optimizer.zero_grad()
             logits = net(images.to(device))
@@ -87,29 +93,33 @@ def main():
 
             # print statistics
             running_loss += loss.item()
-            # print train process
-            rate = (step+1)/len(train_loader)
-            a = "*" * int(rate * 50)
-            b = "." * int((1 - rate) * 50)
-            print("\rtrain loss: {:^3.0f}%[{}->{}]{:.4f}".format(int(rate*100), a, b, loss), end="")
-        print()
+
+            train_bar.desc = "train epoch[{}/{}] loss:{:.3f}".format(epoch + 1,
+                                                                     epochs,
+                                                                     loss)
 
         # validate
         net.eval()
         acc = 0.0  # accumulate accurate number / epoch
         with torch.no_grad():
-            for val_data in validate_loader:
+            val_bar = tqdm(validate_loader, colour='green')
+            for val_data in val_bar:
                 val_images, val_labels = val_data
-                outputs = net(val_images.to(device))  # eval model only have last output layer
+                outputs = net(val_images.to(device))
                 # loss = loss_function(outputs, test_labels)
                 predict_y = torch.max(outputs, dim=1)[1]
-                acc += (predict_y == val_labels.to(device)).sum().item()
-            val_accurate = acc / val_num
-            if val_accurate > best_acc:
-                best_acc = val_accurate
-                torch.save(net.state_dict(), save_path)
-            print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
-                  (epoch + 1, running_loss / step, val_accurate))
+                acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
+
+                val_bar.desc = "valid epoch[{}/{}]".format(epoch + 1,
+                                                           epochs)
+
+        val_accurate = acc / val_num
+        print('[epoch %d] train_loss: %.3f  val_accuracy: %.3f' %
+              (epoch + 1, running_loss / train_steps, val_accurate))
+
+        if val_accurate > best_acc:
+            best_acc = val_accurate
+            torch.save(net.state_dict(), save_path)
 
     print('Finished Training')
 
