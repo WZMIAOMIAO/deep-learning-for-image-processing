@@ -5,7 +5,6 @@ import glob
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 
 from model import resnet50
 
@@ -15,23 +14,26 @@ def main():
     im_width = 224
     num_classes = 5
 
-    # load image
-    img_path = "../tulip.jpg"
-    assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
-    img = Image.open(img_path)
-    # resize image to 224x224
-    img = img.resize((im_width, im_height))
-    plt.imshow(img)
-
-    # scaling pixel value to (0-1)
     _R_MEAN = 123.68
     _G_MEAN = 116.78
     _B_MEAN = 103.94
-    img = np.array(img).astype(np.float32)
-    img = img - [_R_MEAN, _G_MEAN, _B_MEAN]
 
-    # Add the image to a batch where it's the only member.
-    img = (np.expand_dims(img, 0))
+    # load images
+    img_path_list = ["../tulip.jpg", "../rose.jpg"]
+    img_list = []
+    for img_path in img_path_list:
+        assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
+        img = Image.open(img_path)
+        # resize image to 224x224
+        img = img.resize((im_width, im_height))
+
+        # scaling pixel value to (0-1)
+        img = np.array(img).astype(np.float32)
+        img = img - [_R_MEAN, _G_MEAN, _B_MEAN]
+        img_list.append(img)
+
+    # batch images
+    batch_img = np.stack(img_list, axis=0)
 
     # read class_indict
     json_path = './class_indices.json'
@@ -57,14 +59,14 @@ def main():
     model.load_weights(weights_path)
 
     # prediction
-    result = np.squeeze(model.predict(img))
-    predict_class = np.argmax(result)
+    result = model.predict(batch_img)
+    predict_classes = np.argmax(result, axis=1)
 
-    print_res = "class: {}   prob: {:.3}".format(class_indict[str(predict_class)],
-                                                 result[predict_class])
-    plt.title(print_res)
-    print(print_res)
-    plt.show()
+    for index, class_index in enumerate(predict_classes):
+        print_res = "image: {}  class: {}   prob: {:.3}".format(img_path_list[index],
+                                                                class_indict[str(class_index)],
+                                                                result[index][class_index])
+        print(print_res)
 
 
 if __name__ == '__main__':
