@@ -43,7 +43,7 @@ def main():
     class_indict = json.load(json_file)
 
     # create model
-    feature = resnet50(num_classes=5, include_top=False)
+    feature = resnet50(num_classes=num_classes, include_top=False)
     feature.trainable = False
     model = tf.keras.Sequential([feature,
                                  tf.keras.layers.GlobalAvgPool2D(),

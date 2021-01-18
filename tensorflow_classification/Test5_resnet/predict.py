@@ -40,7 +40,8 @@ def main():
     json_file = open(json_path, "r")
     class_indict = json.load(json_file)
 
-    feature = resnet50(num_classes=5, include_top=False)
+    # create model
+    feature = resnet50(num_classes=num_classes, include_top=False)
     feature.trainable = False
     model = tf.keras.Sequential([feature,
                                  tf.keras.layers.GlobalAvgPool2D(),
@@ -50,6 +51,7 @@ def main():
                                  tf.keras.layers.Dense(num_classes),
                                  tf.keras.layers.Softmax()])
 
+    # load weights
     weights_path = './save_weights/resNet_50.ckpt'
     assert len(glob.glob(weights_path+"*")), "cannot find {}".format(weights_path)
     model.load_weights(weights_path)
