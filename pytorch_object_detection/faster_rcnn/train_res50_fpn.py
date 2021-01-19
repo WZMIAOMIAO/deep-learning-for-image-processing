@@ -9,13 +9,13 @@ from my_dataset import VOC2012DataSet
 from train_utils import train_eval_utils as utils
 
 
-def create_model(num_classes):
+def create_model(num_classes, device):
     backbone = resnet50_fpn_backbone()
     # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
     # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
+    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location=device)
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
         print("missing_keys: ", missing_keys)
@@ -68,7 +68,7 @@ def main(parser_data):
                                                       collate_fn=train_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    model = create_model(num_classes=21)
+    model = create_model(num_classes=21, device=device)
     # print(model)
 
     model.to(device)
