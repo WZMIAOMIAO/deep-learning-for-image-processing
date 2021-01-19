@@ -337,7 +337,7 @@ class FasterRCNN(FasterRCNNBase):
             box_fg_iou_thresh, box_bg_iou_thresh,  # 0.5  0.5
             box_batch_size_per_image, box_positive_fraction,  # 512  0.25
             bbox_reg_weights,
-            box_score_thresh, box_nms_thresh, box_detections_per_img)  # 0.5  0.5  100
+            box_score_thresh, box_nms_thresh, box_detections_per_img)  # 0.05  0.5  100
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
