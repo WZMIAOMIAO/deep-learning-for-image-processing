@@ -1,10 +1,13 @@
+from typing import List, Callable
+
 import torch
+from torch import Tensor
 import torch.nn as nn
 
 
-def channel_shuffle(x, groups):
-    # type: (torch.Tensor, int) -> torch.Tensor
-    batch_size, num_channels, height, width = x.data.size()
+def channel_shuffle(x: Tensor, groups: int) -> Tensor:
+
+    batch_size, num_channels, height, width = x.size()
     channels_per_group = num_channels // groups
 
     # reshape
@@ -20,7 +23,7 @@ def channel_shuffle(x, groups):
 
 
 class InvertedResidual(nn.Module):
-    def __init__(self, input_c, output_c, stride):
+    def __init__(self, input_c: int, output_c: int, stride: int):
         super(InvertedResidual, self).__init__()
 
         if stride not in [1, 2]:
@@ -57,11 +60,16 @@ class InvertedResidual(nn.Module):
         )
 
     @staticmethod
-    def depthwise_conv(input_c, output_c, kernel_s, stride=1, padding=0, bias=False):
+    def depthwise_conv(input_c: int,
+                       output_c: int,
+                       kernel_s: int,
+                       stride: int = 1,
+                       padding: int = 0,
+                       bias: bool = False) -> nn.Conv2d:
         return nn.Conv2d(in_channels=input_c, out_channels=output_c, kernel_size=kernel_s,
                          stride=stride, padding=padding, bias=bias, groups=input_c)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         if self.stride == 1:
             x1, x2 = x.chunk(2, dim=1)
             out = torch.cat((x1, self.branch2(x2)), dim=1)
@@ -74,8 +82,11 @@ class InvertedResidual(nn.Module):
 
 
 class ShuffleNetV2(nn.Module):
-    def __init__(self, stages_repeats, stages_out_channels,
-                 num_classes=1000, inverted_residual=InvertedResidual):
+    def __init__(self,
+                 stages_repeats: List[int],
+                 stages_out_channels: List[int],
+                 num_classes: int = 1000,
+                 inverted_residual: Callable[..., nn.Module] = InvertedResidual):
         super(ShuffleNetV2, self).__init__()
 
         if len(stages_repeats) != 3:
@@ -97,11 +108,16 @@ class ShuffleNetV2(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
+        # Static annotations for mypy
+        self.stage2: nn.Sequential
+        self.stage3: nn.Sequential
+        self.stage4: nn.Sequential
+
         stage_names = ["stage{}".format(i) for i in [2, 3, 4]]
         for name, repeats, output_channels in zip(stage_names, stages_repeats,
                                                   self._stage_out_channels[1:]):
             seq = [inverted_residual(input_channels, output_channels, 2)]
-            for i in range(repeats-1):
+            for i in range(repeats - 1):
                 seq.append(inverted_residual(output_channels, output_channels, 1))
             setattr(self, name, nn.Sequential(*seq))
             input_channels = output_channels
@@ -115,7 +131,7 @@ class ShuffleNetV2(nn.Module):
 
         self.fc = nn.Linear(output_channels, num_classes)
 
-    def _forward_impl(self, x):
+    def _forward_impl(self, x: Tensor) -> Tensor:
         # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.maxpool(x)
@@ -127,7 +143,7 @@ class ShuffleNetV2(nn.Module):
         x = self.fc(x)
         return x
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return self._forward_impl(x)
 
 
