@@ -13,13 +13,13 @@ from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect
 from train_utils.distributed_utils import init_distributed_mode, save_on_master, mkdir
 
 
-def create_model(num_classes):
+def create_model(num_classes, device):
     backbone = resnet50_fpn_backbone()
     # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
     # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth")
+    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location=device)
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
         print("missing_keys: ", missing_keys)
@@ -89,7 +89,7 @@ def main(args):
         collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
-    model = create_model(num_classes=21)
+    model = create_model(num_classes=21, device=device)
     model.to(device)
 
     model_without_ddp = model

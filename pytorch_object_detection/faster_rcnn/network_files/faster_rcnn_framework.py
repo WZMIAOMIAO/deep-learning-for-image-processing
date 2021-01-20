@@ -86,6 +86,8 @@ class FasterRCNNBase(nn.Module):
             features = OrderedDict([('0', features)])  # 若在多层特征层上预测，传入的就是一个有序字典
 
         # 将特征层以及标注target信息传入rpn中
+        # proposals: List[Tensor], Tensor_shape: [num_proposals, 4],
+        # 每个proposals是绝对坐标，且为(x1, y1, x2, y2)格式
         proposals, proposal_losses = self.rpn(images, features, targets)
 
         # 将rpn生成的数据以及标注target信息传入fast rcnn后半部分
@@ -332,10 +334,10 @@ class FasterRCNN(FasterRCNNBase):
         roi_heads = RoIHeads(
             # box
             box_roi_pool, box_head, box_predictor,
-            box_fg_iou_thresh, box_bg_iou_thresh,
-            box_batch_size_per_image, box_positive_fraction,
+            box_fg_iou_thresh, box_bg_iou_thresh,  # 0.5  0.5
+            box_batch_size_per_image, box_positive_fraction,  # 512  0.25
             bbox_reg_weights,
-            box_score_thresh, box_nms_thresh, box_detections_per_img)
+            box_score_thresh, box_nms_thresh, box_detections_per_img)  # 0.05  0.5  100
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
