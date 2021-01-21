@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from model import MobileNetV2
+from model_v2 import MobileNetV2
 
 
 def main():
