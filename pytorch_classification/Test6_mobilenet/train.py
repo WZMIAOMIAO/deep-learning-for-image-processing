@@ -7,12 +7,15 @@ import torch.optim as optim
 from torchvision import transforms, datasets
 from tqdm import tqdm
 
-from model import MobileNetV2
+from model_v2 import MobileNetV2
 
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
+
+    batch_size = 16
+    epochs = 5
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -39,7 +42,6 @@ def main():
     with open('class_indices.json', 'w') as json_file:
         json_file.write(json_str)
 
-    batch_size = 16
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
 
@@ -56,13 +58,16 @@ def main():
 
     print("using {} images for training, {} images fot validation.".format(train_num,
                                                                            val_num))
-    
+
+    # create model
     net = MobileNetV2(num_classes=5)
+
     # load pretrain weights
     # download url: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
     model_weight_path = "./mobilenet_v2.pth"
     assert os.path.exists(model_weight_path), "file {} dose not exist.".format(model_weight_path)
-    pre_weights = torch.load(model_weight_path)
+    pre_weights = torch.load(model_weight_path, map_location=device)
+
     # delete classifier weights
     pre_dict = {k: v for k, v in pre_weights.items() if "classifier" not in k}
     missing_keys, unexpected_keys = net.load_state_dict(pre_dict, strict=False)
@@ -76,7 +81,6 @@ def main():
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
-    epochs = 5
     best_acc = 0.0
     save_path = './MobileNetV2.pth'
     train_steps = len(train_loader)
@@ -115,7 +119,7 @@ def main():
                 val_bar.desc = "valid epoch[{}/{}]".format(epoch + 1,
                                                            epochs)
         val_accurate = acc / val_num
-        print('[epoch %d] train_loss: %.3f  test_accuracy: %.3f' %
+        print('[epoch %d] train_loss: %.3f  val_accuracy: %.3f' %
               (epoch + 1, running_loss / train_steps, val_accurate))
 
         if val_accurate > best_acc:
