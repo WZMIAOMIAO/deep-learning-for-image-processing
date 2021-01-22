@@ -37,7 +37,13 @@ def main(args):
         if os.path.exists("./weights") is False:
             os.makedirs("./weights")
 
-    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
+    train_info, val_info, num_classes = read_split_data(args.data_path)
+    train_images_path, train_images_label = train_info
+    val_images_path, val_images_label = val_info
+
+    # check num_classes
+    assert args.num_classes == num_classes, "dataset num_classes: {}, input {}".format(args.num_classes,
+                                                                                       num_classes)
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
