@@ -260,7 +260,7 @@ def main(opt, hyp):
                     # save weights every epoch
                     with open(results_file, 'r') as f:
                         save_files = {
-                            'model': model.state_dict(),
+                            'model': model.module.state_dict(),
                             'optimizer': optimizer.state_dict(),
                             'training_results': f.read(),
                             'epoch': epoch,
@@ -271,7 +271,7 @@ def main(opt, hyp):
                     if best_map == coco_mAP:
                         with open(results_file, 'r') as f:
                             save_files = {
-                                'model': model.state_dict(),
+                                'model': model.module.state_dict(),
                                 'optimizer': optimizer.state_dict(),
                                 'training_results': f.read(),
                                 'epoch': epoch,
