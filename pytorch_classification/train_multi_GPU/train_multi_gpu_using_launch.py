@@ -146,7 +146,7 @@ def main(args):
             tb_writer.add_scalar(tags[1], acc, epoch)
             tb_writer.add_scalar(tags[2], optimizer.param_groups[0]["lr"], epoch)
 
-            torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
+            torch.save(model.module.state_dict(), "./weights/model-{}.pth".format(epoch))
 
     # 删除临时缓存文件
     if rank == 0:
