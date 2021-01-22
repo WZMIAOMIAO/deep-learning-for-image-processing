@@ -23,7 +23,13 @@ def main(args):
     if os.path.exists("./weights") is False:
         os.makedirs("./weights")
 
-    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
+    train_info, val_info, num_classes = read_split_data(args.data_path)
+    train_images_path, train_images_label = train_info
+    val_images_path, val_images_label = val_info
+
+    # check num_classes
+    assert args.num_classes == num_classes, "dataset num_classes: {}, input {}".format(args.num_classes,
+                                                                                       num_classes)
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -117,7 +123,8 @@ if __name__ == '__main__':
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str, default="/home/wz/data_set/flower_data/flower_photos")
+    parser.add_argument('--data-path', type=str,
+                        default="/home/w180662/my_project/my_github/data_set/flower_data/flower_photos")
 
     # resnet34 官方权重下载地址
     # https://download.pytorch.org/models/resnet34-333f7ec4.pth
