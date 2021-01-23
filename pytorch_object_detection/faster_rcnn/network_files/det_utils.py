@@ -158,8 +158,8 @@ class BoxCoder(object):
         """
         结合anchors和与之对应的gt计算regression参数
         Args:
-            reference_boxes: List[Tensor] gt_boxes
-            proposals: List[Tensor] anchors
+            reference_boxes: List[Tensor] 每个proposal/anchor对应的gt_boxes
+            proposals: List[Tensor] anchors/proposals
 
         Returns: regression parameters
 
