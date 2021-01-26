@@ -13,10 +13,10 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     Computes the loss for Faster R-CNN.
 
     Arguments:
-        class_logits (Tensor): 预测类别概率信息，shape=[num_anchors, num_classes]
-        box_regression (Tensor): 预测边目标界框回归信息
-        labels (list[BoxList]): 真实类别信息
-        regression_targets (Tensor): 真实目标边界框信息
+        class_logits : 预测类别概率信息，shape=[num_anchors, num_classes]
+        box_regression : 预测边目标界框回归信息
+        labels : 真实类别信息
+        regression_targets : 真实目标边界框信息
 
     Returns:
         classification_loss (Tensor)

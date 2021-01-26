@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict, Optional, Union
 
 import torch
 from torch import nn, Tensor
@@ -36,7 +36,7 @@ class FasterRCNNBase(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]
         if self.training:
             return losses
 
