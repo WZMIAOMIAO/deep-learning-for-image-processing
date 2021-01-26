@@ -325,7 +325,7 @@ class RoIHeads(torch.nn.Module):
 
             # remove empty boxes
             # 移除小目标
-            keep = box_ops.remove_small_boxes(boxes, min_size=1e-2)
+            keep = box_ops.remove_small_boxes(boxes, min_size=1.)
             boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
 
             # non-maximun suppression, independently done per class
