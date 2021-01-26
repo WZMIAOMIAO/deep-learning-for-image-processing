@@ -369,7 +369,7 @@ class RegionProposalNetwork(torch.nn.Module):
         self._pre_nms_top_n = pre_nms_top_n
         self._post_nms_top_n = post_nms_top_n
         self.nms_thresh = nms_thresh
-        self.min_size = 1e-3
+        self.min_size = 1.
 
     def pre_nms_top_n(self):
         if self.training:

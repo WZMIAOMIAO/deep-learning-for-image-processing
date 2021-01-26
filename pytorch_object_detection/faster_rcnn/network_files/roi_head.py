@@ -13,10 +13,10 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     Computes the loss for Faster R-CNN.
 
     Arguments:
-        class_logits (Tensor): 预测类别概率信息，shape=[num_anchors, num_classes]
-        box_regression (Tensor): 预测边目标界框回归信息
-        labels (list[BoxList]): 真实类别信息
-        regression_targets (Tensor): 真实目标边界框信息
+        class_logits : 预测类别概率信息，shape=[num_anchors, num_classes]
+        box_regression : 预测边目标界框回归信息
+        labels : 真实类别信息
+        regression_targets : 真实目标边界框信息
 
     Returns:
         classification_loss (Tensor)
@@ -194,7 +194,7 @@ class RoIHeads(torch.nn.Module):
                                 proposals,  # type: List[Tensor]
                                 targets     # type: Optional[List[Dict[str, Tensor]]]
                                 ):
-        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
+        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]
         """
         划分正负样本，统计对应gt的标签以及边界框回归信息
         list元素个数为batch_size
@@ -208,11 +208,12 @@ class RoIHeads(torch.nn.Module):
 
         # 检查target数据是否为空
         self.check_targets(targets)
-        assert targets is not None
+
         dtype = proposals[0].dtype
         device = proposals[0].device
 
-        gt_boxes = [t["boxes"].to(dtype) for t in targets]
+        # 获取标注好的boxes以及labels信息
+        gt_boxes = [t["boxes"] for t in targets]
         gt_labels = [t["labels"] for t in targets]
 
         # append ground-truth bboxes to proposal
@@ -234,9 +235,9 @@ class RoIHeads(torch.nn.Module):
             img_sampled_inds = sampled_inds[img_id]
             # 获取对应正负样本的proposals信息
             proposals[img_id] = proposals[img_id][img_sampled_inds]
-            # 获取对应正负样本的预测类别信息
-            labels[img_id] = labels[img_id][img_sampled_inds]
             # 获取对应正负样本的真实类别信息
+            labels[img_id] = labels[img_id][img_sampled_inds]
+            # 获取对应正负样本的gt索引信息
             matched_idxs[img_id] = matched_idxs[img_id][img_sampled_inds]
 
             gt_boxes_in_image = gt_boxes[img_id]
@@ -247,7 +248,7 @@ class RoIHeads(torch.nn.Module):
 
         # 根据gt和proposal计算边框回归参数（针对gt的）
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
-        return proposals, matched_idxs, labels, regression_targets
+        return proposals, labels, regression_targets
 
     def postprocess_detections(self,
                                class_logits,    # type: Tensor
@@ -324,7 +325,7 @@ class RoIHeads(torch.nn.Module):
 
             # remove empty boxes
             # 移除小目标
-            keep = box_ops.remove_small_boxes(boxes, min_size=1e-2)
+            keep = box_ops.remove_small_boxes(boxes, min_size=1.)
             boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
 
             # non-maximun suppression, independently done per class
@@ -366,11 +367,10 @@ class RoIHeads(torch.nn.Module):
 
         if self.training:
             # 划分正负样本，统计对应gt的标签以及边界框回归信息
-            proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
+            proposals, labels, regression_targets = self.select_training_samples(proposals, targets)
         else:
             labels = None
             regression_targets = None
-            matched_idxs = None
 
         # 将采集样本通过Multi-scale RoIAlign pooling层
         # box_features_shape: [num_proposals, channel, height, width]

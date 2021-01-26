@@ -74,10 +74,10 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
     max_coordinate = boxes.max()
 
     # to(): Performs Tensor dtype and/or device conversion
-    # 为每一个类别生成一个很大的偏移量
+    # 为每一个类别/每一层生成一个很大的偏移量
     # 这里的to只是让生成tensor的dytpe和device与boxes保持一致
     offsets = idxs.to(boxes) * (max_coordinate + 1)
-    # boxes加上对应层的偏移量后，保证不同类别之间boxes不会有重合的现象
+    # boxes加上对应层的偏移量后，保证不同类别/层之间boxes不会有重合的现象
     boxes_for_nms = boxes + offsets[:, None]
     keep = nms(boxes_for_nms, scores, iou_threshold)
     return keep

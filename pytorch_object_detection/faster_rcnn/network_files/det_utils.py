@@ -158,8 +158,8 @@ class BoxCoder(object):
         """
         结合anchors和与之对应的gt计算regression参数
         Args:
-            reference_boxes: List[Tensor] gt_boxes
-            proposals: List[Tensor] anchors
+            reference_boxes: List[Tensor] 每个proposal/anchor对应的gt_boxes
+            proposals: List[Tensor] anchors/proposals
 
         Returns: regression parameters
 
@@ -196,14 +196,12 @@ class BoxCoder(object):
 
         Args:
             rel_codes: bbox regression parameters
-            boxes: anchors
+            boxes: anchors/proposals
 
         Returns:
 
         """
         assert isinstance(boxes, (list, tuple))
-        # if isinstance(rel_codes, (list, tuple)):
-        #     rel_codes = torch.cat(rel_codes, dim=0)
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
@@ -211,6 +209,7 @@ class BoxCoder(object):
         box_sum = 0
         for val in boxes_per_image:
             box_sum += val
+
         # 将预测的bbox回归参数应用到对应anchors上得到预测bbox的坐标
         pred_boxes = self.decode_single(
             rel_codes.reshape(box_sum, -1), concat_boxes
@@ -229,16 +228,16 @@ class BoxCoder(object):
         boxes = boxes.to(rel_codes.dtype)
 
         # xmin, ymin, xmax, ymax
-        widths = boxes[:, 2] - boxes[:, 0]   # anchor宽度
-        heights = boxes[:, 3] - boxes[:, 1]  # anchor高度
-        ctr_x = boxes[:, 0] + 0.5 * widths   # anchor中心x坐标
-        ctr_y = boxes[:, 1] + 0.5 * heights  # anchor中心y坐标
+        widths = boxes[:, 2] - boxes[:, 0]   # anchor/proposal宽度
+        heights = boxes[:, 3] - boxes[:, 1]  # anchor/proposal高度
+        ctr_x = boxes[:, 0] + 0.5 * widths   # anchor/proposal中心x坐标
+        ctr_y = boxes[:, 1] + 0.5 * heights  # anchor/proposal中心y坐标
 
-        wx, wy, ww, wh = self.weights  # 默认都是1
-        dx = rel_codes[:, 0::4] / wx   # 预测anchors的中心坐标x回归参数
-        dy = rel_codes[:, 1::4] / wy   # 预测anchors的中心坐标y回归参数
-        dw = rel_codes[:, 2::4] / ww   # 预测anchors的宽度回归参数
-        dh = rel_codes[:, 3::4] / wh   # 预测anchors的高度回归参数
+        wx, wy, ww, wh = self.weights  # RPN中为[1,1,1,1], fastrcnn中为[10,10,5,5]
+        dx = rel_codes[:, 0::4] / wx   # 预测anchors/proposals的中心坐标x回归参数
+        dy = rel_codes[:, 1::4] / wy   # 预测anchors/proposals的中心坐标y回归参数
+        dw = rel_codes[:, 2::4] / ww   # 预测anchors/proposals的宽度回归参数
+        dh = rel_codes[:, 3::4] / wh   # 预测anchors/proposals的高度回归参数
 
         # limit max value, prevent sending too large values into torch.exp()
         # self.bbox_xform_clip=math.log(1000. / 16)
@@ -258,6 +257,7 @@ class BoxCoder(object):
         pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
         # ymax
         pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
+
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 

@@ -168,7 +168,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', type=int, default=100)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=32)
-    parser.add_argument('--lr', type=float, default=0.1)
+    parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lrf', type=float, default=0.0001)
     # 是否启用SyncBatchNorm
     parser.add_argument('--syncBN', type=bool, default=True)
