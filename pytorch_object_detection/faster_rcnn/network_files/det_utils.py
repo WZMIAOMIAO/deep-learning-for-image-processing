@@ -223,7 +223,7 @@ class BoxCoder(object):
 
         Arguments:
             rel_codes (Tensor): encoded boxes (bbox regression parameters)
-            boxes (Tensor): reference boxes (anchors)
+            boxes (Tensor): reference boxes (anchors/proposals)
         """
         boxes = boxes.to(rel_codes.dtype)
 
@@ -240,7 +240,7 @@ class BoxCoder(object):
         dh = rel_codes[:, 3::4] / wh   # 预测anchors/proposals的高度回归参数
 
         # limit max value, prevent sending too large values into torch.exp()
-        # self.bbox_xform_clip=math.log(1000. / 16)
+        # self.bbox_xform_clip=math.log(1000. / 16)   4.135
         dw = torch.clamp(dw, max=self.bbox_xform_clip)
         dh = torch.clamp(dh, max=self.bbox_xform_clip)
 

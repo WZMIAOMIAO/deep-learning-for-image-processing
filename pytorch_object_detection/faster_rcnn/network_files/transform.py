@@ -87,7 +87,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
         bbox = target["boxes"]
         # 根据图像的缩放比例来缩放bbox
-        bbox = resize_boxes(bbox, [h, w], image.shape[-2:])
+        bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
         target["boxes"] = bbox
 
         return image, target
@@ -183,6 +183,8 @@ class GeneralizedRCNNTransform(nn.Module):
         """
         if self.training:
             return result
+
+        # 遍历每张图片的预测信息，将boxes信息还原回原尺度
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
             boxes = pred["boxes"]
             boxes = resize_boxes(boxes, im_s, o_im_s)  # 将bboxes缩放回原图像尺度上
@@ -232,7 +234,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
 
 def resize_boxes(boxes, original_size, new_size):
-    # type: (Tensor, List[int], List[int]) -> Tensor
+    # type: (Tensor, Tuple[int, int], Tuple[int, int]) -> Tensor
     """
     将boxes参数根据图像的缩放情况进行相应缩放
 
