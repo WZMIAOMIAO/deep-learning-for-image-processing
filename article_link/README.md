@@ -28,3 +28,6 @@
 - YOLOv3 [https://arxiv.org/pdf/1804.02767.pdf](https://arxiv.org/pdf/1804.02767.pdf)
 - YOLOv4 [https://arxiv.org/pdf/2004.10934.pdf](https://arxiv.org/pdf/2004.10934.pdf)
 
+
+## Other
+- Microsoft COCO: Common Objects in Context [https://arxiv.org/pdf/1405.0312.pdf](https://arxiv.org/pdf/1405.0312.pdf)
