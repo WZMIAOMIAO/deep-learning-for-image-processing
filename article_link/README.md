@@ -7,11 +7,14 @@
 - VGG [https://arxiv.org/pdf/1409.1556.pdf](https://arxiv.org/pdf/1409.1556.pdf)
 - GoogLeNet [https://arxiv.org/pdf/1409.4842.pdf](https://arxiv.org/pdf/1409.4842.pdf)
 - ResNet [https://arxiv.org/pdf/1512.03385.pdf](https://arxiv.org/pdf/1512.03385.pdf)
+- ResNeXt [https://arxiv.org/pdf/1611.05431.pdf](https://arxiv.org/pdf/1611.05431.pdf)
+- DenseNet [https://arxiv.org/pdf/1608.06993.pdf](https://arxiv.org/pdf/1608.06993.pdf)
 - MobileNet(v1) [https://arxiv.org/pdf/1704.04861.pdf](https://arxiv.org/pdf/1704.04861.pdf)
 - MobileNet(v2) [https://arxiv.org/pdf/1801.04381.pdf](https://arxiv.org/pdf/1801.04381.pdf)
 - MobileNet(v3) [https://arxiv.org/pdf/1905.02244.pdf](https://arxiv.org/pdf/1905.02244.pdf)
 - ShuffleNet(v1) [https://arxiv.org/pdf/1707.01083.pdf](https://arxiv.org/pdf/1707.01083.pdf)
 - ShuffleNet(v2) [https://arxiv.org/pdf/1807.11164.pdf](https://arxiv.org/pdf/1807.11164.pdf)
+- CSPNet [https://arxiv.org/pdf/1911.11929.pdf](https://arxiv.org/pdf/1911.11929.pdf)
 
 ------
 
