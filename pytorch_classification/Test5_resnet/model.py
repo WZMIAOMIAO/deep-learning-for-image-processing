@@ -87,7 +87,7 @@ class ResNet(nn.Module):
                  num_classes=1000,
                  include_top=True,
                  groups=1,
-                 width_per_group=4):
+                 width_per_group=64):
         super(ResNet, self).__init__()
         self.include_top = include_top
         self.in_channel = 64
