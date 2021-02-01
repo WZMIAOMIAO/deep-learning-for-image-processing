@@ -8,7 +8,6 @@ from torchvision import transforms, datasets
 from tqdm import tqdm
 
 from model_v2 import MobileNetV2
-from model_v3 import mobilenet_v3_large
 
 
 def main():
@@ -61,11 +60,11 @@ def main():
                                                                            val_num))
 
     # create model
-    net = mobilenet_v3_large(num_classes=5)
+    net = MobileNetV2(num_classes=5)
 
     # load pretrain weights
     # download url: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
-    model_weight_path = "./mobilenet_v3_large.pth"
+    model_weight_path = "./mobilenet_v2.pth"
     assert os.path.exists(model_weight_path), "file {} dose not exist.".format(model_weight_path)
     pre_weights = torch.load(model_weight_path, map_location=device)
 
