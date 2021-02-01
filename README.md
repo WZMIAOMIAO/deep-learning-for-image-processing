@@ -36,8 +36,10 @@
     * [Tensorflow2搭建ResNet网络](https://www.bilibili.com/video/BV1WE41177Ya)
   
   * MobileNet（已完成）
-    * [MobileNet理论讲解](https://www.bilibili.com/video/BV1yE411p7L7)
+    * [MobileNet_v1_v2理论讲解](https://www.bilibili.com/video/BV1yE411p7L7)
+    * [MobileNet_v3理论讲解](https://www.bilibili.com/video/BV1GK4y1p7uE)
     * [Pytorch搭建MobileNetV2网络](https://www.bilibili.com/video/BV1qE411T7qZ)
+    * [Pytorch搭建MobileNetV3网络](https://www.bilibili.com/video/BV1zT4y1P7pd)
     * [Tensorflow2搭建MobileNetV2网络](https://www.bilibili.com/video/BV1NE411K7tX)
   
   * ShuffleNet (准备中)
