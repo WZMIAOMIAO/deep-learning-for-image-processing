@@ -22,6 +22,11 @@ class VOC2012DataSet(Dataset):
             self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                              for line in read.readlines()]
 
+        # check file
+        assert len(self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
+        for xml_path in self.xml_list:
+            assert os.path.exists(xml_path), "not found '{}' file.".format(xml_path)
+
         # read class_indict
         try:
             json_file = open('./pascal_voc_classes.json', 'r')
