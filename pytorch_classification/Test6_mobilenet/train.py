@@ -69,7 +69,7 @@ def main():
     pre_weights = torch.load(model_weight_path, map_location=device)
 
     # delete classifier weights
-    pre_dict = {k: v for k, v in pre_weights.items() if "classifier" not in k}
+    pre_dict = {k: v for k, v in pre_weights.items() if net.state_dict()[k].numel() == v.numel()}
     missing_keys, unexpected_keys = net.load_state_dict(pre_dict, strict=False)
 
     # freeze features weights
