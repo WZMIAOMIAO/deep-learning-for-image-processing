@@ -8,6 +8,7 @@ from torchvision import transforms, datasets
 from tqdm import tqdm
 
 from model_v2 import MobileNetV2
+from model_v3 import mobilenet_v3_large
 
 
 def main():
@@ -60,16 +61,16 @@ def main():
                                                                            val_num))
 
     # create model
-    net = MobileNetV2(num_classes=5)
+    net = mobilenet_v3_large(num_classes=5)
 
     # load pretrain weights
     # download url: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
-    model_weight_path = "./mobilenet_v2.pth"
+    model_weight_path = "./mobilenet_v3_large.pth"
     assert os.path.exists(model_weight_path), "file {} dose not exist.".format(model_weight_path)
     pre_weights = torch.load(model_weight_path, map_location=device)
 
     # delete classifier weights
-    pre_dict = {k: v for k, v in pre_weights.items() if "classifier" not in k}
+    pre_dict = {k: v for k, v in pre_weights.items() if net.state_dict()[k].numel() == v.numel()}
     missing_keys, unexpected_keys = net.load_state_dict(pre_dict, strict=False)
 
     # freeze features weights
