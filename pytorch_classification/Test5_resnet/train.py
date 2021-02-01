@@ -62,7 +62,7 @@ def main():
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = "./resnet34-pre.pth"
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
-    missing_keys, unexpected_keys = net.load_state_dict(torch.load(model_weight_path), strict=False)
+    net.load_state_dict(torch.load(model_weight_path, map_location=device))
     # for param in net.parameters():
     #     param.requires_grad = False
 
@@ -71,8 +71,12 @@ def main():
     net.fc = nn.Linear(in_channel, 5)
     net.to(device)
 
+    # define loss function
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+
+    # construct an optimizer
+    params = [p for p in net.parameters() if p.requires_grad]
+    optimizer = optim.Adam(params, lr=0.0001)
 
     epochs = 3
     best_acc = 0.0

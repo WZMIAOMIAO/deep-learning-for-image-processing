@@ -78,8 +78,12 @@ def main():
 
     net.to(device)
 
+    # define loss function
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+
+    # construct an optimizer
+    params = [p for p in net.parameters() if p.requires_grad]
+    optimizer = optim.Adam(params, lr=0.0001)
 
     best_acc = 0.0
     save_path = './MobileNetV2.pth'
