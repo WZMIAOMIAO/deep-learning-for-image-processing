@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tqdm import tqdm
 
-from model import MobileNetV2
+from model_v2 import MobileNetV2
 
 
 def main():

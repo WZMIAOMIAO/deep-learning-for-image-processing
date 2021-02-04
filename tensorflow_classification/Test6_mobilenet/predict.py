@@ -7,7 +7,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-from model import MobileNetV2
+from model_v2 import MobileNetV2
 
 
 def main():
