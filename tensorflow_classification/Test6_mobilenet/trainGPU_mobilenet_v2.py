@@ -1,4 +1,4 @@
-from model import MobileNetV2
+from model_v2 import MobileNetV2
 import tensorflow as tf
 import json
 import os
