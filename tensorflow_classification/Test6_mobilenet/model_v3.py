@@ -114,7 +114,7 @@ def _inverted_res_block(x,
                           name=prefix + 'expand')(x)
         x = bn(name=prefix + 'expand/BatchNorm')(x)
         x = act(name=prefix + 'expand/' + act.__name__)(x)
-    # from tensorflow.python.keras.applications.imagenet_utils import correct_pad
+
     if stride == 2:
         x = layers.ZeroPadding2D(padding=correct_pad(exp_c, kernel_size),
                                  name=prefix + 'depthwise/pad')(x)
