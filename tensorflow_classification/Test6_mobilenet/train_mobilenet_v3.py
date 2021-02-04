@@ -10,7 +10,7 @@ assert tf.version.VERSION >= "2.4.0", "version of tf must greater/equal than 2.4
 
 
 def main():
-    data_root = "/data/flower_photos"  # get data root path
+    data_root = "D:/My_code/pythonProject/deep-learning-for-image-processing-master/data_set/flower_data/flower_photos"  # get data root path
 
     if not os.path.exists("./save_weights"):
         os.makedirs("./save_weights")
@@ -62,7 +62,7 @@ def main():
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
         train_loss(loss)
-        train_accuracy(labels, output)
+        train_accuracy(train_labels, output)
 
     @tf.function
     def val_step(val_images, val_labels):
@@ -70,7 +70,7 @@ def main():
         loss = loss_object(val_labels, output)
 
         val_loss(loss)
-        val_accuracy(labels, output)
+        val_accuracy(val_labels, output)
 
     best_test_loss = float('inf')
     for epoch in range(epochs):

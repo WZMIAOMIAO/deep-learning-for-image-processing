@@ -18,7 +18,7 @@ def _make_divisible(ch, divisor=8, min_ch=None):
     return new_ch
 
 
-def correct_pad(input_c, kernel_size):
+def correct_pad(input_c: int, kernel_size: int):
     """Returns a tuple for zero-padding for 2D convolution with downsampling.
 
     Arguments:
@@ -28,8 +28,8 @@ def correct_pad(input_c, kernel_size):
     Returns:
       A tuple.
     """
-    if isinstance(kernel_size, int):
-        kernel_size = (kernel_size, kernel_size)
+
+    kernel_size = (kernel_size, kernel_size)
 
     adjust = (1 - input_c % 2, 1 - input_c % 2)
     correct = (kernel_size[0] // 2, kernel_size[1] // 2)
@@ -84,15 +84,15 @@ def _se_block(inputs, filters, prefix, se_ratio=1 / 4.):
 
 
 def _inverted_res_block(x,
-                        input_c,
-                        kernel_size,
-                        exp_c,
-                        out_c,
-                        use_se,
-                        activation,
-                        stride,
-                        block_id,
-                        alpha=1.0):
+                        input_c: int,      # input channel
+                        kernel_size: int,  # kennel size
+                        exp_c: int,        # expanded channel
+                        out_c: int,        # out channel
+                        use_se: bool,      # whether using SE
+                        activation: str,   # RE or HS
+                        stride: int,
+                        block_id: int,
+                        alpha: float = 1.0):
 
     bn = partial(layers.BatchNormalization, epsilon=0.001, momentum=0.99)
 
