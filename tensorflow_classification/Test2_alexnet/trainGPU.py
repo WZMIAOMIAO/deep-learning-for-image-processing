@@ -87,7 +87,7 @@ def main():
                              .repeat().batch(batch_size)
 
     # 实例化模型
-    model = AlexNet_v1(im_height=im_height, im_width=im_width, class_num=5)
+    model = AlexNet_v1(im_height=im_height, im_width=im_width, num_classes=5)
     # model = AlexNet_v2(class_num=5)
     # model.build((batch_size, 224, 224, 3))  # when using subclass model
     model.summary()
