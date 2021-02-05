@@ -18,7 +18,7 @@
   │    └── pascal_voc_classes.json: pascal voc数据集标签
   │ 
   ├── runs: 保存训练过程中生成的所有tensorboard相关文件
-  ├── utils: 搭建训练网络时使用到的工具
+  ├── build_utils: 搭建训练网络时使用到的工具
   │     ├── datasets.py: 数据读取以及预处理方法
   │     ├── img_utils.py: 部分图像处理方法
   │     ├── layers.py: 实现的一些基础层结构

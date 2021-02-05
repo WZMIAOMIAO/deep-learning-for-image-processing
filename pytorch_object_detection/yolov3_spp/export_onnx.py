@@ -6,7 +6,7 @@ import onnx
 import onnxruntime
 import numpy as np
 import models
-from utils import img_utils
+from build_utils import img_utils
 
 device = torch.device("cpu")
 models.ONNX_EXPORT = True

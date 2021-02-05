@@ -1,11 +1,8 @@
-import glob
 import math
 import os
 import random
 import shutil
-import time
 from pathlib import Path
-from threading import Thread
 
 import cv2
 import numpy as np
@@ -14,7 +11,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.utils import xyxy2xywh, xywh2xyxy
+from build_utils.utils import xyxy2xywh, xywh2xyxy
 
 help_url = 'https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data'
 img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']

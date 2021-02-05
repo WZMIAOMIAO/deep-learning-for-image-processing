@@ -1,8 +1,8 @@
 from torch import nn
-import torch
 import math
-from utils.layers import *
-from utils.parse_config import *
+from build_utils import torch_utils
+from build_utils.layers import *
+from build_utils.parse_config import *
 
 ONNX_EXPORT = False
 
@@ -12,7 +12,6 @@ def create_modules(modules_defs: list, img_size):
     Constructs module list of layer blocks from module configuration in module_defs
     :param modules_defs: 通过.cfg文件解析得到的每个层结构的列表
     :param img_size:
-    :param cfg: .cfg文件的路径
     :return:
     """
 
