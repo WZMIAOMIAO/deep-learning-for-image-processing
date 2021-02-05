@@ -62,7 +62,7 @@ def main():
                   loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
                   metrics=["accuracy"])
 
-    callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myAlex_{epoch}.h5',
+    callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./save_weights/myVGG.h5',
                                                     save_best_only=True,
                                                     save_weights_only=True,
                                                     monitor='val_loss')]
