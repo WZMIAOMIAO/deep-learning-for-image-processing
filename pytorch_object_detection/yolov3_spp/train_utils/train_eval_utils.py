@@ -3,7 +3,7 @@ import sys
 from torch.cuda import amp
 import torch.nn.functional as F
 
-from utils.utils import *
+from build_utils.utils import *
 from train_utils.coco_eval import CocoEvaluator
 from train_utils.coco_utils import get_coco_api_from_dataset
 import train_utils.distributed_utils as utils
@@ -125,7 +125,7 @@ def evaluate(model, data_loader, coco=None, device=None):
 
         model_time = time.time()
         pred = model(imgs)[0]  # only get inference result
-        pred = non_max_suppression(pred, conf_thres=0.001, iou_thres=0.6, multi_label=False)
+        pred = non_max_suppression(pred, conf_thres=0.01, iou_thres=0.6, multi_label=False)
         outputs = []
         for index, p in enumerate(pred):
             if p is None:

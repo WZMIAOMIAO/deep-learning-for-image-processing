@@ -5,9 +5,9 @@ import cv2
 import numpy as np
 import time
 from matplotlib import pyplot as plt
-from utils import img_utils
-from utils import torch_utils
-from utils import utils
+from build_utils import img_utils
+from build_utils import torch_utils
+from build_utils import utils
 from models import Darknet
 from draw_box_utils import draw_box
 
@@ -83,6 +83,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
