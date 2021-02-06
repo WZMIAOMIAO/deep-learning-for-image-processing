@@ -170,7 +170,7 @@ def resnet101(num_classes=1000, include_top=True):
     return ResNet(Bottleneck, [3, 4, 23, 3], num_classes=num_classes, include_top=include_top)
 
 
-def resnet50_32x4d(num_classes=1000, include_top=True):
+def resnext50_32x4d(num_classes=1000, include_top=True):
     # https://download.pytorch.org/models/resnext50_32x4d-7cdf4587.pth
     groups = 32
     width_per_group = 4
@@ -181,7 +181,7 @@ def resnet50_32x4d(num_classes=1000, include_top=True):
                   width_per_group=width_per_group)
 
 
-def resnet101_32x8d(num_classes=1000, include_top=True):
+def resnext101_32x8d(num_classes=1000, include_top=True):
     # https://download.pytorch.org/models/resnext101_32x8d-8ba56ff5.pth
     groups = 32
     width_per_group = 8
