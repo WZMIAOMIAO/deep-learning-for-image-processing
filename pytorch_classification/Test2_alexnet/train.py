@@ -55,7 +55,7 @@ def main():
                                                   batch_size=4, shuffle=False,
                                                   num_workers=nw)
 
-    print("using {} images for training, {} images fot validation.".format(train_num,
+    print("using {} images for training, {} images for validation.".format(train_num,
                                                                            val_num))
     # test_data_iter = iter(validate_loader)
     # test_image, test_label = test_data_iter.next()

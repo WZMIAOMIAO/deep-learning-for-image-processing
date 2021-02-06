@@ -56,7 +56,7 @@ def main():
                                                   batch_size=batch_size, shuffle=False,
                                                   num_workers=nw)
 
-    print("using {} images for training, {} images fot validation.".format(train_num,
+    print("using {} images for training, {} images for validation.".format(train_num,
                                                                            val_num))
 
     # create model
