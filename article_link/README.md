@@ -36,5 +36,6 @@
 - YOLOv4 [https://arxiv.org/pdf/2004.10934.pdf](https://arxiv.org/pdf/2004.10934.pdf)
 
 
-## Other
+## Others
 - Microsoft COCO: Common Objects in Context [https://arxiv.org/pdf/1405.0312.pdf](https://arxiv.org/pdf/1405.0312.pdf)
+- The PASCALVisual Object Classes Challenge: A Retrospective [http://host.robots.ox.ac.uk/pascal/VOC/pubs/everingham15.pdf](http://host.robots.ox.ac.uk/pascal/VOC/pubs/everingham15.pdf)
