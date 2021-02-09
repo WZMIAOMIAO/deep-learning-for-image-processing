@@ -32,7 +32,9 @@
   
   * ResNet（已完成）
     * [ResNet理论讲解](https://www.bilibili.com/video/BV1T7411T7wa)
+    * [ResNeXt理论讲解](https://www.bilibili.com/video/BV1Ap4y1p71v/)
     * [Pytorch搭建ResNet网络](https://www.bilibili.com/video/BV14E411H7Uw)
+    * [Pytorch搭建ResNeXt网络](https://www.bilibili.com/video/BV1rX4y1N7tE)
     * [Tensorflow2搭建ResNet网络](https://www.bilibili.com/video/BV1WE41177Ya)
   
   * MobileNet（已完成）
