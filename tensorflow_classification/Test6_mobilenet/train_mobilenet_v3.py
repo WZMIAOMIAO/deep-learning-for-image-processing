@@ -10,7 +10,7 @@ assert tf.version.VERSION >= "2.4.0", "version of tf must greater/equal than 2.4
 
 
 def main():
-    data_root = "D:/My_code/pythonProject/deep-learning-for-image-processing-master/data_set/flower_data/flower_photos"  # get data root path
+    data_root = "/data/flower_photos"  # get data root path
 
     if not os.path.exists("./save_weights"):
         os.makedirs("./save_weights")
