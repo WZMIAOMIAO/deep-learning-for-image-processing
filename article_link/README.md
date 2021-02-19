@@ -18,6 +18,7 @@
 - MobileNet(v3) [https://arxiv.org/pdf/1905.02244.pdf](https://arxiv.org/pdf/1905.02244.pdf)
 - ShuffleNet(v1) [https://arxiv.org/pdf/1707.01083.pdf](https://arxiv.org/pdf/1707.01083.pdf)
 - ShuffleNet(v2) [https://arxiv.org/pdf/1807.11164.pdf](https://arxiv.org/pdf/1807.11164.pdf)
+- EfficientNet [https://arxiv.org/pdf/1905.11946.pdf](https://arxiv.org/pdf/1905.11946.pdf)
 - CSPNet [https://arxiv.org/pdf/1911.11929.pdf](https://arxiv.org/pdf/1911.11929.pdf)
 
 ------
