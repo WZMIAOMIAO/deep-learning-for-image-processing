@@ -164,6 +164,7 @@ def shufflenet_v2(num_classes: int,
 
 
 def shufflenet_v2_x1_0(num_classes=1000, input_shape=(224, 224, 3)):
+    # 权重链接: https://pan.baidu.com/s/1M2mp98Si9eT9qT436DcdOw  密码: mhts
     model = shufflenet_v2(num_classes=num_classes,
                           input_shape=input_shape,
                           stages_repeats=[4, 8, 4],
