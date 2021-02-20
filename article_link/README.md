@@ -20,6 +20,7 @@
 - ShuffleNet(v2) [https://arxiv.org/pdf/1807.11164.pdf](https://arxiv.org/pdf/1807.11164.pdf)
 - EfficientNet [https://arxiv.org/pdf/1905.11946.pdf](https://arxiv.org/pdf/1905.11946.pdf)
 - CSPNet [https://arxiv.org/pdf/1911.11929.pdf](https://arxiv.org/pdf/1911.11929.pdf)
+- RegNet [https://arxiv.org/pdf/2003.13678.pdf](https://arxiv.org/pdf/2003.13678.pdf)
 
 ------
 
