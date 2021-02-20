@@ -48,6 +48,8 @@ def read_split_data(root: str, val_rate: float = 0.2):
                 train_images_label.append(image_class)
 
     print("{} images were found in the dataset.".format(sum(every_class_num)))
+    print("{} images for training.".format(len(train_images_path)))
+    print("{} images for validation.".format(len(val_images_path)))
 
     plot_image = False
     if plot_image:
