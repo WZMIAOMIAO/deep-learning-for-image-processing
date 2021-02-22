@@ -170,7 +170,7 @@ class MobileNetV3(nn.Module):
                                        stride=2,
                                        norm_layer=norm_layer,
                                        activation_layer=nn.Hardswish))
-        # building inverted residual bloks
+        # building inverted residual blocks
         for cnf in inverted_residual_setting:
             layers.append(block(cnf, norm_layer))
 
