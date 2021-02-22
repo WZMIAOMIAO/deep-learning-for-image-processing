@@ -124,7 +124,7 @@ def main():
         with val_writer.as_default():
             tf.summary.scalar("loss", val_loss.result(), epoch)
             tf.summary.scalar("accuracy", val_accuracy.result(), epoch)
-        
+
         # only save best weights
         if val_accuracy.result() > best_val_acc:
             best_val_acc = val_accuracy.result()
