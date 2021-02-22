@@ -84,7 +84,7 @@ def main():
         val_loss(loss)
         val_accuracy(val_labels, output)
 
-    best_test_loss = float('inf')
+    best_val_acc = 0.
     for epoch in range(epochs):
         train_loss.reset_states()  # clear history info
         train_accuracy.reset_states()  # clear history info
@@ -124,9 +124,10 @@ def main():
         with val_writer.as_default():
             tf.summary.scalar("loss", val_loss.result(), epoch)
             tf.summary.scalar("accuracy", val_accuracy.result(), epoch)
-
-        if val_loss.result() < best_test_loss:
-            best_test_loss = val_loss.result()
+        
+        # only save best weights
+        if val_accuracy.result() > best_val_acc:
+            best_val_acc = val_accuracy.result()
             model.save_weights("./save_weights/shufflenetv2.ckpt", save_format="tf")
 
 

@@ -5,7 +5,6 @@ import numpy as np
 
 from PIL import Image
 import matplotlib.pyplot as plt
-import tensorflow as tf
 
 from model import shufflenet_v2_x1_0
 
