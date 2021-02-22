@@ -1,3 +1,4 @@
+from typing import Optional, Tuple
 from functools import partial
 from tensorflow.keras import layers, Model
 
@@ -18,20 +19,23 @@ def _make_divisible(ch, divisor=8, min_ch=None):
     return new_ch
 
 
-def correct_pad(input_c: int, kernel_size: int):
+def correct_pad(input_size: Optional[int, Tuple], kernel_size: int):
     """Returns a tuple for zero-padding for 2D convolution with downsampling.
 
     Arguments:
-      input_c: Input tensor channel.
+      input_size: Input tensor size.
       kernel_size: An integer or tuple/list of 2 integers.
 
     Returns:
       A tuple.
     """
 
+    if isinstance(input_size, int):
+        input_size = (input_size, input_size)
+
     kernel_size = (kernel_size, kernel_size)
 
-    adjust = (1 - input_c % 2, 1 - input_c % 2)
+    adjust = (1 - input_size[0] % 2, 1 - input_size[1] % 2)
     correct = (kernel_size[0] // 2, kernel_size[1] // 2)
     return ((correct[0] - adjust[0], correct[0]),
             (correct[1] - adjust[1], correct[1]))
