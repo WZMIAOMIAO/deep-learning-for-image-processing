@@ -100,7 +100,7 @@ def main():
         val_loss(loss)
         val_accuracy(labels, output)
 
-    best_val_loss = float('inf')
+    best_val_acc = 0.
     for epoch in range(epochs):
         train_loss.reset_states()  # clear history info
         train_accuracy.reset_states()  # clear history info
@@ -131,8 +131,9 @@ def main():
                                                                                val_loss.result(),
                                                                                val_accuracy.result())
 
-        if val_loss.result() < best_val_loss:
-            best_val_loss = val_loss.result()
+        # only save best weights
+        if val_accuracy.result() > best_val_acc:
+            best_val_acc = val_accuracy.result()
             model.save_weights("./save_weights/myGoogLeNet.ckpt")
 
 
