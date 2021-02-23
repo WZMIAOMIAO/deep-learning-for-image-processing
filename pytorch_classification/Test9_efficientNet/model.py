@@ -27,7 +27,7 @@ def _make_divisible(ch, divisor=8, min_ch=None):
 
 
 class Swish(nn.Module):
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return x * torch.sigmoid(x)
 
 
