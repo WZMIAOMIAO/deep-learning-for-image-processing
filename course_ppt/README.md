@@ -5,7 +5,10 @@
 - **VGG** 链接: https://pan.baidu.com/s/1BnYpdaDwAIcgRm7YwakEZw  密码: 8ev0
 - **GoogleNet** 链接: https://pan.baidu.com/s/1XjZXprvayV3dDMvLjoOk3A  密码: 9hq4
 - **ResNet** 链接: https://pan.baidu.com/s/1I2LUlwCSjNKr37T0n3NKzg  密码: f1s9
-- **MobileNet** 链接: https://pan.baidu.com/s/1ReDDCuK8wyH0XqniUgiSYQ  密码: ipqv
+- **ResNext** 链接：https://pan.baidu.com/s/1-anFYX5572MJmiQym9D4Eg 密码：f8ob 
+- **MobileNet_v1_v2** 链接: https://pan.baidu.com/s/1ReDDCuK8wyH0XqniUgiSYQ  密码: ipqv
+- **MobileNet_v3**  链接：https://pan.baidu.com/s/13mzSpyxuA4T4ki7kEN1Xqw 密码：fp5g 
+- **ShuffleNet_v1_v2** 链接：https://pan.baidu.com/s/1-DDwePMPCDvjw08YU8nAAA 密码：ad6n 
 - **ConfusionMatrix** 链接: https://pan.baidu.com/s/1EtKzHkZyv2XssYtqmGYCLg  密码: uoo5
 
 
