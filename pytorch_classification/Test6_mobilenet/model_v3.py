@@ -47,9 +47,9 @@ class ConvBNActivation(nn.Sequential):
                                                activation_layer(inplace=True))
 
 
-class SqueezeExcitaion(nn.Module):
+class SqueezeExcitation(nn.Module):
     def __init__(self, input_c: int, squeeze_factor: int = 4):
-        super(SqueezeExcitaion, self).__init__()
+        super(SqueezeExcitation, self).__init__()
         squeeze_c = _make_divisible(input_c // squeeze_factor, 8)
         self.fc1 = nn.Conv2d(input_c, squeeze_c, 1)
         self.fc2 = nn.Conv2d(squeeze_c, input_c, 1)
@@ -118,7 +118,7 @@ class InvertedResidual(nn.Module):
                                        activation_layer=activation_layer))
 
         if cnf.use_se:
-            layers.append(SqueezeExcitaion(cnf.expanded_c))
+            layers.append(SqueezeExcitation(cnf.expanded_c))
 
         # project
         layers.append(ConvBNActivation(cnf.expanded_c,
