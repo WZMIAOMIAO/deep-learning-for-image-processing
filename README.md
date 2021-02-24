@@ -47,6 +47,7 @@
   
   * ShuffleNet (进行中)
 	* [ShuffleNet_v1_v2理论讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
+	* [使用Pytorch搭建ShuffleNetv2](https://www.bilibili.com/video/BV1dh411r76X)
 
 * 目标检测篇
   * Faster-RCNN/FPN（进行中）
