@@ -26,11 +26,6 @@ def _make_divisible(ch, divisor=8, min_ch=None):
     return new_ch
 
 
-class Swish(nn.Module):
-    def forward(self, x: Tensor) -> Tensor:
-        return x * torch.sigmoid(x)
-
-
 class ConvBNActivation(nn.Sequential):
     def __init__(self,
                  in_planes: int,
@@ -44,7 +39,7 @@ class ConvBNActivation(nn.Sequential):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         if activation_layer is None:
-            activation_layer = Swish
+            activation_layer = nn.SiLU  # alias Swish
 
         super(ConvBNActivation, self).__init__(nn.Conv2d(in_channels=in_planes,
                                                          out_channels=out_planes,
@@ -65,7 +60,7 @@ class SqueezeExcitation(nn.Module):
         super(SqueezeExcitation, self).__init__()
         squeeze_c = input_c // squeeze_factor
         self.fc1 = nn.Conv2d(expand_c, squeeze_c, 1)
-        self.ac1 = Swish()
+        self.ac1 = nn.SiLU()  # alias Swish
         self.fc2 = nn.Conv2d(squeeze_c, expand_c, 1)
         self.ac2 = nn.Sigmoid()
 
@@ -116,7 +111,7 @@ class InvertedResidual(nn.Module):
         self.use_res_connect = (cnf.stride == 1 and cnf.input_c == cnf.out_c)
 
         layers = OrderedDict()
-        activation_layer = Swish
+        activation_layer = nn.SiLU  # alias Swish
 
         # expand
         if cnf.expanded_c != cnf.input_c:
