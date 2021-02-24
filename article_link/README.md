@@ -23,7 +23,7 @@
 - EfficientNet [https://arxiv.org/abs/1905.11946.pdf](https://arxiv.org/abs/1905.11946.pdf)
 - CSPNet [https://arxiv.org/abs/1911.11929.pdf](https://arxiv.org/abs/1911.11929.pdf)
 - RegNet [https://arxiv.org/abs/2003.13678.pdf](https://arxiv.org/abs/2003.13678.pdf)
-
+- NFNets(High-Performance Large-Scale Image Recognition Without Normalization) [https://arxiv.org/abs/2102.06171](https://arxiv.org/abs/2102.06171)
 ------
 
 ## 目标检测(Object Detection)
