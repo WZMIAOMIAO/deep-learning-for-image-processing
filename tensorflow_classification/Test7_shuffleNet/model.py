@@ -80,7 +80,7 @@ class ChannelSplit(layers.Layer):
 
 
 def shuffle_block_s1(inputs, output_c: int, stride: int, prefix: str):
-    if stride not in [1, 2]:
+    if stride != 1:
         raise ValueError("illegal stride value.")
 
     assert output_c % 2 == 0
@@ -100,7 +100,7 @@ def shuffle_block_s1(inputs, output_c: int, stride: int, prefix: str):
 
 
 def shuffle_block_s2(inputs, output_c: int, stride: int, prefix: str):
-    if stride not in [1, 2]:
+    if stride != 2:
         raise ValueError("illegal stride value.")
 
     assert output_c % 2 == 0
