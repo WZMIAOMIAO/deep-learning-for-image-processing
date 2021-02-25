@@ -45,9 +45,10 @@
     * [Tensorflow2搭建MobileNetV2网络](https://www.bilibili.com/video/BV1NE411K7tX)
     * [Tensorflow2搭建MobileNetV3网络](https://www.bilibili.com/video/BV1KA411g7wX)
   
-  * ShuffleNet (进行中)
+  * ShuffleNet (已完成)
 	* [ShuffleNet_v1_v2理论讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
 	* [使用Pytorch搭建ShuffleNetv2](https://www.bilibili.com/video/BV1dh411r76X)
+	* [使用Tensorflow2搭建ShuffleNetv2](https://www.bilibili.com/video/BV1kr4y1N7bh)
 
 * 目标检测篇
   * Faster-RCNN/FPN（进行中）
