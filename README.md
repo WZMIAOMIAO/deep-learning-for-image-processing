@@ -32,10 +32,12 @@
   
   * ResNet（已完成）
     * [ResNet理论讲解](https://www.bilibili.com/video/BV1T7411T7wa)
-    * [ResNeXt理论讲解](https://www.bilibili.com/video/BV1Ap4y1p71v/)
     * [Pytorch搭建ResNet网络](https://www.bilibili.com/video/BV14E411H7Uw)
-    * [Pytorch搭建ResNeXt网络](https://www.bilibili.com/video/BV1rX4y1N7tE)
     * [Tensorflow2搭建ResNet网络](https://www.bilibili.com/video/BV1WE41177Ya)
+
+  * ResNeXt (已完成)
+    * [ResNeXt理论讲解](https://www.bilibili.com/video/BV1Ap4y1p71v/)
+    * [Pytorch搭建ResNeXt网络](https://www.bilibili.com/video/BV1rX4y1N7tE)
   
   * MobileNet（已完成）
     * [MobileNet_v1_v2理论讲解](https://www.bilibili.com/video/BV1yE411p7L7)
@@ -46,9 +48,9 @@
     * [Tensorflow2搭建MobileNetV3网络](https://www.bilibili.com/video/BV1KA411g7wX)
   
   * ShuffleNet (已完成)
-	* [ShuffleNet_v1_v2理论讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
-	* [使用Pytorch搭建ShuffleNetv2](https://www.bilibili.com/video/BV1dh411r76X)
-	* [使用Tensorflow2搭建ShuffleNetv2](https://www.bilibili.com/video/BV1kr4y1N7bh)
+    * [ShuffleNet_v1_v2理论讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
+    * [使用Pytorch搭建ShuffleNetv2](https://www.bilibili.com/video/BV1dh411r76X)
+    * [使用Tensorflow2搭建ShuffleNetv2](https://www.bilibili.com/video/BV1kr4y1N7bh)
 
 * 目标检测篇
   * Faster-RCNN/FPN（进行中）
@@ -75,7 +77,7 @@
 * pycharm (IDE)
 * pytorch 1.6 (pip package)
 * torchvision 0.7.0 (pip package)
-* tensorflow 2.2 (pip package)
+* tensorflow 2.4 (pip package)
 
 [你可能遇到的问题](./summary_problem.md)     
 
@@ -84,6 +86,3 @@
 
 我的bilibili频道：
 [https://space.bilibili.com/18161609/channel/index](https://space.bilibili.com/18161609/channel/index)
-
-我的优酷播单：
-[http://list.youku.com/albumlist/show/id_52338354](http://list.youku.com/albumlist/show/id_52338354)
