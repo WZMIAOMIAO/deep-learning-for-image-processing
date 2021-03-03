@@ -103,7 +103,6 @@ class ConvBNAct(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.bn(x)
-        # if self.act is not None:
         x = self.act(x)
         return x
 

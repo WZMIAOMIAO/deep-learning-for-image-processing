@@ -39,6 +39,11 @@ def create_model(num_classes):
     return model
 
 
+def time_synchronized():
+    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    return time.time()
+
+
 def main():
     # get devices
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -76,9 +81,10 @@ def main():
         init_img = torch.zeros((1, 3, img_height, img_width), device=device)
         model(init_img)
 
-        t_start = time.time()
+        t_start = time_synchronized()
         predictions = model(img.to(device))[0]
-        print("inference+NMS time: {}".format(time.time() - t_start))
+        t_end = time_synchronized()
+        print("inference+NMS time: {}".format(t_end - t_start))
 
         predict_boxes = predictions["boxes"].to("cpu").numpy()
         predict_classes = predictions["labels"].to("cpu").numpy()
