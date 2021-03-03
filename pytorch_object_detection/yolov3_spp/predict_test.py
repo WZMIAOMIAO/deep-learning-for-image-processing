@@ -1,9 +1,9 @@
 import os
 import json
+import time
 import torch
 import cv2
 import numpy as np
-import time
 from matplotlib import pyplot as plt
 from build_utils import img_utils
 from build_utils import torch_utils
