@@ -120,7 +120,8 @@ def _inverted_res_block(x,
         x = act(name=prefix + 'expand/' + act.__name__)(x)
 
     if stride == 2:
-        x = layers.ZeroPadding2D(padding=correct_pad(exp_c, kernel_size),
+        input_size = (x.shape[1], x.shape[2])  # height, width
+        x = layers.ZeroPadding2D(padding=correct_pad(input_size, kernel_size),
                                  name=prefix + 'depthwise/pad')(x)
 
     x = layers.DepthwiseConv2D(kernel_size=kernel_size,

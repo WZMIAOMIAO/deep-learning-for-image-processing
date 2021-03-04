@@ -20,6 +20,7 @@ def main():
     batch_size = 16
     epochs = 20
     num_classes = 5
+    freeze_layer = False
 
     # data generator with data augmentation
     train_ds, val_ds = generate_ds(data_root, im_height, im_width, batch_size)
@@ -34,12 +35,13 @@ def main():
     assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
     model.load_weights(pre_weights_path, by_name=True, skip_mismatch=True)
 
-    # freeze layer, only training 2 last layers
-    for layer in model.layers:
-        if layer.name not in ["Conv_2", "Logits/Conv2d_1c_1x1"]:
-            layer.trainable = False
-        else:
-            print("training: " + layer.name)
+    if freeze_layer is True:
+        # freeze layer, only training 2 last layers
+        for layer in model.layers:
+            if layer.name not in ["Conv_2", "Logits/Conv2d_1c_1x1"]:
+                layer.trainable = False
+            else:
+                print("training: " + layer.name)
 
     model.summary()
 
