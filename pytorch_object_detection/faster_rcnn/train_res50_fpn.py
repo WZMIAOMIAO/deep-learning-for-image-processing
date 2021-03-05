@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
 
     args = parser.parse_args()
