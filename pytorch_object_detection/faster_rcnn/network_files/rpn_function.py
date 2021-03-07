@@ -447,7 +447,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
             else:
                 num_anchors = ob.shape[1]  # 预测特征层上的预测的anchors个数
-                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)  # self.pre_nms_top_n=1000
+                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
 
             # Returns the k largest elements of the given input tensor along a given dimension
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
