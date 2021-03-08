@@ -106,7 +106,7 @@ def main():
         net.eval()
         acc = 0.0  # accumulate accurate number / epoch
         with torch.no_grad():
-            val_bar = tqdm(validate_loader, colour='green')
+            val_bar = tqdm(validate_loader)
             for val_data in val_bar:
                 val_images, val_labels = val_data
                 outputs = net(val_images.to(device))
