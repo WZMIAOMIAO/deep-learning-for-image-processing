@@ -21,12 +21,10 @@ class VOC2012DataSet(Dataset):
                              for line in read.readlines()]
 
         # read class_indict
-        try:
-            json_file = open('./pascal_voc_classes.json', 'r')
-            self.class_dict = json.load(json_file)
-        except Exception as e:
-            print(e)
-            exit(-1)
+        json_file = "./pascal_voc_classes.json"
+        assert os.path.exists(json_file), "{} file not exist.".format(json_file)
+        json_file = open(json_file, 'r')
+        self.class_dict = json.load(json_file)
 
         self.transforms = transforms
 
@@ -46,7 +44,7 @@ class VOC2012DataSet(Dataset):
         img_path = os.path.join(self.img_root, data["filename"])
         image = Image.open(img_path)
         if image.format != "JPEG":
-            raise ValueError("Image format not JPEG")
+            raise ValueError("Image '{}' format not JPEG".format(img_path))
         boxes = []
         labels = []
         iscrowd = []

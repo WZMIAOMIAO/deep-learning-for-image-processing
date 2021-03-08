@@ -48,7 +48,7 @@ class VOC2012DataSet(Dataset):
         img_path = os.path.join(self.img_root, data["filename"])
         image = Image.open(img_path)
         if image.format != "JPEG":
-            raise ValueError("Image format not JPEG")
+            raise ValueError("Image '{}' format not JPEG".format(img_path))
         boxes = []
         labels = []
         iscrowd = []
