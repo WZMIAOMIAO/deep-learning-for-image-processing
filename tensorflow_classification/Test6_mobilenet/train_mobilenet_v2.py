@@ -129,7 +129,7 @@ def main():
                                                                                  train_accuracy.result())
 
         # validate
-        val_bar = tqdm(range(total_val // batch_size), colour='green')
+        val_bar = tqdm(range(total_val // batch_size))
         for step in val_bar:
             val_images, val_labels = next(val_data_gen)
             val_step(val_images, val_labels)
