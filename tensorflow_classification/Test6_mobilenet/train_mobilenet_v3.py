@@ -93,7 +93,7 @@ def main():
                                                                                  train_accuracy.result())
 
         # validate
-        val_bar = tqdm(val_ds, colour='green')
+        val_bar = tqdm(val_ds)
         for images, labels in val_bar:
             val_step(images, labels)
 
