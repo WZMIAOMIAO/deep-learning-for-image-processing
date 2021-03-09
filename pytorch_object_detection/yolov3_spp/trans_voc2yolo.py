@@ -19,7 +19,7 @@ train_txt = "train.txt"
 val_txt = "val.txt"
 
 # 转换后的文件保存目录
-save_file_root = "/data/my_yolo_dataset"
+save_file_root = "./my_yolo_dataset"
 
 # label标签对应json文件
 label_json_path = './data/pascal_voc_classes.json'
