@@ -613,8 +613,8 @@ def letterbox(img: np.ndarray,
     new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
     dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
     if auto:  # minimun rectangle 保证原图比例不变，将图像最大边缩放到指定大小
-        # 这里的取余操作可以保证padding后的图片是32的整数倍(416x416)，如果是(512x512)可以保证是64的整数倍
-        dw, dh = np.mod(dw, 64), np.mod(dh, 64)  # wh padding
+        # 这里的取余操作可以保证padding后的图片是32的整数倍
+        dw, dh = np.mod(dw, 32), np.mod(dh, 32)  # wh padding
     elif scale_fill:  # stretch 简单粗暴的将图片缩放到指定尺寸
         dw, dh = 0, 0
         new_unpad = new_shape
