@@ -378,7 +378,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6,
         # Batched NMS
         c = x[:, 5] * 0 if agnostic else x[:, 5]  # classes
         boxes, scores = x[:, :4].clone() + c.view(-1, 1) * max_wh, x[:, 4]  # boxes (offset by class), scores
-        i = torchvision.ops.boxes.nms(boxes, scores, iou_thres)
+        i = torchvision.ops.nms(boxes, scores, iou_thres)
         i = i[:max_num]  # 最多只保留前max_num个目标信息
         if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
             try:  # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
