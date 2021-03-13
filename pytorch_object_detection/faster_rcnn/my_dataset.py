@@ -49,9 +49,11 @@ class VOC2012DataSet(Dataset):
         image = Image.open(img_path)
         if image.format != "JPEG":
             raise ValueError("Image '{}' format not JPEG".format(img_path))
+
         boxes = []
         labels = []
         iscrowd = []
+        assert "object" in data, "{} lack of object information.".format(xml_path)
         for obj in data["object"]:
             xmin = float(obj["bndbox"]["xmin"])
             xmax = float(obj["bndbox"]["xmax"])
@@ -59,7 +61,10 @@ class VOC2012DataSet(Dataset):
             ymax = float(obj["bndbox"]["ymax"])
             boxes.append([xmin, ymin, xmax, ymax])
             labels.append(self.class_dict[obj["name"]])
-            iscrowd.append(int(obj["difficult"]))
+            if "difficult" in obj:
+                iscrowd.append(int(obj["difficult"]))
+            else:
+                iscrowd.append(0)
 
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
