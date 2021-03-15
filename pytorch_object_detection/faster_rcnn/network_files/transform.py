@@ -8,6 +8,43 @@ import torchvision
 from network_files.image_list import ImageList
 
 
+@torch.jit.unused
+def _resize_image_onnx(image, self_min_size, self_max_size):
+    # type: (Tensor, float, float) -> Tensor
+    from torch.onnx import operators
+    im_shape = operators.shape_as_tensor(image)[-2:]
+    min_size = torch.min(im_shape).to(dtype=torch.float32)
+    max_size = torch.max(im_shape).to(dtype=torch.float32)
+    scale_factor = torch.min(self_min_size / min_size, self_max_size / max_size)
+
+    image = torch.nn.functional.interpolate(
+        image[None], scale_factor=scale_factor, mode="bilinear", recompute_scale_factor=True,
+        align_corners=False)[0]
+
+    return image
+
+
+def _resize_image(image, self_min_size, self_max_size):
+    # type: (Tensor, float, float) -> Tensor
+    im_shape = torch.tensor(image.shape[-2:])
+    min_size = float(torch.min(im_shape))    # 获取高宽中的最小值
+    max_size = float(torch.max(im_shape))    # 获取高宽中的最大值
+    scale_factor = self_min_size / min_size  # 根据指定最小边长和图片最小边长计算缩放比例
+
+    # 如果使用该缩放比例计算的图片最大边长大于指定的最大边长
+    if max_size * scale_factor > self_max_size:
+        scale_factor = self_max_size / max_size  # 将缩放比例设为指定最大边长和图片最大边长之比
+
+    # interpolate利用插值的方法缩放图片
+    # image[None]操作是在最前面添加batch维度[C, H, W] -> [1, C, H, W]
+    # bilinear只支持4D Tensor
+    image = torch.nn.functional.interpolate(
+        image[None], scale_factor=scale_factor, mode="bilinear", recompute_scale_factor=True,
+        align_corners=False)[0]
+
+    return image
+
+
 class GeneralizedRCNNTransform(nn.Module):
     """
     Performs input / target transformation before feeding the data to a GeneralizedRCNN
@@ -61,33 +98,24 @@ class GeneralizedRCNNTransform(nn.Module):
         """
         # image shape is [channel, height, width]
         h, w = image.shape[-2:]
-        im_shape = torch.tensor(image.shape[-2:])
-        min_size = float(torch.min(im_shape))  # 获取高宽中的最小值
-        max_size = float(torch.max(im_shape))  # 获取高宽中的最大值
+
         if self.training:
             size = float(self.torch_choice(self.min_size))  # 指定输入图片的最小边长,注意是self.min_size不是min_size
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])    # 指定输入图片的最小边长,注意是self.min_size不是min_size
-        scale_factor = size / min_size  # 根据指定最小边长和图片最小边长计算缩放比例
 
-        # 如果使用该缩放比例计算的图片最大边长大于指定的最大边长
-        if max_size * scale_factor > self.max_size:
-            scale_factor = self.max_size / max_size  # 将缩放比例设为指定最大边长和图片最大边长之比
-
-        # interpolate利用插值的方法缩放图片
-        # image[None]操作是在最前面添加batch维度[C, H, W] -> [1, C, H, W]
-        # bilinear只支持4D Tensor
-        image = torch.nn.functional.interpolate(
-            image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
-            align_corners=False)[0]
+        if torchvision._is_tracing():
+            image = _resize_image_onnx(image, size, float(self.max_size))
+        else:
+            image = _resize_image(image, size, float(self.max_size))
 
         if target is None:
             return image, target
 
         bbox = target["boxes"]
         # 根据图像的缩放比例来缩放bbox
-        bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
+        bbox = resize_boxes(bbox, [h, w], image.shape[-2:])
         target["boxes"] = bbox
 
         return image, target
@@ -234,7 +262,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
 
 def resize_boxes(boxes, original_size, new_size):
-    # type: (Tensor, Tuple[int, int], Tuple[int, int]) -> Tensor
+    # type: (Tensor, List[int], List[int]) -> Tensor
     """
     将boxes参数根据图像的缩放情况进行相应缩放
 
