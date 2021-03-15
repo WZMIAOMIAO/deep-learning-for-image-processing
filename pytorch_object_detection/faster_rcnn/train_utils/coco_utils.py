@@ -1,5 +1,3 @@
-from tqdm import tqdm
-
 import torch
 import torchvision
 import torch.utils.data
