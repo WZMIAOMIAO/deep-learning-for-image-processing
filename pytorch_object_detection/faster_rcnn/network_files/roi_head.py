@@ -208,12 +208,14 @@ class RoIHeads(torch.nn.Module):
 
         # 检查target数据是否为空
         self.check_targets(targets)
+        # 如果不加这句，jit.script会不通过(看不懂)
+        assert targets is not None
 
         dtype = proposals[0].dtype
         device = proposals[0].device
 
         # 获取标注好的boxes以及labels信息
-        gt_boxes = [t["boxes"] for t in targets]
+        gt_boxes = [t["boxes"].to(dtype) for t in targets]
         gt_labels = [t["labels"] for t in targets]
 
         # append ground-truth bboxes to proposal
