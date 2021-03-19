@@ -37,9 +37,6 @@ def main():
 
     model.load_state_dict(train_weights_dict, strict=False)
     model.to(device)
-    # initial model
-    init_img = torch.zeros((1, 3, 300, 300), device=device)
-    model(init_img)
 
     # read class_indict
     json_path = "./pascal_voc_classes.json"
@@ -61,6 +58,10 @@ def main():
 
     model.eval()
     with torch.no_grad():
+        # initial model
+        init_img = torch.zeros((1, 3, 300, 300), device=device)
+        model(init_img)
+
         time_start = time_synchronized()
         predictions = model(img.to(device))[0]  # bboxes_out, labels_out, scores_out
         time_end = time_synchronized()
