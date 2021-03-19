@@ -6,7 +6,7 @@ def plot_loss_and_lr(train_loss, learning_rate):
         x = list(range(len(train_loss)))
         fig, ax1 = plt.subplots(1, 1)
         ax1.plot(x, train_loss, 'r', label='loss')
-        ax1.set_xlabel("step")
+        ax1.set_xlabel("epoch")
         ax1.set_ylabel("loss")
         ax1.set_title("Train Loss and lr")
         plt.legend(loc='best')

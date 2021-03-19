@@ -10,8 +10,8 @@ from train_utils.coco_eval import CocoEvaluator
 import train_utils.distributed_utils as utils
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
-                    train_loss=None, train_lr=None, warmup=False):
+def train_one_epoch(model, optimizer, data_loader, device, epoch,
+                    print_freq=50, warmup=False):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -24,7 +24,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
 
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
-    for images, targets in metric_logger.log_every(data_loader, print_freq, header):
+    mloss = torch.zeros(1).to(device)  # mean losses
+    for i, [images, targets] in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         # batch inputs information
         images = torch.stack(images, dim=0)
 
@@ -49,10 +50,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
         losses_dict_reduced = utils.reduce_dict(losses_dict)
         losses_reduce = losses_dict_reduced["total_losses"]
 
-        loss_value = losses_reduce.item()
-        if isinstance(train_loss, list):
-            # 记录训练损失
-            train_loss.append(loss_value)
+        loss_value = losses_reduce.detach()
+        # 记录训练损失
+        mloss = (mloss * i + loss_value) / (i + 1)  # update mean losses
 
         if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
             print("Loss is {}, stopping training".format(loss_value))
@@ -70,12 +70,12 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq,
         metric_logger.update(**losses_dict_reduced)
         now_lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(lr=now_lr)
-        if isinstance(train_lr, list):
-            train_lr.append(now_lr)
+
+    return mloss, now_lr
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
+def evaluate(model, data_loader, device, data_set=None):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -138,12 +138,9 @@ def evaluate(model, data_loader, device, data_set=None, mAP_list=None):
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)
 
-    print_txt = coco_evaluator.coco_eval[iou_types[0]].stats
-    coco_mAP = print_txt[0]
-    voc_mAP = print_txt[1]
-    if isinstance(mAP_list, list):
-        mAP_list.append(voc_mAP)
-    # return coco_evaluator
+    coco_info = coco_evaluator.coco_eval[iou_types[0]].stats.tolist()  # numpy to list
+
+    return coco_info
 
 
 def _get_iou_types(model):

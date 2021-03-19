@@ -590,13 +590,15 @@ class PostProcess(nn.Module):
 
         # remove low scoring boxes
         # 移除低概率目标，self.scores_thresh=0.05
-        inds = torch.nonzero(scores_in > 0.05).squeeze(1)
+        # inds = torch.nonzero(scores_in > 0.05).squeeze(1)
+        inds = torch.where(torch.gt(scores_in, 0.05))[0]
         bboxes_in, scores_in, labels = bboxes_in[inds, :], scores_in[inds], labels[inds]
 
         # remove empty boxes
         ws, hs = bboxes_in[:, 2] - bboxes_in[:, 0], bboxes_in[:, 3] - bboxes_in[:, 1]
         keep = (ws >= 1 / 300) & (hs >= 1 / 300)
-        keep = keep.nonzero().squeeze(1)
+        # keep = keep.nonzero().squeeze(1)
+        keep = torch.where(keep)[0]
         bboxes_in, scores_in, labels = bboxes_in[keep], scores_in[keep], labels[keep]
 
         # non-maximum suppression
