@@ -36,7 +36,7 @@ def create_model(num_classes=21, device=torch.device('cpu')):
         print("missing_keys: ", missing_keys)
         print("unexpected_keys: ", unexpected_keys)
 
-    return model
+    return model.to(device)
 
 
 def main(parser_data):
@@ -88,8 +88,7 @@ def main(parser_data):
                                                   num_workers=nw,
                                                   collate_fn=train_dataset.collate_fn)
 
-    model = create_model(num_classes=21, device=device)
-    model.to(device)
+    model = create_model(num_classes=args.num_classes+1, device=device)
 
     # define optimizer
     params = [p for p in model.parameters() if p.requires_grad]
@@ -168,6 +167,8 @@ if __name__ == '__main__':
 
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
+    # 检测的目标类别个数，不包括背景
+    parser.add_argument('--num_classes', default=20, type=int, help='num_classes')
     # 训练数据集的根目录
     parser.add_argument('--data-path', default='./', help='dataset')
     # 文件保存地址

@@ -46,6 +46,8 @@ def main(args):
 
     device = torch.device(args.device)
 
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+
     # Data loading code
     print("Loading data")
 
@@ -99,8 +101,7 @@ def main(args):
         collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
-    model = create_model(num_classes=21)
-    model.to(device)
+    model = create_model(num_classes=args.num_classes+1, device=device)
 
     model_without_ddp = model
     if args.distributed:
@@ -129,16 +130,35 @@ def main(args):
         utils.evaluate(model, data_loader_test, device=device)
         return
 
+    train_loss = []
+    learning_rate = []
+    val_map = []
     print("Start training")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        # only first process to save training info
+        if args.rank in [-1, 0]:
+            train_loss.append(mean_loss.item())
+            learning_rate.append(lr)
+
+        # update learning rate
         lr_scheduler.step()
 
         # evaluate after every epoch
-        utils.evaluate(model, data_loader_test, device=device)
+        coco_info = utils.evaluate(model, data_loader_test, device=device)
+
+        if args.rank in [-1, 0]:
+            # write into txt
+            with open(results_file, "a") as f:
+                result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
+                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                f.write(txt + "\n")
+
+            val_map.append(coco_info[1])  # pascal mAP
 
         if args.output_dir:
             # 只在主节点上执行保存权重操作
@@ -154,6 +174,17 @@ def main(args):
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
 
+    if args.rank in [-1, 0]:
+        # plot loss and lr curve
+        if len(train_loss) != 0 and len(learning_rate) != 0:
+            from plot_curve import plot_loss_and_lr
+            plot_loss_and_lr(train_loss, learning_rate)
+
+        # plot mAP curve
+        if len(val_map) != 0:
+            from plot_curve import plot_map
+            plot_map(val_map)
+
 
 if __name__ == "__main__":
     import argparse
@@ -162,6 +193,8 @@ if __name__ == "__main__":
 
     # 训练文件的根目录
     parser.add_argument('--data-path', default='./', help='dataset')
+    # 检测的目标类别个数，不包括背景
+    parser.add_argument('--num_classes', default=20, type=int, help='num_classes')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 每块GPU上的batch_size

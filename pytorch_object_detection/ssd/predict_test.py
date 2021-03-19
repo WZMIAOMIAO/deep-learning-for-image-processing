@@ -29,13 +29,15 @@ def main():
     print(device)
 
     # create model
-    model = create_model(num_classes=21)
+    # 目标检测数 + 背景
+    num_classes = 20 + 1
+    model = create_model(num_classes=num_classes)
 
     # load train weights
-    train_weights = "./save_weights/ssd300-15.pth"
+    train_weights = "./save_weights/ssd300-14.pth"
     train_weights_dict = torch.load(train_weights, map_location=device)['model']
 
-    model.load_state_dict(train_weights_dict, strict=False)
+    model.load_state_dict(train_weights_dict)
     model.to(device)
 
     # read class_indict
