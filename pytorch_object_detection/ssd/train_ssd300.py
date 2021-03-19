@@ -1,4 +1,5 @@
 import os
+import datetime
 
 import torch
 
@@ -44,6 +45,8 @@ def main(parser_data):
 
     if not os.path.exists("save_weights"):
         os.mkdir("save_weights")
+
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     data_transform = {
         "train": transform.Compose([transform.SSDCropping(),
@@ -113,16 +116,26 @@ def main(parser_data):
     # 提前加载验证集数据，以免每次验证时都要重新加载一次数据，节省时间
     val_data = get_coco_api_from_dataset(val_data_loader.dataset)
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
-        utils.train_one_epoch(model=model, optimizer=optimizer,
-                              data_loader=train_data_loader,
-                              device=device, epoch=epoch,
-                              print_freq=50, train_loss=train_loss,
-                              train_lr=learning_rate)
+        mean_loss, lr = utils.train_one_epoch(model=model, optimizer=optimizer,
+                                              data_loader=train_data_loader,
+                                              device=device, epoch=epoch,
+                                              print_freq=50)
+        train_loss.append(mean_loss.item())
+        learning_rate.append(lr)
 
+        # update learning rate
         lr_scheduler.step()
 
-        utils.evaluate(model=model, data_loader=val_data_loader,
-                       device=device, data_set=val_data, mAP_list=val_map)
+        coco_info = utils.evaluate(model=model, data_loader=val_data_loader,
+                                   device=device, data_set=val_data)
+
+        # write into txt
+        with open(results_file, "a") as f:
+            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
+            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            f.write(txt + "\n")
+
+        val_map.append(coco_info[1])  # pascal mAP
 
         # save weights
         save_files = {
