@@ -34,7 +34,7 @@ def main(opt, hyp):
 
     wdir = "weights" + os.sep  # weights dir
     best = wdir + "best.pt"
-    results_file = "results.txt"
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     cfg = opt.cfg
     data = opt.data
