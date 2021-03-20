@@ -76,14 +76,14 @@ class SqueezeExcitation(nn.Module):
 class InvertedResidualConfig:
     # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, dropout_ratio
     def __init__(self,
-                 kernel: int,
+                 kernel: int,          # 3 or 5
                  input_c: int,
                  out_c: int,
-                 expanded_ratio: int,
-                 stride: int,
-                 use_se: bool,
+                 expanded_ratio: int,  # 1 or 6
+                 stride: int,          # 1 or 2
+                 use_se: bool,         # True
                  drop_rate: float,
-                 index: str,
+                 index: str,           # 1a, 2a, 2b, ...
                  width_coefficient: float):
         self.input_c = self.adjust_channels(input_c, width_coefficient)
         self.kernel = kernel
@@ -187,7 +187,7 @@ class EfficientNet(nn.Module):
             block = InvertedResidual
 
         if norm_layer is None:
-            norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.1)
+            norm_layer = partial(nn.BatchNorm2d, eps=1e-3, momentum=0.1)
 
         adjust_channels = partial(InvertedResidualConfig.adjust_channels,
                                   width_coefficient=width_coefficient)

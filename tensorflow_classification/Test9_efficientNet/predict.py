@@ -6,10 +6,11 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 
-from model import EfficientNetB0
+from model import efficientnet_b0 as create_model
 
 
 def main():
+    num_classes = 5
 
     img_size = {"B0": 224,
                 "B1": 240,
@@ -19,10 +20,8 @@ def main():
                 "B5": 456,
                 "B6": 528,
                 "B7": 600}
-
-    im_height = img_size["B0"]
-    im_width = img_size["B0"]
-    num_classes = 5
+    num_model = "B0"
+    im_height = im_width = img_size[num_model]
 
     # load image
     img_path = "../tulip.jpg"
@@ -46,7 +45,7 @@ def main():
     class_indict = json.load(json_file)
 
     # create model
-    model = EfficientNetB0(num_classes=num_classes)
+    model = create_model(num_classes=num_classes)
 
     weights_path = './save_weights/efficientnet.ckpt'
     assert len(glob.glob(weights_path+"*")), "cannot find {}".format(weights_path)
