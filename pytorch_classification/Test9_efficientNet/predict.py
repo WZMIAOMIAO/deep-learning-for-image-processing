@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from model import efficientnet_b0
+from model import efficientnet_b0 as create_model
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
     class_indict = json.load(json_file)
 
     # create model
-    model = efficientnet_b0(num_classes=5).to(device)
+    model = create_model(num_classes=5).to(device)
     # load model weights
     model_weight_path = "./weights/model-29.pth"
     model.load_state_dict(torch.load(model_weight_path, map_location=device))
