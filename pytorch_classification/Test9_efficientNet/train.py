@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import torch.optim.lr_scheduler as lr_scheduler
 
-from model import efficientnet_b0
+from model import efficientnet_b0 as create_model
 from my_dataset import MyDataSet
 from utils import read_split_data, train_one_epoch, evaluate
 
@@ -72,7 +72,7 @@ def main(args):
                                              collate_fn=val_data_set.collate_fn)
 
     # 如果存在预训练权重则载入
-    model = efficientnet_b0(num_classes=args.num_classes).to(device)
+    model = create_model(num_classes=args.num_classes).to(device)
     if os.path.exists(args.weights):
         weights_dict = torch.load(args.weights, map_location=device)
         load_weights_dict = {k: v for k, v in weights_dict.items()
