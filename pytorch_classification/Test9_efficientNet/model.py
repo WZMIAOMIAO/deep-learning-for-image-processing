@@ -39,7 +39,7 @@ class ConvBNActivation(nn.Sequential):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         if activation_layer is None:
-            activation_layer = nn.SiLU  # alias Swish
+            activation_layer = nn.SiLU  # alias Swish  (torch>=1.7)
 
         super(ConvBNActivation, self).__init__(nn.Conv2d(in_channels=in_planes,
                                                          out_channels=out_planes,
@@ -74,7 +74,7 @@ class SqueezeExcitation(nn.Module):
 
 
 class InvertedResidualConfig:
-    # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, dropout_ratio
+    # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, drop_connect_rate
     def __init__(self,
                  kernel: int,          # 3 or 5
                  input_c: int,
@@ -164,14 +164,14 @@ class EfficientNet(nn.Module):
                  width_coefficient: float,
                  depth_coefficient: float,
                  num_classes: int = 1000,
-                 dropout_ratio: float = 0.2,
+                 dropout_rate: float = 0.2,
                  drop_connect_rate: float = 0.2,
                  block: Optional[Callable[..., nn.Module]] = None,
                  norm_layer: Optional[Callable[..., nn.Module]] = None
                  ):
         super(EfficientNet, self).__init__()
 
-        # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, dropout_ratio, repeats
+        # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, drop_connect_rate, repeats
         default_cnf = [[3, 32, 16, 1, 1, True, drop_connect_rate, 1],
                        [3, 16, 24, 6, 2, True, drop_connect_rate, 2],
                        [5, 24, 40, 6, 2, True, drop_connect_rate, 2],
@@ -239,8 +239,8 @@ class EfficientNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
 
         classifier = []
-        if dropout_ratio > 0:
-            classifier.append(nn.Dropout(p=dropout_ratio, inplace=True))
+        if dropout_rate > 0:
+            classifier.append(nn.Dropout(p=dropout_rate, inplace=True))
         classifier.append(nn.Linear(last_conv_output_c, num_classes))
         self.classifier = nn.Sequential(*classifier)
 
@@ -273,7 +273,7 @@ def efficientnet_b0(num_classes=1000):
     # input image size 224x224
     return EfficientNet(width_coefficient=1.0,
                         depth_coefficient=1.0,
-                        dropout_ratio=0.2,
+                        dropout_rate=0.2,
                         num_classes=num_classes)
 
 
@@ -281,7 +281,7 @@ def efficientnet_b1(num_classes=1000):
     # input image size 240x240
     return EfficientNet(width_coefficient=1.0,
                         depth_coefficient=1.1,
-                        dropout_ratio=0.2,
+                        dropout_rate=0.2,
                         num_classes=num_classes)
 
 
@@ -289,7 +289,7 @@ def efficientnet_b2(num_classes=1000):
     # input image size 260x260
     return EfficientNet(width_coefficient=1.1,
                         depth_coefficient=1.2,
-                        dropout_ratio=0.3,
+                        dropout_rate=0.3,
                         num_classes=num_classes)
 
 
@@ -297,7 +297,7 @@ def efficientnet_b3(num_classes=1000):
     # input image size 300x300
     return EfficientNet(width_coefficient=1.2,
                         depth_coefficient=1.4,
-                        dropout_ratio=0.3,
+                        dropout_rate=0.3,
                         num_classes=num_classes)
 
 
@@ -305,7 +305,7 @@ def efficientnet_b4(num_classes=1000):
     # input image size 380x380
     return EfficientNet(width_coefficient=1.4,
                         depth_coefficient=1.8,
-                        dropout_ratio=0.4,
+                        dropout_rate=0.4,
                         num_classes=num_classes)
 
 
@@ -313,7 +313,7 @@ def efficientnet_b5(num_classes=1000):
     # input image size 456x456
     return EfficientNet(width_coefficient=1.6,
                         depth_coefficient=2.2,
-                        dropout_ratio=0.4,
+                        dropout_rate=0.4,
                         num_classes=num_classes)
 
 
@@ -321,7 +321,7 @@ def efficientnet_b6(num_classes=1000):
     # input image size 528x528
     return EfficientNet(width_coefficient=1.8,
                         depth_coefficient=2.6,
-                        dropout_ratio=0.5,
+                        dropout_rate=0.5,
                         num_classes=num_classes)
 
 
@@ -329,5 +329,5 @@ def efficientnet_b7(num_classes=1000):
     # input image size 600x600
     return EfficientNet(width_coefficient=2.0,
                         depth_coefficient=3.1,
-                        dropout_ratio=0.5,
+                        dropout_rate=0.5,
                         num_classes=num_classes)
