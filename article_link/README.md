@@ -4,6 +4,7 @@
 
 ## 图像分类(Classification)
 - AlexNet [http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
+- ZFNet(Visualizing and Understanding Convolutional Networks) [https://arxiv.org/abs/1311.2901](https://arxiv.org/abs/1311.2901)
 - VGG [https://arxiv.org/abs/1409.1556](https://arxiv.org/abs/1409.1556)
 - GoogLeNet, Inceptionv1(Going deeper with convolutions) [https://arxiv.org/abs/1409.4842](https://arxiv.org/abs/1409.4842)
 - Batch Normalization [https://arxiv.org/abs/1502.03167](https://arxiv.org/abs/1502.03167)
