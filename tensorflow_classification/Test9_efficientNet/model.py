@@ -131,7 +131,7 @@ def block(inputs,
     if strides == 1 and input_channel == output_channel:
         if drop_rate > 0:
             x = layers.Dropout(rate=drop_rate,
-                               noise_shape=(None, 1, 1, 1),
+                               noise_shape=(None, 1, 1, 1),  # binary dropout mask
                                name=name + "drop")(x)
         x = layers.add([x, inputs], name=name + "add")
 
