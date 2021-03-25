@@ -1,11 +1,12 @@
-from torchvision.ops import misc
-import torch.nn as nn
-import torch
-from torch import Tensor
+import os
 from collections import OrderedDict
-import torch.nn.functional as F
 
-from torch.jit.annotations import Tuple, List, Dict
+import torch
+import torch.nn as nn
+from torch.jit.annotations import List, Dict
+from torchvision.ops.misc import FrozenBatchNorm2d
+
+from .feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
 
 
 class Bottleneck(nn.Module):
@@ -117,6 +118,24 @@ class ResNet(nn.Module):
         return x
 
 
+def overwrite_eps(model, eps):
+    """
+    This method overwrites the default eps values of all the
+    FrozenBatchNorm2d layers of the model with the provided value.
+    This is necessary to address the BC-breaking change introduced
+    by the bug-fix at pytorch/vision#2933. The overwrite is applied
+    only when the pretrained weights are loaded to maintain compatibility
+    with previous versions.
+
+    Args:
+        model (nn.Module): The model on which we perform the overwrite.
+        eps (float): The new value of eps.
+    """
+    for module in model.modules():
+        if isinstance(module, FrozenBatchNorm2d):
+            module.eps = eps
+
+
 class IntermediateLayerGetter(nn.ModuleDict):
     """
     Module wrapper that returns intermediate layers from a model
@@ -143,7 +162,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
             raise ValueError("return_layers are not present in model")
 
         orig_return_layers = return_layers
-        return_layers = {k: v for k, v in return_layers.items()}
+        return_layers = {str(k): str(v) for k, v in return_layers.items()}
         layers = OrderedDict()
 
         # 遍历模型子模块按顺序存入有序字典
@@ -162,151 +181,12 @@ class IntermediateLayerGetter(nn.ModuleDict):
         out = OrderedDict()
         # 依次遍历模型的所有子模块，并进行正向传播，
         # 收集layer1, layer2, layer3, layer4的输出
-        for name, module in self.named_children():
+        for name, module in self.items():
             x = module(x)
             if name in self.return_layers:
                 out_name = self.return_layers[name]
                 out[out_name] = x
         return out
-
-
-class FeaturePyramidNetwork(nn.Module):
-    """
-    Module that adds a FPN from on top of a set of feature maps. This is based on
-    `"Feature Pyramid Network for Object Detection" <https://arxiv.org/abs/1612.03144>`_.
-    The feature maps are currently supposed to be in increasing depth
-    order.
-    The input to the model is expected to be an OrderedDict[Tensor], containing
-    the feature maps on top of which the FPN will be added.
-    Arguments:
-        in_channels_list (list[int]): number of channels for each feature map that
-            is passed to the module
-        out_channels (int): number of channels of the FPN representation
-        extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
-            be performed. It is expected to take the fpn features, the original
-            features and the names of the original features as input, and returns
-            a new list of feature maps and their corresponding names
-    """
-
-    def __init__(self, in_channels_list, out_channels, extra_blocks=None):
-        super(FeaturePyramidNetwork, self).__init__()
-        # 用来调整resnet特征矩阵(layer1,2,3,4)的channel（kernel_size=1）
-        self.inner_blocks = nn.ModuleList()
-        # 对调整后的特征矩阵使用3x3的卷积核来得到对应的预测特征矩阵
-        self.layer_blocks = nn.ModuleList()
-        for in_channels in in_channels_list:
-            if in_channels == 0:
-                continue
-            inner_block_module = nn.Conv2d(in_channels, out_channels, 1)
-            layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
-            self.inner_blocks.append(inner_block_module)
-            self.layer_blocks.append(layer_block_module)
-
-        # initialize parameters now to avoid modifying the initialization of top_blocks
-        for m in self.children():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_uniform_(m.weight, a=1)
-                nn.init.constant_(m.bias, 0)
-
-        self.extra_blocks = extra_blocks
-
-    def get_result_from_inner_blocks(self, x, idx):
-        # type: (Tensor, int) -> Tensor
-        """
-        This is equivalent to self.inner_blocks[idx](x),
-        but torchscript doesn't support this yet
-        """
-        num_blocks = len(self.inner_blocks)
-        if idx < 0:
-            idx += num_blocks
-        i = 0
-        out = x
-        for module in self.inner_blocks:
-            if i == idx:
-                out = module(x)
-            i += 1
-        return out
-
-    def get_result_from_layer_blocks(self, x, idx):
-        # type: (Tensor, int) -> Tensor
-        """
-        This is equivalent to self.layer_blocks[idx](x),
-        but torchscript doesn't support this yet
-        """
-        num_blocks = len(self.layer_blocks)
-        if idx < 0:
-            idx += num_blocks
-        i = 0
-        out = x
-        for module in self.layer_blocks:
-            if i == idx:
-                out = module(x)
-            i += 1
-        return out
-
-    def forward(self, x):
-        # type: (Dict[str, Tensor]) -> Dict[str, Tensor]
-        """
-        Computes the FPN for a set of feature maps.
-        Arguments:
-            x (OrderedDict[Tensor]): feature maps for each feature level.
-        Returns:
-            results (OrderedDict[Tensor]): feature maps after FPN layers.
-                They are ordered from highest resolution first.
-        """
-        # unpack OrderedDict into two lists for easier handling
-        names = list(x.keys())
-        x = list(x.values())
-
-        # 将resnet layer4的channel调整到指定的out_channels
-        # last_inner = self.inner_blocks[-1](x[-1])
-        last_inner = self.get_result_from_inner_blocks(x[-1], -1)
-        # result中保存着每个预测特征层
-        results = []
-        # 将layer4调整channel后的特征矩阵，通过3x3卷积后得到对应的预测特征矩阵
-        # results.append(self.layer_blocks[-1](last_inner))
-        results.append(self.get_result_from_layer_blocks(last_inner, -1))
-
-        # 倒序遍历resenet输出特征层，以及对应inner_block和layer_block
-        # layer3 -> layer2 -> layer1 （layer4已经处理过了）
-        # for feature, inner_block, layer_block in zip(
-        #         x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
-        # ):
-        #     if not inner_block:
-        #         continue
-        #     inner_lateral = inner_block(feature)
-        #     feat_shape = inner_lateral.shape[-2:]
-        #     inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-        #     last_inner = inner_lateral + inner_top_down
-        #     results.insert(0, layer_block(last_inner))
-
-        for idx in range(len(x) - 2, -1, -1):
-            inner_lateral = self.get_result_from_inner_blocks(x[idx], idx)
-            feat_shape = inner_lateral.shape[-2:]
-            inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-            last_inner = inner_lateral + inner_top_down
-            results.insert(0, self.get_result_from_layer_blocks(last_inner, idx))
-
-        # 在layer4对应的预测特征层基础上生成预测特征矩阵5
-        if self.extra_blocks is not None:
-            results, names = self.extra_blocks(results, names)
-
-        # make it back an OrderedDict
-        out = OrderedDict([(k, v) for k, v in zip(names, results)])
-
-        return out
-
-
-class LastLevelMaxPool(torch.nn.Module):
-    """
-    Applies a max_pool2d on top of the last feature map
-    """
-
-    def forward(self, x, names):
-        # type: (List[Tensor], List[str]) -> Tuple[List[Tensor], List[str]]
-        names.append("pool")
-        x.append(F.max_pool2d(x[-1], 1, 2, 0))
-        return x, names
 
 
 class BackboneWithFPN(nn.Module):
@@ -324,20 +204,24 @@ class BackboneWithFPN(nn.Module):
         in_channels_list (List[int]): number of channels for each feature map
             that is returned, in the order they are present in the OrderedDict
         out_channels (int): number of channels in the FPN.
+        extra_blocks: ExtraFPNBlock
     Attributes:
         out_channels (int): the number of channels in the FPN
     """
 
-    def __init__(self, backbone, return_layers, in_channels_list, out_channels):
+    def __init__(self, backbone, return_layers, in_channels_list, out_channels, extra_blocks=None):
         super(BackboneWithFPN, self).__init__()
+
+        if extra_blocks is None:
+            extra_blocks = LastLevelMaxPool()
+
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.fpn = FeaturePyramidNetwork(
             in_channels_list=in_channels_list,
             out_channels=out_channels,
-            extra_blocks=LastLevelMaxPool(),
-            )
-        # super(BackboneWithFPN, self).__init__(OrderedDict(
-        #     [("body", body), ("fpn", fpn)]))
+            extra_blocks=extra_blocks,
+        )
+
         self.out_channels = out_channels
 
     def forward(self, x):
@@ -346,27 +230,66 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
-def resnet50_fpn_backbone():
-    # FrozenBatchNorm2d的功能与BatchNorm2d类似，但参数无法更新
-    # norm_layer=misc.FrozenBatchNorm2d
+def resnet50_fpn_backbone(pretrain_path="",
+                          norm_layer=FrozenBatchNorm2d,  # FrozenBatchNorm2d的功能与BatchNorm2d类似，但参数无法更新
+                          trainable_layers=3,
+                          returned_layers=None,
+                          extra_blocks=None):
+    """
+    搭建resnet50_fpn——backbone
+    Args:
+        pretrain_path: resnet50的预训练权重，如果不使用就默认为空
+        norm_layer: 官方默认的是FrozenBatchNorm2d，即不会更新参数的bn层(因为如果batch_size设置的很小会导致效果更差，还不如不用bn层)
+                    如果自己的GPU显存很大可以设置很大的batch_size，那么自己可以传入正常的BatchNorm2d层
+                    (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
+        trainable_layers: 指定训练哪些层结构
+        returned_layers: 指定哪些层的输出需要返回
+        extra_blocks: 在输出的特征层基础上额外添加的层结构
+
+    Returns:
+
+    """
     resnet_backbone = ResNet(Bottleneck, [3, 4, 6, 3],
-                             include_top=False)
+                             include_top=False,
+                             norm_layer=norm_layer)
+
+    if isinstance(norm_layer, FrozenBatchNorm2d):
+        overwrite_eps(resnet_backbone, 0.0)
+
+    if pretrain_path != "":
+        assert os.path.exists(pretrain_path), "{} is not exist.".format(pretrain_path)
+        # 载入预训练权重
+        print(resnet_backbone.load_state_dict(torch.load(pretrain_path), strict=False))
+
+    # select layers that wont be frozen
+    assert 0 <= trainable_layers <= 5
+    layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1', 'conv1'][:trainable_layers]
+
+    # 如果要训练所有层结构的话，不要忘了conv1后还有一个bn1
+    if trainable_layers == 5:
+        layers_to_train.append("bn1")
 
     # freeze layers
-    # 冻结layer1及其之前的所有底层权重（基础通用特征）
     for name, parameter in resnet_backbone.named_parameters():
-        if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+        # 只训练不在layers_to_train列表中的层结构
+        if all([not name.startswith(layer) for layer in layers_to_train]):
             parameter.requires_grad_(False)
 
-    return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
+    if extra_blocks is None:
+        extra_blocks = LastLevelMaxPool()
+
+    if returned_layers is None:
+        returned_layers = [1, 2, 3, 4]
+    # 返回的特征层个数肯定大于0小于5
+    assert min(returned_layers) > 0 and max(returned_layers) < 5
+
+    # return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
+    return_layers = {f'layer{k}': str(v) for v, k in enumerate(returned_layers)}
 
     # in_channel 为layer4的输出特征矩阵channel = 2048
-    in_channels_stage2 = resnet_backbone.in_channel // 8
-    in_channels_list = [
-        in_channels_stage2,  # layer1 out_channel=256
-        in_channels_stage2 * 2,  # layer2 out_channel=512
-        in_channels_stage2 * 4,  # layer3 out_channel=1024
-        in_channels_stage2 * 8,  # layer4 out_channel=2048
-    ]
+    in_channels_stage2 = resnet_backbone.in_channel // 8  # 256
+    # 记录resnet50提供给fpn的每个特征层channel
+    in_channels_list = [in_channels_stage2 * 2 ** (i - 1) for i in returned_layers]
+    # 通过fpn后得到的每个特征层的channel
     out_channels = 256
-    return BackboneWithFPN(resnet_backbone, return_layers, in_channels_list, out_channels)
+    return BackboneWithFPN(resnet_backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)

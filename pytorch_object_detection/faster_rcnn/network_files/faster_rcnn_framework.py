@@ -7,9 +7,9 @@ from torch import nn, Tensor
 import torch.nn.functional as F
 from torchvision.ops import MultiScaleRoIAlign
 
-from network_files.roi_head import RoIHeads
-from network_files.transform import GeneralizedRCNNTransform
-from network_files.rpn_function import AnchorsGenerator, RPNHead, RegionProposalNetwork
+from .roi_head import RoIHeads
+from .transform import GeneralizedRCNNTransform
+from .rpn_function import AnchorsGenerator, RPNHead, RegionProposalNetwork
 
 
 class FasterRCNNBase(nn.Module):

@@ -1,13 +1,12 @@
 import os
+import datetime
 
 import torch
 import torchvision
-from torchvision.ops import misc
 
 import transforms
-from network_files.faster_rcnn_framework import FasterRCNN
-from network_files.rpn_function import AnchorsGenerator
-from backbone.mobilenetv2_model import MobileNetV2
+from network_files import FasterRCNN, AnchorsGenerator
+from backbone import MobileNetV2
 from my_dataset import VOC2012DataSet
 from train_utils import train_eval_utils as utils
 
@@ -35,6 +34,8 @@ def create_model(num_classes):
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("Using {} device training.".format(device.type))
+
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     # 检查保存权重文件夹是否存在，不存在则创建
     if not os.path.exists("save_weights"):
@@ -81,7 +82,7 @@ def main():
 
     train_loss = []
     learning_rate = []
-    val_mAP = []
+    val_map = []
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     #  first frozen backbone and train 5 epochs                   #
@@ -95,15 +96,24 @@ def main():
     optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
 
-    num_epochs = 5
-    for epoch in range(num_epochs):
+    init_epochs = 5
+    for epoch in range(init_epochs):
         # train for one epoch, printing every 10 iterations
-        utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, print_freq=50,
-                              train_loss=train_loss, train_lr=learning_rate)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
+                                              device, epoch, print_freq=50)
+        train_loss.append(mean_loss.item())
+        learning_rate.append(lr)
 
         # evaluate on the test dataset
-        utils.evaluate(model, val_data_set_loader, device=device, mAP_list=val_mAP)
+        coco_info = utils.evaluate(model, val_data_set_loader, device=device)
+
+        # write into txt
+        with open(results_file, "a") as f:
+            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
+            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            f.write(txt + "\n")
+
+        val_map.append(coco_info[1])  # pascal mAP
 
     torch.save(model.state_dict(), "./save_weights/pretrain.pth")
 
@@ -126,22 +136,33 @@ def main():
                                 momentum=0.9, weight_decay=0.0005)
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                   step_size=5,
+                                                   step_size=3,
                                                    gamma=0.33)
     num_epochs = 20
-    for epoch in range(num_epochs):
+    for epoch in range(init_epochs, num_epochs+init_epochs, 1):
         # train for one epoch, printing every 50 iterations
-        utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, print_freq=50,
-                              train_loss=train_loss, train_lr=learning_rate)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
+                                              device, epoch, print_freq=50)
+        train_loss.append(mean_loss.item())
+        learning_rate.append(lr)
+
         # update the learning rate
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        utils.evaluate(model, val_data_set_loader, device=device, mAP_list=val_mAP)
+        coco_info = utils.evaluate(model, val_data_set_loader, device=device)
+
+        # write into txt
+        with open(results_file, "a") as f:
+            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
+            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            f.write(txt + "\n")
+
+        val_map.append(coco_info[1])  # pascal mAP
 
         # save weights
-        if epoch > 10:
+        # 仅保存最后5个epoch的权重
+        if epoch in range(num_epochs+init_epochs)[-5:]:
             save_files = {
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
@@ -155,20 +176,10 @@ def main():
         plot_loss_and_lr(train_loss, learning_rate)
 
     # plot mAP curve
-    if len(val_mAP) != 0:
+    if len(val_map) != 0:
         from plot_curve import plot_map
-        plot_map(val_mAP)
-
-    # model.eval()
-    # x = [torch.rand(3, 300, 400), torch.rand(3, 400, 400)]
-    # predictions = model(x)
-    # print(predictions)
+        plot_map(val_map)
 
 
 if __name__ == "__main__":
-    version = torch.version.__version__[:5]  # example: 1.6.0
-    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
-    if version < "1.6.0":
-        raise EnvironmentError("pytorch version must be 1.6.0 or above")
-
     main()

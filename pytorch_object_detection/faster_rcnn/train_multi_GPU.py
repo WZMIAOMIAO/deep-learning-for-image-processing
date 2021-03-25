@@ -6,15 +6,15 @@ import torch
 
 import transforms
 from my_dataset import VOC2012DataSet
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
-from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
+from backbone import resnet50_fpn_backbone
+from network_files import FasterRCNN, FastRCNNPredictor
 import train_utils.train_eval_utils as utils
-from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from train_utils.distributed_utils import init_distributed_mode, save_on_master, mkdir
+from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
 
 
 def create_model(num_classes, device):
-    backbone = resnet50_fpn_backbone()
+    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
+                                     trainable_layers=5)
     # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
