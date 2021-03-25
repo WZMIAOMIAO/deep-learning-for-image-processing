@@ -147,11 +147,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-    version = torch.version.__version__[:5]  # example: 1.6.0
-    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
-    if version < "1.6.0":
-        raise EnvironmentError("pytorch version must be 1.6.0 or above")
-
     import argparse
 
     parser = argparse.ArgumentParser(
