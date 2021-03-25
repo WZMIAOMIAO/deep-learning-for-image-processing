@@ -12,26 +12,18 @@ def convert_to_coco_api(ds):
     categories = set()
     for img_idx in range(len(ds)):
         # find better way to get target
-        img, targets = ds[img_idx]
+        hw, targets = ds.coco_index(img_idx)
         image_id = targets["image_id"].item()
         img_dict = {}
         img_dict['id'] = image_id
-        # img_dict['height'] = img.shape[-2]
-        # img_dict['width'] = img.shape[-1]
-        img_dict['height'] = targets["height_width"][0]
-        img_dict['width'] = targets["height_width"][1]
+        img_dict['height'] = hw[0]
+        img_dict['width'] = hw[1]
         dataset['images'].append(img_dict)
         bboxes = targets["boxes"]
         bboxes[:, 2:] -= bboxes[:, :2]
-        # 将box的相对坐标信息（0-1）转为绝对值坐标
-        bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * img_dict["width"]
-        bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * img_dict["height"]
-        # bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * 640
-        # bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * 640
         bboxes = bboxes.tolist()
         labels = targets['labels'].tolist()
-        # 注意这里的boxes area也要进行转换，否则导致(small, medium, large)计算错误
-        areas = (targets['area'] * img_dict["width"] * img_dict["height"]).tolist()
+        areas = targets['area'].tolist()
         iscrowd = targets['iscrowd'].tolist()
         num_objs = len(bboxes)
         for i in range(num_objs):
