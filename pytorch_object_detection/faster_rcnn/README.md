@@ -45,6 +45,9 @@
 ## 进一步了解该项目，以及对Faster RCNN代码的分析可参考我的bilibili
 * https://b23.tv/HvMiDy
 
+## 注意事项
+* 因为带有FPN结构的Faster RCNN很吃显存，如果GPU的显存不够(如果batch_size小于8的话)建议在create_model函数中使用默认的norm_layer，
+  即不传递norm_layer变量，默认去使用FrozenBatchNorm2d(即不会去更新参数的bn层),使用中发现效果也很好。
 
 ## Faster RCNN框架图
 ![Faster R-CNN](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_object_detection/faster_rcnn/fasterRCNN.png) 
