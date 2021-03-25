@@ -9,27 +9,29 @@ from lxml import etree
 class VOC2012DataSet(Dataset):
     """读取解析PASCAL VOC2012数据集"""
 
-    def __init__(self, voc_root, transforms, train_set=True):
+    def __init__(self, voc_root, transforms, txt_name: str = "train.txt"):
         self.root = os.path.join(voc_root, "VOCdevkit", "VOC2012")
         self.img_root = os.path.join(self.root, "JPEGImages")
         self.annotations_root = os.path.join(self.root, "Annotations")
 
         # read train.txt or val.txt file
-        if train_set:
-            txt_list = os.path.join(self.root, "ImageSets", "Main", "train.txt")
-        else:
-            txt_list = os.path.join(self.root, "ImageSets", "Main", "val.txt")
-        with open(txt_list) as read:
+        txt_path = os.path.join(self.root, "ImageSets", "Main", txt_name)
+        assert os.path.exists(txt_path), "not found {} file.".format(txt_name)
+
+        with open(txt_path) as read:
             self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                              for line in read.readlines()]
 
+        # check file
+        assert len(self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
+        for xml_path in self.xml_list:
+            assert os.path.exists(xml_path), "not found '{}' file.".format(xml_path)
+
         # read class_indict
-        try:
-            json_file = open('./pascal_voc_classes.json', 'r')
-            self.class_dict = json.load(json_file)
-        except Exception as e:
-            print(e)
-            exit(-1)
+        json_file = './pascal_voc_classes.json'
+        assert os.path.exists(json_file), "{} file not exist.".format(json_file)
+        json_file = open(json_file, 'r')
+        self.class_dict = json.load(json_file)
 
         self.transforms = transforms
 
@@ -43,31 +45,31 @@ class VOC2012DataSet(Dataset):
             xml_str = fid.read()
         xml = etree.fromstring(xml_str)
         data = self.parse_xml_to_dict(xml)["annotation"]
-        data_height = int(data["size"]["height"])
-        data_width = int(data["size"]["width"])
-        height_width = [data_height, data_width]
         img_path = os.path.join(self.img_root, data["filename"])
         image = Image.open(img_path)
         if image.format != "JPEG":
-            raise ValueError("Image format not JPEG")
+            raise ValueError("Image '{}' format not JPEG".format(img_path))
+
         boxes = []
         labels = []
         iscrowd = []
+        assert "object" in data, "{} lack of object information.".format(xml_path)
         for obj in data["object"]:
-            # 将所有的gt box信息转换成相对值0-1之间
-            xmin = float(obj["bndbox"]["xmin"]) / data_width
-            xmax = float(obj["bndbox"]["xmax"]) / data_width
-            ymin = float(obj["bndbox"]["ymin"]) / data_height
-            ymax = float(obj["bndbox"]["ymax"]) / data_height
+            xmin = float(obj["bndbox"]["xmin"])
+            xmax = float(obj["bndbox"]["xmax"])
+            ymin = float(obj["bndbox"]["ymin"])
+            ymax = float(obj["bndbox"]["ymax"])
             boxes.append([xmin, ymin, xmax, ymax])
             labels.append(self.class_dict[obj["name"]])
-            iscrowd.append(int(obj["difficult"]))
+            if "difficult" in obj:
+                iscrowd.append(int(obj["difficult"]))
+            else:
+                iscrowd.append(0)
 
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(labels, dtype=torch.int64)
         iscrowd = torch.as_tensor(iscrowd, dtype=torch.int64)
-        height_width = torch.as_tensor(height_width, dtype=torch.int64)
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
 
@@ -77,7 +79,6 @@ class VOC2012DataSet(Dataset):
         target["image_id"] = image_id
         target["area"] = area
         target["iscrowd"] = iscrowd
-        target["height_width"] = height_width
 
         if self.transforms is not None:
             image, target = self.transforms(image, target)
@@ -98,7 +99,7 @@ class VOC2012DataSet(Dataset):
     def parse_xml_to_dict(self, xml):
         """
         将xml文件解析成字典形式，参考tensorflow的recursive_parse_xml_to_dict
-        Args：
+        Args:
             xml: xml tree obtained by parsing XML file contents using lxml.etree
 
         Returns:
@@ -119,6 +120,57 @@ class VOC2012DataSet(Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
+    def coco_index(self, idx):
+        """
+        该方法是专门为pycocotools统计标签信息准备，不对图像和标签作任何处理
+        由于不用去读取图片，可大幅缩减统计时间
+
+        Args:
+            idx: 输入需要获取图像的索引
+        """
+        # read xml
+        xml_path = self.xml_list[idx]
+        with open(xml_path) as fid:
+            xml_str = fid.read()
+        xml = etree.fromstring(xml_str)
+        data = self.parse_xml_to_dict(xml)["annotation"]
+        data_height = int(data["size"]["height"])
+        data_width = int(data["size"]["width"])
+        # img_path = os.path.join(self.img_root, data["filename"])
+        # image = Image.open(img_path)
+        # if image.format != "JPEG":
+        #     raise ValueError("Image format not JPEG")
+        boxes = []
+        labels = []
+        iscrowd = []
+        for obj in data["object"]:
+            xmin = float(obj["bndbox"]["xmin"])
+            xmax = float(obj["bndbox"]["xmax"])
+            ymin = float(obj["bndbox"]["ymin"])
+            ymax = float(obj["bndbox"]["ymax"])
+            boxes.append([xmin, ymin, xmax, ymax])
+            labels.append(self.class_dict[obj["name"]])
+            iscrowd.append(int(obj["difficult"]))
+
+        # convert everything into a torch.Tensor
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        labels = torch.as_tensor(labels, dtype=torch.int64)
+        iscrowd = torch.as_tensor(iscrowd, dtype=torch.int64)
+        image_id = torch.tensor([idx])
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["image_id"] = image_id
+        target["area"] = area
+        target["iscrowd"] = iscrowd
+
+        return (data_height, data_width), target
+
+    @staticmethod
+    def collate_fn(batch):
+        return tuple(zip(*batch))
 
 # import transforms
 # from draw_box_utils import draw_box
