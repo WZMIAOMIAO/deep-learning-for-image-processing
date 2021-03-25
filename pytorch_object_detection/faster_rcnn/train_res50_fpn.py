@@ -12,7 +12,7 @@ from train_utils import train_eval_utils as utils
 
 def create_model(num_classes, device):
     # 注意，这里的backbone默认使用的是FrozenBatchNorm2d，即不会去更新bn参数
-    # 目的是为了防止batch_size太小导致效果更差
+    # 目的是为了防止batch_size太小导致效果更差(如果显存很小，建议使用默认的FrozenBatchNorm2d)
     # 如果GPU显存很大可以设置比较大的batch_size就可以将norm_layer设置为普通的BatchNorm2d
     # trainable_layers包括['layer4', 'layer3', 'layer2', 'layer1', 'conv1']， 5代表全部训练
     backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,

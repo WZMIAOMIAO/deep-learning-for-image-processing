@@ -13,6 +13,7 @@ from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_di
 
 
 def create_model(num_classes, device):
+    # 如果显存很小，建议使用默认的FrozenBatchNorm2d
     # trainable_layers包括['layer4', 'layer3', 'layer2', 'layer1', 'conv1']， 5代表全部训练
     backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
                                      trainable_layers=3)
