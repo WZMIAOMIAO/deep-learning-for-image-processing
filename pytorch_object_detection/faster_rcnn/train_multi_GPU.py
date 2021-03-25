@@ -13,8 +13,9 @@ from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_di
 
 
 def create_model(num_classes, device):
+    # trainable_layers包括['layer4', 'layer3', 'layer2', 'layer1', 'conv1']， 5代表全部训练
     backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
-                                     trainable_layers=5)
+                                     trainable_layers=3)
     # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
@@ -160,7 +161,7 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 每块GPU上的batch_size
-    parser.add_argument('-b', '--batch-size', default=2, type=int,
+    parser.add_argument('-b', '--batch-size', default=4, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
     # 指定接着从哪个epoch数开始训练
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
