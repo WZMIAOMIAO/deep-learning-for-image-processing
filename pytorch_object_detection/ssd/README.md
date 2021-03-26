@@ -1,10 +1,9 @@
 # SSD: Single Shot MultiBox Detector
 
 ## 环境配置：
-* Python 3.6或者3.7
-* Pytorch 1.5(注意：是1.5)
-* pycocotools(Linux: pip install pycocotools;
-  Windows:pip install pycocotools-windows(不需要额外安装vs))
+* Python 3.6/3.7/3.8
+* Pytorch 1.6
+* pycocotools(Linux:```pip install pycocotools```; Windows:```pip install pycocotools-windows```(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
 
