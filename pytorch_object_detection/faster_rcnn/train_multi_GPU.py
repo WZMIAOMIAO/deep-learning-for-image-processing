@@ -35,13 +35,14 @@ def create_model(num_classes, device):
     return model
 
 
-# def main_worker(args):
 def main(args):
     print(args)
-    # mp.spawn(main_worker, args=(args,), nprocs=args.world_size, join=True)
     init_distributed_mode(args)
 
     device = torch.device(args.device)
+
+    # 用来保存coco_info的文件
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     # Data loading code
     print("Loading data")
@@ -121,13 +122,35 @@ def main(args):
         utils.evaluate(model, data_loader_test, device=device)
         return
 
+    train_loss = []
+    learning_rate = []
+    val_map = []
+
     print("Start training")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        train_loss.append(mean_loss.item())
+        learning_rate.append(lr)
+
+        # update learning rate
         lr_scheduler.step()
+
+        # evaluate after every epoch
+        coco_info = utils.evaluate(model, data_loader_test, device=device)
+        val_map.append(coco_info[1])  # pascal mAP
+
+        # 只在主进程上进行写操作
+        if args.rank in [-1, 0]:
+            # write into txt
+            with open(results_file, "a") as f:
+                # 写入的数据包括coco指标还有loss和learning rate
+                result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
+                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                f.write(txt + "\n")
+
         if args.output_dir:
             # 只在主节点上执行保存权重操作
             save_on_master({
@@ -138,12 +161,20 @@ def main(args):
                 'epoch': epoch},
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
-        # evaluate after every epoch
-        utils.evaluate(model, data_loader_test, device=device)
-
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
+
+    if args.rank in [-1, 0]:
+        # plot loss and lr curve
+        if len(train_loss) != 0 and len(learning_rate) != 0:
+            from plot_curve import plot_loss_and_lr
+            plot_loss_and_lr(train_loss, learning_rate)
+
+        # plot mAP curve
+        if len(val_map) != 0:
+            from plot_curve import plot_map
+            plot_map(val_map)
 
 
 if __name__ == "__main__":
