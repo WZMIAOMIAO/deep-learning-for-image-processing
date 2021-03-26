@@ -37,11 +37,9 @@ def create_model(num_classes, device=torch.device('cpu')):
     return model
 
 
-# def main_worker(args):
 def main(args):
-    print(args)
-    # mp.spawn(main_worker, args=(args,), nprocs=args.world_size, join=True)
     init_distributed_mode(args)
+    print(args)
 
     device = torch.device(args.device)
 
@@ -138,7 +136,8 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
 
-        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device,
+                                              epoch, args.print_freq, warmup=True)
         # only first process to save training info
         if args.rank in [-1, 0]:
             train_loss.append(mean_loss.item())
@@ -153,6 +152,7 @@ def main(args):
         if args.rank in [-1, 0]:
             # write into txt
             with open(results_file, "a") as f:
+                # 写入的数据包括coco指标还有loss和learning rate
                 result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
                 txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
                 f.write(txt + "\n")

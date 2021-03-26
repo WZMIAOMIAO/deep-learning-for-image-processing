@@ -212,9 +212,13 @@ class BoxCoder(object):
 
         # 将预测的bbox回归参数应用到对应anchors上得到预测bbox的坐标
         pred_boxes = self.decode_single(
-            rel_codes.reshape(box_sum, -1), concat_boxes
+            rel_codes, concat_boxes
         )
-        return pred_boxes.reshape(box_sum, -1, 4)
+
+        if box_sum > 0:
+            pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
+
+        return pred_boxes
 
     def decode_single(self, rel_codes, boxes):
         """

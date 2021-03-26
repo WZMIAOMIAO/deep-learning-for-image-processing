@@ -4,8 +4,7 @@ import datetime
 import torch
 
 import transforms
-from backbone import LastLevelP6P7
-from backbone import resnet50_fpn_backbone
+from backbone import resnet50_fpn_backbone, LastLevelP6P7
 from network_files import RetinaNet
 from my_dataset import VOC2012DataSet
 from train_utils import train_eval_utils as utils
@@ -119,6 +118,7 @@ def main(parser_data):
 
         # write into txt
         with open(results_file, "a") as f:
+            # 写入的数据包括coco指标还有loss和learning rate
             result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item(), lr]]
             txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
             f.write(txt + "\n")
