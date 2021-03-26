@@ -33,7 +33,7 @@ def create_model(num_classes):
     # resNet50+fpn+faster_RCNN
     # 注意，这里的norm_layer要和训练脚本中保持一致
     backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d)
-    model = FasterRCNN(backbone=backbone, num_classes=num_classes)
+    model = FasterRCNN(backbone=backbone, num_classes=num_classes, rpn_score_thresh=0.5)
 
     return model
 

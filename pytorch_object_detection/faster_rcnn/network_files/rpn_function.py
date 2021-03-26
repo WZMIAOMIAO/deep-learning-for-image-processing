@@ -345,7 +345,7 @@ class RegionProposalNetwork(torch.nn.Module):
     def __init__(self, anchor_generator, head,
                  fg_iou_thresh, bg_iou_thresh,
                  batch_size_per_image, positive_fraction,
-                 pre_nms_top_n, post_nms_top_n, nms_thresh):
+                 pre_nms_top_n, post_nms_top_n, nms_thresh, score_thresh=0.0):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
@@ -369,6 +369,7 @@ class RegionProposalNetwork(torch.nn.Module):
         self._pre_nms_top_n = pre_nms_top_n
         self._post_nms_top_n = post_nms_top_n
         self.nms_thresh = nms_thresh
+        self.score_thresh = score_thresh
         self.min_size = 1.
 
     def pre_nms_top_n(self):
@@ -497,20 +498,31 @@ class RegionProposalNetwork(torch.nn.Module):
         # 预测概率排前pre_nms_top_n的anchors索引值获取相应bbox坐标信息
         proposals = proposals[batch_idx, top_n_idx]
 
+        objectness_prob = torch.sigmoid(objectness)
+
         final_boxes = []
         final_scores = []
         # 遍历每张图像的相关预测信息
-        for boxes, scores, lvl, img_shape in zip(proposals, objectness, levels, image_shapes):
+        for boxes, scores, lvl, img_shape in zip(proposals, objectness_prob, levels, image_shapes):
             # 调整预测的boxes信息，将越界的坐标调整到图片边界上
             boxes = box_ops.clip_boxes_to_image(boxes, img_shape)
+
             # 返回boxes满足宽，高都大于min_size的索引
             keep = box_ops.remove_small_boxes(boxes, self.min_size)
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
+            # 移除小概率boxes，参考下面这个链接
+            # https://github.com/pytorch/vision/pull/3205
+            keep = torch.where(torch.ge(scores, self.score_thresh))[0]  # ge: >=
+            boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
             # non-maximum suppression, independently done per level
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh)
+
             # keep only topk scoring predictions
             keep = keep[: self.post_nms_top_n()]
             boxes, scores = boxes[keep], scores[keep]
+
             final_boxes.append(boxes)
             final_scores.append(scores)
         return final_boxes, final_scores
