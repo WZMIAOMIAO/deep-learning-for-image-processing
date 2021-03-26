@@ -5,9 +5,9 @@ import torch
 
 import transform
 from my_dataset import VOC2012DataSet
-from src.ssd_model import SSD300, Backbone
+from src import SSD300, Backbone
 import train_utils.train_eval_utils as utils
-from train_utils.coco_utils import get_coco_api_from_dataset
+from train_utils import get_coco_api_from_dataset
 
 
 def create_model(num_classes=21, device=torch.device('cpu')):

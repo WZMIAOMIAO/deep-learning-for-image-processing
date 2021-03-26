@@ -1,8 +1,9 @@
-from src.res50_backbone import resnet50
-from torch import nn, Tensor
 import torch
-from torch.jit.annotations import Optional, List, Dict, Tuple, Module
-from src.utils import dboxes300_coco, Encoder, PostProcess
+from torch import nn, Tensor
+from torch.jit.annotations import List
+
+from .res50_backbone import resnet50
+from .utils import dboxes300_coco, Encoder, PostProcess
 
 
 class Backbone(nn.Module):

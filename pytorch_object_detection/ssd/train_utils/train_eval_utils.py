@@ -4,9 +4,7 @@ import time
 
 import torch
 
-from train_utils.coco_utils import get_coco_api_from_dataset
-from train_utils.coco_eval import CocoEvaluator
-
+from train_utils import get_coco_api_from_dataset, CocoEvaluator
 import train_utils.distributed_utils as utils
 
 
