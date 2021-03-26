@@ -1,8 +1,10 @@
 import random
+
+import torch
 import torchvision.transforms as t
 from torchvision.transforms import functional as F
-from src.utils import dboxes300_coco, calc_iou_tensor, Encoder
-import torch
+
+from src import dboxes300_coco, calc_iou_tensor, Encoder
 
 
 class Compose(object):

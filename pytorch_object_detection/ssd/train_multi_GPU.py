@@ -6,10 +6,9 @@ import torch
 
 import transform
 from my_dataset import VOC2012DataSet
-from src.ssd_model import SSD300, Backbone
+from src import SSD300, Backbone
 import train_utils.train_eval_utils as utils
-from train_utils.distributed_utils import init_distributed_mode, save_on_master, mkdir
-from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
 
 
 def create_model(num_classes, device=torch.device('cpu')):

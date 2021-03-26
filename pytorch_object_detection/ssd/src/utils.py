@@ -1,11 +1,11 @@
-import os
-import numpy as np
 from math import sqrt
 import itertools
+
 import torch
 import torch.nn.functional as F
 from torch.jit.annotations import Tuple, List
 from torch import nn, Tensor
+import numpy as np
 
 
 # This function is from https://github.com/kuangliu/pytorch-ssd.
@@ -514,7 +514,7 @@ class PostProcess(nn.Module):
         self.max_output = 100
 
     def scale_back_batch(self, bboxes_in, scores_in):
-        # type: (Tensor, Tensor)
+        # type: (Tensor, Tensor) -> Tuple[Tensor, Tensor]
         """
             1）通过预测的boxes回归参数得到最终预测坐标
             2）将box格式从xywh转换回ltrb
@@ -555,7 +555,7 @@ class PostProcess(nn.Module):
         return bboxes_in, F.softmax(scores_in, dim=-1)
 
     def decode_single_new(self, bboxes_in, scores_in, criteria, num_output):
-        # type: (Tensor, Tensor, float, int)
+        # type: (Tensor, Tensor, float, int) -> Tuple[Tensor, Tensor, Tensor]
         """
         decode:
             input  : bboxes_in (Tensor 8732 x 4), scores_in (Tensor 8732 x nitems)
