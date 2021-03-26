@@ -1,4 +1,5 @@
 # Faster R-CNN
+
 ## 环境配置：
 * Python3.6或者3.7
 * Pytorch1.6(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
@@ -25,6 +26,8 @@
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
 * MobileNetV2 backbone: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
 * ResNet50+FPN backbone: https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
+* 注意，下载的预训练权重记得要重命名，比如在train_resnet50_fpn.py中读取的是'fasterrcnn_resnet50_fpn_coco.pth'文件，
+  不是'fasterrcnn_resnet50_fpn_coco-258fb6c6.pth'
  
  
 ## 数据集，本例程使用的是PASCAL VOC2012数据集
@@ -46,8 +49,12 @@
 * https://b23.tv/HvMiDy
 
 ## 注意事项
-* 因为带有FPN结构的Faster RCNN很吃显存，如果GPU的显存不够(如果batch_size小于8的话)建议在create_model函数中使用默认的norm_layer，
+* 本代码主要是来自pytorch官方torchvision模块中的源码，源码可查看：[https://github.com/pytorch/vision/tree/master/torchvision/models/detection](https://github.com/pytorch/vision/tree/master/torchvision/models/detection)
+* 在使用训练脚本时，注意要将'--data-path'(VOC_root)设置为自己存放'VOCdevkit'文件夹所在的**根目录**
+* 由于带有FPN结构的Faster RCNN很吃显存，如果GPU的显存不够(如果batch_size小于8的话)建议在create_model函数中使用默认的norm_layer，
   即不传递norm_layer变量，默认去使用FrozenBatchNorm2d(即不会去更新参数的bn层),使用中发现效果也很好。
+* 在使用预测脚本时，要将'train_weights'设置为你自己生成的权重路径。
+* 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时只需要修改'--num-classes'、'--data-path'和'--weights'即可，其他代码尽量不要改动
 
 ## Faster RCNN框架图
 ![Faster R-CNN](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_object_detection/faster_rcnn/fasterRCNN.png) 

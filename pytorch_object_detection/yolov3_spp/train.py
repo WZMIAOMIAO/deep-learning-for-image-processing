@@ -10,7 +10,7 @@ from models import *
 from build_utils.datasets import *
 from build_utils.utils import *
 from train_utils import train_eval_utils as train_util
-from train_utils.coco_utils import get_coco_api_from_dataset
+from train_utils import get_coco_api_from_dataset
 
 
 def train(hyp):

@@ -7,7 +7,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 import transform
-from src.ssd_model import SSD300, Backbone
+from src import SSD300, Backbone
 from draw_box_utils import draw_box
 
 
