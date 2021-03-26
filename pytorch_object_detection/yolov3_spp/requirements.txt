@@ -8,4 +8,4 @@ pycocotools==2.0.0
 matplotlib==3.2.1
 tqdm==4.42.1
 tensorboard==2.1.0
-PyYAML==5.3.1
+PyYAML==5.4
