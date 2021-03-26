@@ -12,8 +12,7 @@ from models import *
 from build_utils.datasets import *
 from build_utils.utils import *
 from train_utils import train_eval_utils as train_util
-from train_utils.distributed_utils import init_distributed_mode, torch_distributed_zero_first
-from train_utils.coco_utils import get_coco_api_from_dataset
+from train_utils import get_coco_api_from_dataset, init_distributed_mode, torch_distributed_zero_first
 
 
 def main(opt, hyp):

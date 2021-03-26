@@ -1,13 +1,13 @@
 import os
 import json
 import time
+
 import torch
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from build_utils import img_utils
-from build_utils import torch_utils
-from build_utils import utils
+
+from build_utils import img_utils, torch_utils, utils
 from models import Darknet
 from draw_box_utils import draw_box
 
