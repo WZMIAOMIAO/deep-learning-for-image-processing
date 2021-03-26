@@ -4,7 +4,7 @@
 * https://github.com/pytorch/vision/tree/master/torchvision/models/detection
 
 ## 环境配置：
-* Python3.6或者3.7
+* Python3.6/3.7/3.8
 * Pytorch1.6(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
 * pycocotools(Linux: pip install pycocotools;   
   Windows:pip install pycocotools-windows(不需要额外安装vs))
@@ -29,8 +29,8 @@
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
 * MobileNetV2 backbone: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
 * ResNet50+FPN backbone: https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-* 注意，下载的预训练权重记得要重命名，比如在train_resnet50_fpn.py中读取的是'fasterrcnn_resnet50_fpn_coco.pth'文件，
-  不是'fasterrcnn_resnet50_fpn_coco-258fb6c6.pth'
+* 注意，下载的预训练权重记得要重命名，比如在train_resnet50_fpn.py中读取的是```fasterrcnn_resnet50_fpn_coco.pth```文件，
+  不是```fasterrcnn_resnet50_fpn_coco-258fb6c6.pth```
  
  
 ## 数据集，本例程使用的是PASCAL VOC2012数据集
