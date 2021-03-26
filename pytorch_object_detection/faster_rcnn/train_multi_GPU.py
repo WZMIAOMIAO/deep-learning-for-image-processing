@@ -36,8 +36,8 @@ def create_model(num_classes, device):
 
 
 def main(args):
-    print(args)
     init_distributed_mode(args)
+    print(args)
 
     device = torch.device(args.device)
 
@@ -131,7 +131,8 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device,
+                                              epoch, args.print_freq, warmup=True)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
