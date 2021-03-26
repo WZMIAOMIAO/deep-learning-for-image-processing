@@ -14,7 +14,7 @@ from train_utils import train_eval_utils as utils
 def create_model(num_classes):
     # https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
     backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
-    backbone.out_channels = 1280
+    backbone.out_channels = 1280  # 设置对应backbone输出特征矩阵的channels
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
                                         aspect_ratios=((0.5, 1.0, 2.0),))
