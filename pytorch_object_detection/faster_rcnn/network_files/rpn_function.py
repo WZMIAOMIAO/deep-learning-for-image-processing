@@ -5,9 +5,9 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 import torchvision
 
-from network_files import det_utils
-from network_files import boxes as box_ops
-from network_files.image_list import ImageList
+from . import det_utils
+from . import boxes as box_ops
+from .image_list import ImageList
 
 
 @torch.jit.unused

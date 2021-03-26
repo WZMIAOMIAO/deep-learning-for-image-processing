@@ -15,7 +15,7 @@ def create_model(num_classes, device):
     # 创建retinanet_res50_fpn模型
     # skip P2 because it generates too many anchors (according to their paper)
     # 注意，这里的backbone默认使用的是FrozenBatchNorm2d，即不会去更新bn参数
-    # 目的是为了防止batch_size太小导致效果更差
+    # 目的是为了防止batch_size太小导致效果更差(如果显存很小，建议使用默认的FrozenBatchNorm2d)
     # 如果GPU显存很大可以设置比较大的batch_size就可以将norm_layer设置为普通的BatchNorm2d
     backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
                                      returned_layers=[2, 3, 4],

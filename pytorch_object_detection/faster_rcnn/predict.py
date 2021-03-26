@@ -8,10 +8,8 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 from torchvision import transforms
-from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
-from network_files.rpn_function import AnchorsGenerator
-from backbone.mobilenetv2_model import MobileNetV2
+from network_files import FasterRCNN, FastRCNNPredictor, AnchorsGenerator
+from backbone import resnet50_fpn_backbone, MobileNetV2
 from draw_box_utils import draw_box
 
 
@@ -33,7 +31,8 @@ def create_model(num_classes):
     #                    box_roi_pool=roi_pooler)
 
     # resNet50+fpn+faster_RCNN
-    backbone = resnet50_fpn_backbone()
+    # 注意，这里的norm_layer要和训练脚本中保持一致
+    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d)
     model = FasterRCNN(backbone=backbone, num_classes=num_classes)
 
     return model

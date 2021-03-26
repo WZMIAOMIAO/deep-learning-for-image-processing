@@ -5,7 +5,7 @@ import torch
 from torch import nn, Tensor
 import torchvision
 
-from network_files.image_list import ImageList
+from .image_list import ImageList
 
 
 @torch.jit.unused

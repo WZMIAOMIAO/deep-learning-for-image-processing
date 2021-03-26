@@ -4,7 +4,8 @@ import torch
 from torch import Tensor
 import torch.nn.functional as F
 
-from network_files import boxes as box_ops, det_utils
+from . import det_utils
+from . import boxes as box_ops
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):

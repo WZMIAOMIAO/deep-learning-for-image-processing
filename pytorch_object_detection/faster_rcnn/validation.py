@@ -11,11 +11,10 @@ from tqdm import tqdm
 import numpy as np
 
 import transforms
-from network_files.faster_rcnn_framework import FasterRCNN
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
+from network_files import FasterRCNN
+from backbone import resnet50_fpn_backbone
 from my_dataset import VOC2012DataSet
-from train_utils.coco_utils import get_coco_api_from_dataset
-from train_utils.coco_eval import CocoEvaluator
+from train_utils import get_coco_api_from_dataset, CocoEvaluator
 
 
 def summarize(self, catId=None):
@@ -124,14 +123,17 @@ def main(parser_data):
                                                       collate_fn=val_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    backbone = resnet50_fpn_backbone()
+    # 注意，这里的norm_layer要和训练脚本中保持一致
+    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d)
     model = FasterRCNN(backbone=backbone, num_classes=parser_data.num_classes + 1)
 
     # 载入你自己训练好的模型权重
     weights_path = parser_data.weights
     assert os.path.exists(weights_path), "not found {} file.".format(weights_path)
+    w1 = model.state_dict()
     weights_dict = torch.load(weights_path, map_location=device)
     model.load_state_dict(weights_dict['model'])
+    w2 = model.state_dict()
     # print(model)
 
     model.to(device)
@@ -197,7 +199,7 @@ if __name__ == "__main__":
     parser.add_argument('--num-classes', type=int, default='20', help='number of classes')
 
     # 数据集的根目录(VOC2012根目录)
-    parser.add_argument('--data-path', default='./', help='dataset root')
+    parser.add_argument('--data-path', default='/data/', help='dataset root')
 
     # 训练好的权重文件
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
