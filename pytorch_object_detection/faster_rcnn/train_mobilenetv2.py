@@ -106,7 +106,7 @@ def main():
     for epoch in range(init_epochs):
         # train for one epoch, printing every 10 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
-                                              device, epoch, print_freq=50)
+                                              device, epoch, print_freq=50, warmup=True)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
