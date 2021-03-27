@@ -93,7 +93,8 @@ def main(args):
         collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
-    model = create_model(num_classes=21, device=device)
+    # create model num_classes equal background + 20 classes
+    model = create_model(num_classes=args.num_classes + 1, device=device)
     model.to(device)
 
     model_without_ddp = model
@@ -189,6 +190,8 @@ if __name__ == "__main__":
     parser.add_argument('--data-path', default='./', help='dataset')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
+    # 检测目标类别数(不包含背景)
+    parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
     # 每块GPU上的batch_size
     parser.add_argument('-b', '--batch-size', default=4, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
