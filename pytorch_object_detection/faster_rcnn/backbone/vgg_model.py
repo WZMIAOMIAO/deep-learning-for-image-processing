@@ -7,19 +7,19 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(512*7*7, 2048),
+            nn.Linear(512*7*7, 4096),
             nn.ReLU(True),
             nn.Dropout(p=0.5),
-            nn.Linear(2048, 2048),
+            nn.Linear(4096, 4096),
             nn.ReLU(True),
-            nn.Linear(2048, class_num)
+            nn.Dropout(p=0.5),
+            nn.Linear(4096, class_num)
         )
         if init_weights and weights_path is None:
             self._initialize_weights()
 
         if weights_path is not None:
-            self.load_state_dict(torch.load(weights_path), strict=False)
+            self.load_state_dict(torch.load(weights_path))
 
     def forward(self, x):
         # N x 3 x 224 x 224
@@ -65,10 +65,8 @@ cfgs = {
 
 
 def vgg(model_name="vgg16", weights_path=None):
-    try:
-        cfg = cfgs[model_name]
-    except:
-        print("Warning: model number {} not in cfgs dict!".format(model_name))
-        exit(-1)
+    assert model_name in cfgs, "Warning: model number {} not in cfgs dict!".format(model_name)
+    cfg = cfgs[model_name]
+
     model = VGG(make_features(cfg), weights_path=weights_path)
     return model
