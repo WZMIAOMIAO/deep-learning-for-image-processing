@@ -15,12 +15,12 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
             nn.Linear(512*7*7, 4096),
             nn.ReLU(True),
             nn.Dropout(p=0.5),
             nn.Linear(4096, 4096),
             nn.ReLU(True),
+            nn.Dropout(p=0.5),
             nn.Linear(4096, num_classes)
         )
         if init_weights:
