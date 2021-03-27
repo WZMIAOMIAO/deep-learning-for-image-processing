@@ -77,7 +77,7 @@ def main(parser_data):
                                                       collate_fn=train_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    model = create_model(num_classes=21, device=device)
+    model = create_model(num_classes=parser_data.num_classes + 1, device=device)
     # print(model)
 
     model.to(device)
@@ -157,6 +157,8 @@ if __name__ == "__main__":
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录
     parser.add_argument('--data-path', default='./', help='dataset')
+    # 检测目标类别数(不包含背景)
+    parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
