@@ -135,4 +135,3 @@ def generate_ds(data_root: str,
     val_ds = configure_for_performance(val_ds, total_val)
 
     return train_ds, val_ds
-
