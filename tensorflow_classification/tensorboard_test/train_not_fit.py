@@ -6,6 +6,7 @@ import datetime
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tqdm import tqdm
+assert tf.version.VERSION >= "2.4.0", "version of tf must greater/equal than 2.4.0"
 
 
 def main():
@@ -125,32 +126,27 @@ def main():
         val_loss.reset_states()  # clear history info
         val_accuracy.reset_states()  # clear history info
 
+        print("Epoch [{}/{}]".format(epoch + 1, epochs))
         # train
-        train_bar = tqdm(range(total_train // batch_size))
-        for step in train_bar:
-            images, labels = next(train_data_gen)
+        train_bar = tqdm(train_data_gen)
+        for images, labels in train_bar:
             train_step(images, labels)
 
             # print train process
-            train_bar.desc = "[{}/{}] train_loss:{:.3f}, train_acc:{:.3f}".format(epoch + 1,
-                                                                                  epochs,
-                                                                                  train_loss.result(),
-                                                                                  train_accuracy.result())
+            train_bar.desc = "train_loss:{:.3f}, train_acc:{:.3f}".format(train_loss.result(),
+                                                                          train_accuracy.result())
 
         # update learning rate
         optimizer.learning_rate = scheduler(epoch)
 
-        # validate
-        val_bar = tqdm(range(total_val // batch_size))
-        for step in val_bar:
-            test_images, test_labels = next(val_data_gen)
+        # validation
+        val_bar = tqdm(val_data_gen)
+        for test_images, test_labels in val_bar:
             test_step(test_images, test_labels)
 
             # print val process
-            val_bar.desc = "[{}/{}] val_loss:{:.3f}, val_acc:{:.3f}".format(epoch + 1,
-                                                                            epochs,
-                                                                            val_loss.result(),
-                                                                            val_accuracy.result())
+            val_bar.desc = "val_loss:{:.3f}, val_acc:{:.3f}".format(val_loss.result(),
+                                                                    val_accuracy.result())
 
         with train_writer.as_default():
             tf.summary.scalar("loss", train_loss.result(), epoch)
