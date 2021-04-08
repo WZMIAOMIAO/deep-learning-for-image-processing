@@ -21,6 +21,7 @@
 - MobileNet(v3) [https://arxiv.org/abs/1905.02244](https://arxiv.org/abs/1905.02244)
 - ShuffleNet(v1) [https://arxiv.org/abs/1707.01083](https://arxiv.org/abs/1707.01083)
 - ShuffleNet(v2) [https://arxiv.org/abs/1807.11164](https://arxiv.org/abs/1807.11164)
+- Bag of Tricks for Image Classification with Convolutional Neural Networks [https://arxiv.org/abs/1812.01187](https://arxiv.org/abs/1812.01187)
 - EfficientNet(v1) [https://arxiv.org/abs/1905.11946](https://arxiv.org/abs/1905.11946)
 - EfficientNet(v2) [https://arxiv.org/abs/2104.00298](https://arxiv.org/abs/2104.00298)
 - CSPNet [https://arxiv.org/abs/1911.11929](https://arxiv.org/abs/1911.11929)
@@ -36,10 +37,20 @@
 - SSD [https://arxiv.org/abs/1512.02325](https://arxiv.org/abs/1512.02325)
 - FPN(Feature Pyramid Networks for Object Detection) [https://arxiv.org/abs/1612.03144](https://arxiv.org/abs/1612.03144)
 - RetinaNet(Focal Loss for Dense Object Detection) [https://arxiv.org/abs/1708.02002](https://arxiv.org/abs/1708.02002)
+- Bag of Freebies for Training Object Detection Neural Networks [https://arxiv.org/abs/1902.04103](https://arxiv.org/abs/1902.04103)
 - YOLOv1 [https://arxiv.org/abs/1506.02640](https://arxiv.org/abs/1506.02640)
 - YOLOv2 [https://arxiv.org/abs/1612.08242](https://arxiv.org/abs/1506.02640)
 - YOLOv3 [https://arxiv.org/abs/1804.02767](https://arxiv.org/abs/1804.02767)
 - YOLOv4 [https://arxiv.org/abs/2004.10934](https://arxiv.org/abs/2004.10934)
+
+
+## 目标分割(Segmentation)
+- FCN(Fully Convolutional Networks for Semantic Segmentation) [https://arxiv.org/abs/1411.4038](https://arxiv.org/abs/1411.4038)
+- UNet(U-Net: Convolutional Networks for Biomedical Image Segmentation) [https://arxiv.org/abs/1505.04597](https://arxiv.org/abs/1505.04597)
+- DeepLabv1(Semantic Image Segmentation with Deep Convolutional Nets and Fully Connected CRFs) [https://arxiv.org/abs/1412.7062](https://arxiv.org/abs/1412.7062)
+- DeepLabv2(Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs) [https://arxiv.org/abs/1606.00915](https://arxiv.org/abs/1606.00915)
+- DeepLabv3(Rethinking Atrous Convolution for Semantic Image Segmentation) [https://arxiv.org/abs/1706.05587](https://arxiv.org/abs/1706.05587)
+- DeepLabv3+(Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation) [https://arxiv.org/abs/1802.02611](https://arxiv.org/abs/1802.02611)
 
 
 ## Others
