@@ -80,6 +80,21 @@ class FasterRCNNBase(nn.Module):
         # original_image_sizes = [img.shape[-2:] for img in images]
 
         images, targets = self.transform(images, targets)  # 对图像进行预处理
+
+        # Check for degenerate boxes
+        # 进一步检查数据，有的标注信息中可能有w或h为0的情况，这样的数据会导致计算回归loss为nan
+        if targets is not None:
+            for target_idx, target in enumerate(targets):
+                boxes = target["boxes"]
+                degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+                if degenerate_boxes.any():
+                    # print the first degenerate box
+                    bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
+                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    raise ValueError("All bounding boxes should have positive height and width."
+                                     " Found invalid box {} for target at index {}."
+                                     .format(degen_bb, target_idx))
+
         # print(images.tensors.shape)
         features = self.backbone(images.tensors)  # 将图像输入backbone得到特征图
         if isinstance(features, torch.Tensor):  # 若只在一层特征层上预测，将feature放入有序字典中，并编号为‘0’
