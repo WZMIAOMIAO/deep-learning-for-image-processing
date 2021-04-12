@@ -67,7 +67,7 @@
 
 ## 本项目训练得到的权重(Faster R-CNN + VGG16)
 * 链接: https://pan.baidu.com/s/1fz_9raY6gGLNuAO2_uNp9Q  密码: 7l3v
-* 验证集mAP：
+* COCO2017验证集mAP：
 ```
  Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.233
  Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.415
