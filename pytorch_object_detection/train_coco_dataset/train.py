@@ -106,7 +106,6 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
 
-    num_epochs = args.epochs
     for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch, printing every 50 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
@@ -130,14 +129,12 @@ def main(args):
         val_map.append(coco_info[1])  # pascal mAP
 
         # save weights
-        # 仅保存最后5个epoch的权重
-        if epoch in range(num_epochs)[-5:]:
-            save_files = {
-                'model': model.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'lr_scheduler': lr_scheduler.state_dict(),
-                'epoch': epoch}
-            torch.save(save_files, "./save_weights/mobile-model-{}.pth".format(epoch))
+        save_files = {
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'lr_scheduler': lr_scheduler.state_dict(),
+            'epoch': epoch}
+        torch.save(save_files, "./save_weights/mobile-model-{}.pth".format(epoch))
 
     # plot loss and lr curve
     if len(train_loss) != 0 and len(learning_rate) != 0:
@@ -187,8 +184,8 @@ if __name__ == "__main__":
                         help='decrease lr every step-size epochs')
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
-    # 训练的batch size
-    parser.add_argument('--batch_size', default=8, type=int, metavar='N',
+    # 训练的batch size(如果内存/GPU显存充裕，建议设置更大)
+    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
                         help='batch size when training.')
 
     args = parser.parse_args()
