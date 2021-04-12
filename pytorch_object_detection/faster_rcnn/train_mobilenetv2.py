@@ -13,8 +13,9 @@ from train_utils import train_eval_utils as utils
 
 def create_model(num_classes):
     # https://download.pytorch.org/models/vgg16-397923af.pth
-    # 如果使用vgg16的话(不建议使用，效果不好)就下载对应预训练权重并取消下面两行注释，接着把mobilenetv2模型对应的两行代码注释掉
-    # backbone = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
+    # 如果使用vgg16的话(不建议使用，效果不好)就下载对应预训练权重并取消下面注释，接着把mobilenetv2模型对应的两行代码注释掉
+    # vgg_feature = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
+    # backbone = torch.nn.Sequential(*list(vgg_feature._modules.values())[:-1])  # 删除features中最后一个Maxpool层
     # backbone.out_channels = 512
 
     # https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
