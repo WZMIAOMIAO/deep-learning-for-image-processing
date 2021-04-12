@@ -184,14 +184,14 @@ def main(parser_data):
                     # 要将类别信息还原回coco91中
                     coco80_class = int(object_class)
                     coco91_class = int(coco80to91[str(coco80_class)])
-                    object_box = [round(b, 2) for b in object_box.tolist()]
-
                     # We recommend rounding coordinates to the nearest tenth of a pixel
                     # to reduce resulting JSON file size.
+                    object_box = [round(b, 2) for b in object_box.tolist()]
+
                     res = {"image_id": img_id,
                            "category_id": coco91_class,
                            "bbox": object_box,
-                           "score": object_score}
+                           "score": round(object_score, 3)}
                     results.append(res)
 
     # accumulate predictions from all images
