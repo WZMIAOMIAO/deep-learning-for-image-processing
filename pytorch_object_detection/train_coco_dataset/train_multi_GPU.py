@@ -14,9 +14,15 @@ from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_di
 
 
 def create_model(num_classes, device):
+    # https://download.pytorch.org/models/vgg16-397923af.pth
+    # 如果使用mobilenetv2的话就下载对应预训练权重并注释下面三行，接着把mobilenetv2模型对应的两行代码注释取消掉
     vgg_feature = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
     backbone = torch.nn.Sequential(*list(vgg_feature._modules.values())[:-1])  # 删除feature中最后的maxpool层
     backbone.out_channels = 512
+
+    # https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
+    # backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
+    # backbone.out_channels = 1280  # 设置对应backbone输出特征矩阵的channels
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
                                         aspect_ratios=((0.5, 1.0, 2.0),))
@@ -114,10 +120,6 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
 
-    if args.test_only:
-        utils.evaluate(model, data_loader_test, device=device)
-        return
-
     train_loss = []
     learning_rate = []
     val_map = []
@@ -181,8 +183,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__)
 
-    # 训练文件的根目录
-    parser.add_argument('--data-path', default='./', help='dataset')
+    # 训练文件的根目录(coco2017)
+    parser.add_argument('--data-path', default='/data/coco2017', help='dataset')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 检测目标类别数(不包含背景)
@@ -223,13 +225,6 @@ if __name__ == "__main__":
     # 基于上次的训练结果接着训练
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
-    # 不训练，仅测试
-    parser.add_argument(
-        "--test-only",
-        dest="test_only",
-        help="Only test the model",
-        action="store_true",
-    )
 
     # 开启的进程数(注意不是线程)
     parser.add_argument('--world-size', default=4, type=int,
