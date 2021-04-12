@@ -22,7 +22,7 @@
   ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
   ├── validation.py: 利用训练好的权重验证/测试数据的COCO指标，并生成record_mAP.txt文件
   ├── transforms.py: 数据预处理（随机水平翻转图像以及bboxes、将PIL图像转为Tensor）
-  └── compute_receptive_field.py: 计算VGG16用与特征提取部分的感受野(不包括最后一个maxpool层，228)
+  └── compute_receptive_field.py: 计算VGG16用于特征提取部分的感受野(不包括最后一个maxpool层，228)
 ```
 
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
