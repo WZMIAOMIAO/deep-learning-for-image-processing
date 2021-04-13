@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from torchvision import transforms
 from network_files import FasterRCNN, AnchorsGenerator
-from backbone import vgg
+from backbone import vgg, MobileNetV2
 from draw_box_utils import draw_box
 
 
@@ -17,6 +17,9 @@ def create_model(num_classes):
     vgg_feature = vgg(model_name="vgg16").features
     backbone = torch.nn.Sequential(*list(vgg_feature._modules.values())[:-1])  # 删除feature中最后的maxpool层
     backbone.out_channels = 512
+
+    # backbone = MobileNetV2().features
+    # backbone.out_channels = 1280  # 设置对应backbone输出特征矩阵的channels
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
                                         aspect_ratios=((0.5, 1.0, 2.0),))
@@ -44,7 +47,8 @@ def main():
     print("using {} device.".format(device))
 
     # create model
-    model = create_model(num_classes=80+1)
+    num_classes = 80
+    model = create_model(num_classes=num_classes+1)
 
     # load train weights
     train_weights = "./save_weights/model_25.pth"
