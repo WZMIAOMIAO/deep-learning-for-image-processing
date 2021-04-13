@@ -134,7 +134,7 @@ def main(args):
             'optimizer': optimizer.state_dict(),
             'lr_scheduler': lr_scheduler.state_dict(),
             'epoch': epoch}
-        torch.save(save_files, "./save_weights/mobile-model-{}.pth".format(epoch))
+        torch.save(save_files, "./save_weights/model_{}.pth".format(epoch))
 
     # plot loss and lr curve
     if len(train_loss) != 0 and len(learning_rate) != 0:
