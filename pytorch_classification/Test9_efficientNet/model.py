@@ -145,7 +145,8 @@ class InvertedResidual(nn.Module):
         self.out_channels = cnf.out_c
         self.is_strided = cnf.stride > 1
 
-        if cnf.drop_rate > 0:
+        # 只有在使用shortcut连接时才使用dropout层
+        if self.use_res_connect and cnf.drop_rate > 0:
             self.dropout = nn.Dropout2d(p=cnf.drop_rate, inplace=True)
         else:
             self.dropout = nn.Identity()
