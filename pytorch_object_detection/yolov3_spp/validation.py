@@ -2,18 +2,11 @@
 该脚本用于调用训练好的模型权重去计算验证集/测试集的COCO指标
 以及每个类别的mAP(IoU=0.5)
 """
-
-import os
 import json
 
-import torch
-from tqdm import tqdm
-import numpy as np
-
-import transforms
-from network_files import RetinaNet
-from backbone import resnet50_fpn_backbone, LastLevelP6P7
-from my_dataset import VOC2012DataSet
+from models import *
+from build_utils.datasets import *
+from build_utils.utils import *
 from train_utils import get_coco_api_from_dataset, CocoEvaluator
 
 
@@ -93,21 +86,15 @@ def main(parser_data):
     device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
     print("Using {} device training.".format(device.type))
 
-    data_transform = {
-        "val": transforms.Compose([transforms.ToTensor()])
-    }
-
     # read class_indict
-    label_json_path = './pascal_voc_classes.json'
+    label_json_path = './data/pascal_voc_classes.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
     json_file = open(label_json_path, 'r')
     class_dict = json.load(json_file)
     category_index = {v: k for k, v in class_dict.items()}
 
-    VOC_root = parser_data.data_path
-    # check voc root
-    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
-        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+    data_dict = parse_data_cfg(parser_data.data)
+    test_path = data_dict["valid"]
 
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     batch_size = parser_data.batch_size
@@ -115,46 +102,55 @@ def main(parser_data):
     print('Using %g dataloader workers' % nw)
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
+    val_dataset = LoadImagesAndLabels(test_path, parser_data.img_size, batch_size,
+                                      hyp=parser_data.hyp,
+                                      rect=True)  # 将每个batch的图像调整到合适大小，可减少运算量(并不是512x512标准尺寸)
+
+    val_data_set_loader = torch.utils.data.DataLoader(val_dataset,
                                                       batch_size=batch_size,
                                                       shuffle=False,
                                                       num_workers=nw,
-                                                      collate_fn=val_data_set.collate_fn)
+                                                      collate_fn=val_dataset.collate_fn)
 
-    # create model num_classes equal background + 20 classes
-    # 注意，这里的norm_layer要和训练脚本中保持一致
-    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
-                                     returned_layers=[2, 3, 4],
-                                     extra_blocks=LastLevelP6P7(256, 256))
-    model = RetinaNet(backbone, parser_data.num_classes + 1)
-
-    # 载入你自己训练好的模型权重
-    weights_path = parser_data.weights
-    assert os.path.exists(weights_path), "not found {} file.".format(weights_path)
-    weights_dict = torch.load(weights_path, map_location=device)
-    model.load_state_dict(weights_dict['model'])
-    # print(model)
-
+    # create model
+    model = Darknet(parser_data.cfg, parser_data.img_size)
+    model.load_state_dict(torch.load(parser_data.weights, map_location=device)["model"])
     model.to(device)
 
     # evaluate on the test dataset
-    coco = get_coco_api_from_dataset(val_data_set)
+    coco = get_coco_api_from_dataset(val_dataset)
     iou_types = ["bbox"]
     coco_evaluator = CocoEvaluator(coco, iou_types)
     cpu_device = torch.device("cpu")
 
     model.eval()
     with torch.no_grad():
-        for image, targets in tqdm(val_data_set_loader, desc="validation..."):
-            # 将图片传入指定设备device
-            image = list(img.to(device) for img in image)
+        for imgs, targets, paths, shapes, img_index in tqdm(val_data_set_loader, desc="validation..."):
+            imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
 
-            # inference
-            outputs = model(image)
+            pred = model(imgs)[0]  # only get inference result
+            pred = non_max_suppression(pred, conf_thres=0.01, iou_thres=0.6, multi_label=False)
 
-            outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-            res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+            outputs = []
+            for index, p in enumerate(pred):
+                if p is None:
+                    p = torch.empty((0, 6), device=cpu_device)
+                    boxes = torch.empty((0, 4), device=cpu_device)
+                else:
+                    # xmin, ymin, xmax, ymax
+                    boxes = p[:, :4]
+                    # shapes: (h0, w0), ((h / h0, w / w0), pad)
+                    # 将boxes信息还原回原图尺度，这样计算的mAP才是准确的
+                    boxes = scale_coords(imgs[index].shape[1:], boxes, shapes[index][0]).round()
+
+                # 注意这里传入的boxes格式必须是xmin, ymin, xmax, ymax，且为绝对坐标
+                info = {"boxes": boxes.to(cpu_device),
+                        "labels": p[:, 5].to(device=cpu_device, dtype=torch.int64),
+                        "scores": p[:, 4].to(cpu_device)}
+                outputs.append(info)
+
+            res = {img_id: output for img_id, output in zip(img_index, outputs)}
+
             coco_evaluator.update(res)
 
     coco_evaluator.synchronize_between_processes()
@@ -193,19 +189,21 @@ if __name__ == "__main__":
         description=__doc__)
 
     # 使用设备类型
-    parser.add_argument('--device', default='cuda:0', help='device')
+    parser.add_argument('--device', default='cuda', help='device')
 
     # 检测目标类别数
     parser.add_argument('--num-classes', type=int, default='20', help='number of classes')
 
-    # 数据集的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='./', help='dataset root')
+    parser.add_argument('--cfg', type=str, default='cfg/my_yolov3.cfg', help="*.cfg path")
+    parser.add_argument('--data', type=str, default='data/my_data.data', help='*.data path')
+    parser.add_argument('--hyp', type=str, default='cfg/hyp.yaml', help='hyperparameters path')
+    parser.add_argument('--img-size', type=int, default=512, help='test size')
 
     # 训练好的权重文件
-    parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
+    parser.add_argument('--weights', default='./weights/yolov3spp-voc-512.pt', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
 
     args = parser.parse_args()

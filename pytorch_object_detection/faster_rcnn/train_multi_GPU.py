@@ -185,7 +185,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__)
 
-    # 训练文件的根目录
+    # 训练文件的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')

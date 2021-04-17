@@ -6,7 +6,7 @@ import torch
 from PIL import Image
 import matplotlib.pyplot as plt
 
-import transform
+import transforms
 from src import SSD300, Backbone
 from draw_box_utils import draw_box
 
@@ -51,9 +51,9 @@ def main():
     original_img = Image.open("./test.jpg")
 
     # from pil image to tensor, do not normalize image
-    data_transform = transform.Compose([transform.Resize(),
-                                        transform.ToTensor(),
-                                        transform.Normalization()])
+    data_transform = transforms.Compose([transforms.Resize(),
+                                         transforms.ToTensor(),
+                                         transforms.Normalization()])
     img, _ = data_transform(original_img)
     # expand batch dimension
     img = torch.unsqueeze(img, dim=0)

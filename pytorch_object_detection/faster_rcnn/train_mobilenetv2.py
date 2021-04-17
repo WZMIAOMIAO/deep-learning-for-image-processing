@@ -13,8 +13,9 @@ from train_utils import train_eval_utils as utils
 
 def create_model(num_classes):
     # https://download.pytorch.org/models/vgg16-397923af.pth
-    # 如果使用vgg16的话(不建议使用，效果不好)就下载对应预训练权重并取消下面两行注释，接着把mobilenetv2模型对应的两行代码注释掉
-    # backbone = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
+    # 如果使用vgg16的话就下载对应预训练权重并取消下面注释，接着把mobilenetv2模型对应的两行代码注释掉
+    # vgg_feature = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
+    # backbone = torch.nn.Sequential(*list(vgg_feature._modules.values())[:-1])  # 删除features中最后一个Maxpool层
     # backbone.out_channels = 512
 
     # https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
@@ -53,7 +54,7 @@ def main():
         "val": transforms.Compose([transforms.ToTensor()])
     }
 
-    VOC_root = "./"
+    VOC_root = "./"  # VOCdevkit
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
@@ -77,6 +78,7 @@ def main():
     val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
                                                       batch_size=batch_size,
                                                       shuffle=False,
+                                                      pin_memory=True,
                                                       num_workers=nw,
                                                       collate_fn=train_data_set.collate_fn)
 

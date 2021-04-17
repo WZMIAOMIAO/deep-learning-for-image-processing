@@ -80,7 +80,6 @@ class FasterRCNNBase(nn.Module):
         # original_image_sizes = [img.shape[-2:] for img in images]
 
         images, targets = self.transform(images, targets)  # 对图像进行预处理
-
         # print(images.tensors.shape)
         features = self.backbone(images.tensors)  # 将图像输入backbone得到特征图
         if isinstance(features, torch.Tensor):  # 若只在一层特征层上预测，将feature放入有序字典中，并编号为‘0’

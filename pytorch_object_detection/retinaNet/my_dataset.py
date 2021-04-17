@@ -148,6 +148,12 @@ class VOC2012DataSet(Dataset):
             xmax = float(obj["bndbox"]["xmax"])
             ymin = float(obj["bndbox"]["ymin"])
             ymax = float(obj["bndbox"]["ymax"])
+
+            # 进一步检查数据，有的标注信息中可能有w或h为0的情况，这样的数据会导致计算回归loss为nan
+            if xmax <= xmin or ymax <= ymin:
+                print("Warning: in '{}' xml, there are some bbox w/h <=0".format(xml_path))
+                continue
+                
             boxes.append([xmin, ymin, xmax, ymax])
             labels.append(self.class_dict[obj["name"]])
             iscrowd.append(int(obj["difficult"]))

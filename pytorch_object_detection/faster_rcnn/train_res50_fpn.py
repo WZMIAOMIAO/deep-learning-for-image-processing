@@ -64,6 +64,7 @@ def main(parser_data):
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
                                                     batch_size=batch_size,
                                                     shuffle=True,
+                                                    pin_memory=True,
                                                     num_workers=nw,
                                                     collate_fn=train_data_set.collate_fn)
 
@@ -73,6 +74,7 @@ def main(parser_data):
     val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
                                                       batch_size=batch_size,
                                                       shuffle=False,
+                                                      pin_memory=True,
                                                       num_workers=nw,
                                                       collate_fn=train_data_set.collate_fn)
 
@@ -155,7 +157,7 @@ if __name__ == "__main__":
 
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
-    # 训练数据集的根目录
+    # 训练数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 检测目标类别数(不包含背景)
     parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
