@@ -121,6 +121,7 @@ def main(parser_data):
                                                       batch_size=batch_size,
                                                       shuffle=False,
                                                       num_workers=nw,
+                                                      pin_memory=True,
                                                       collate_fn=val_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
