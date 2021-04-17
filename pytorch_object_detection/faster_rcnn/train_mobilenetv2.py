@@ -54,7 +54,7 @@ def main():
         "val": transforms.Compose([transforms.ToTensor()])
     }
 
-    VOC_root = "./"
+    VOC_root = "./"  # VOCdevkit
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))

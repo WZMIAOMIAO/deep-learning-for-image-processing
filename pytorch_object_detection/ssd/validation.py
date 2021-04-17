@@ -11,8 +11,7 @@ from tqdm import tqdm
 import numpy as np
 
 import transforms
-from network_files import RetinaNet
-from backbone import resnet50_fpn_backbone, LastLevelP6P7
+from src import Backbone, SSD300
 from my_dataset import VOC2012DataSet
 from train_utils import get_coco_api_from_dataset, CocoEvaluator
 
@@ -94,7 +93,9 @@ def main(parser_data):
     print("Using {} device training.".format(device.type))
 
     data_transform = {
-        "val": transforms.Compose([transforms.ToTensor()])
+        "val": transforms.Compose([transforms.Resize(),
+                                   transforms.ToTensor(),
+                                   transforms.Normalization()])
     }
 
     # read class_indict
@@ -115,7 +116,7 @@ def main(parser_data):
     print('Using %g dataloader workers' % nw)
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_data_set = VOC2012DataSet(VOC_root, transforms=data_transform["val"], train_set="val.txt")
     val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
                                                       batch_size=batch_size,
                                                       shuffle=False,
@@ -123,11 +124,8 @@ def main(parser_data):
                                                       collate_fn=val_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    # 注意，这里的norm_layer要和训练脚本中保持一致
-    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
-                                     returned_layers=[2, 3, 4],
-                                     extra_blocks=LastLevelP6P7(256, 256))
-    model = RetinaNet(backbone, parser_data.num_classes + 1)
+    backbone = Backbone()
+    model = SSD300(backbone=backbone, num_classes=parser_data.num_classes + 1)
 
     # 载入你自己训练好的模型权重
     weights_path = parser_data.weights
@@ -146,14 +144,26 @@ def main(parser_data):
 
     model.eval()
     with torch.no_grad():
-        for image, targets in tqdm(val_data_set_loader, desc="validation..."):
+        for images, targets in tqdm(val_data_set_loader, desc="validation..."):
             # 将图片传入指定设备device
-            image = list(img.to(device) for img in image)
+            images = torch.stack(images, dim=0).to(device)
 
             # inference
-            outputs = model(image)
+            results = model(images)
 
-            outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            outputs = []
+            for index, (bboxes_out, labels_out, scores_out) in enumerate(results):
+                # 将box的相对坐标信息（0-1）转为绝对值坐标(xmin, ymin, xmax, ymax)
+                height_width = targets[index]["height_width"]
+                # 还原回原图尺度
+                bboxes_out[:, [0, 2]] = bboxes_out[:, [0, 2]] * height_width[1]
+                bboxes_out[:, [1, 3]] = bboxes_out[:, [1, 3]] * height_width[0]
+
+                info = {"boxes": bboxes_out.to(cpu_device),
+                        "labels": labels_out.to(cpu_device),
+                        "scores": scores_out.to(cpu_device)}
+                outputs.append(info)
+
             res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
             coco_evaluator.update(res)
 
@@ -193,19 +203,19 @@ if __name__ == "__main__":
         description=__doc__)
 
     # 使用设备类型
-    parser.add_argument('--device', default='cuda:0', help='device')
+    parser.add_argument('--device', default='cuda', help='device')
 
     # 检测目标类别数
     parser.add_argument('--num-classes', type=int, default='20', help='number of classes')
 
-    # 数据集的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='./', help='dataset root')
+    # 数据集的根目录(VOCdevkit根目录)
+    parser.add_argument('--data-path', default='/data/', help='dataset root')
 
     # 训练好的权重文件
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
 
     args = parser.parse_args()

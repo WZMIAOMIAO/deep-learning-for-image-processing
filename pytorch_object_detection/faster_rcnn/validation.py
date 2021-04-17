@@ -196,7 +196,7 @@ if __name__ == "__main__":
     # 检测目标类别数
     parser.add_argument('--num-classes', type=int, default='20', help='number of classes')
 
-    # 数据集的根目录(VOC2012根目录)
+    # 数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='/data/', help='dataset root')
 
     # 训练好的权重文件

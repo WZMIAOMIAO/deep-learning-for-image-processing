@@ -3,7 +3,7 @@ import datetime
 
 import torch
 
-import transform
+import transforms
 from my_dataset import VOC2012DataSet
 from src import SSD300, Backbone
 import train_utils.train_eval_utils as utils
@@ -49,16 +49,16 @@ def main(parser_data):
     results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     data_transform = {
-        "train": transform.Compose([transform.SSDCropping(),
-                                    transform.Resize(),
-                                    transform.ColorJitter(),
-                                    transform.ToTensor(),
-                                    transform.RandomHorizontalFlip(),
-                                    transform.Normalization(),
-                                    transform.AssignGTtoDefaultBox()]),
-        "val": transform.Compose([transform.Resize(),
-                                  transform.ToTensor(),
-                                  transform.Normalization()])
+        "train": transforms.Compose([transforms.SSDCropping(),
+                                     transforms.Resize(),
+                                     transforms.ColorJitter(),
+                                     transforms.ToTensor(),
+                                     transforms.RandomHorizontalFlip(),
+                                     transforms.Normalization(),
+                                     transforms.AssignGTtoDefaultBox()]),
+        "val": transforms.Compose([transforms.Resize(),
+                                   transforms.ToTensor(),
+                                   transforms.Normalization()])
     }
 
     VOC_root = parser_data.data_path
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cuda:0', help='device')
     # 检测的目标类别个数，不包括背景
     parser.add_argument('--num_classes', default=20, type=int, help='num_classes')
-    # 训练数据集的根目录
+    # 训练数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
