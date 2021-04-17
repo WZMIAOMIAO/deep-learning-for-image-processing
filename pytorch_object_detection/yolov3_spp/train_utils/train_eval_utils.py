@@ -126,6 +126,8 @@ def evaluate(model, data_loader, coco=None, device=None):
         model_time = time.time()
         pred = model(imgs)[0]  # only get inference result
         pred = non_max_suppression(pred, conf_thres=0.01, iou_thres=0.6, multi_label=False)
+        model_time = time.time() - model_time
+
         outputs = []
         for index, p in enumerate(pred):
             if p is None:
@@ -143,7 +145,6 @@ def evaluate(model, data_loader, coco=None, device=None):
                     "labels": p[:, 5].to(device=cpu_device, dtype=torch.int64),
                     "scores": p[:, 4].to(cpu_device)}
             outputs.append(info)
-        model_time = time.time() - model_time
 
         res = {img_id: output for img_id, output in zip(img_index, outputs)}
 
