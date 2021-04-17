@@ -88,9 +88,7 @@ def evaluate(model, data_loader, device, data_set=None):
     coco_evaluator = CocoEvaluator(data_set, iou_types)
 
     for images, targets in metric_logger.log_every(data_loader, 100, header):
-        images = torch.stack(images, dim=0)
-
-        images = images.to(device)
+        images = torch.stack(images, dim=0).to(device)
 
         if device != torch.device("cpu"):
             torch.cuda.synchronize(device)
@@ -98,12 +96,13 @@ def evaluate(model, data_loader, device, data_set=None):
         model_time = time.time()
         #  list((bboxes_out, labels_out, scores_out), ...)
         results = model(images, targets=None)
+        model_time = time.time() - model_time
 
         outputs = []
         for index, (bboxes_out, labels_out, scores_out) in enumerate(results):
             # 将box的相对坐标信息（0-1）转为绝对值坐标(xmin, ymin, xmax, ymax)
             height_width = targets[index]["height_width"]
-            # height_width = [300, 300]
+            # 还原回原图尺度
             bboxes_out[:, [0, 2]] = bboxes_out[:, [0, 2]] * height_width[1]
             bboxes_out[:, [1, 3]] = bboxes_out[:, [1, 3]] * height_width[0]
 
@@ -112,14 +111,7 @@ def evaluate(model, data_loader, device, data_set=None):
                     "scores": scores_out.to(cpu_device)}
             outputs.append(info)
 
-        # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        model_time = time.time() - model_time
-
-        res = dict()
-        for index in range(len(outputs)):
-            info = {targets[index]["image_id"].item(): outputs[index]}
-            res.update(info)
-        # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+        res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
 
         evaluator_time = time.time()
         coco_evaluator.update(res)
