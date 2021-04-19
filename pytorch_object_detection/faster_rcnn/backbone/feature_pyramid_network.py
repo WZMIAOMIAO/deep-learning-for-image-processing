@@ -130,5 +130,5 @@ class LastLevelMaxPool(torch.nn.Module):
     def forward(self, x, y, names):
         # type: (List[Tensor], List[Tensor], List[str]) -> Tuple[List[Tensor], List[str]]
         names.append("pool")
-        x.append(F.max_pool2d(x[-1], 1, 2, 0))
+        x.append(F.max_pool2d(x[-1], 1, 2, 0))  # input, kernel_size, stride, padding
         return x, names
