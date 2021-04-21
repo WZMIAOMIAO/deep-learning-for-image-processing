@@ -76,6 +76,7 @@ class RetinaNetClassificationHead(nn.Module):
             ] = 1.0
 
             # find indices for which anchors should be ignored
+            # 忽略iou在[0.4, 0.5)之间的anchors
             valid_idxs_per_img = torch.ne(matched_idxs_per_img, self.BETWEEN_THRESHOLDS)  # ne: !=
 
             # compute the classification loss
@@ -83,8 +84,9 @@ class RetinaNetClassificationHead(nn.Module):
                 cls_logits_per_img[valid_idxs_per_img],
                 gt_classes_target[valid_idxs_per_img],
                 reduction="sum"
-            ) / max(1, num_foreground))
+            ) / max(1, num_foreground))  # 注意这里除以的是正样本的个数
 
+        # len(targets): batch_size
         return _sum(losses) / len(targets)
 
     def forward(self, x: Tensor) -> Tensor:
