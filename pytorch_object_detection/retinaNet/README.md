@@ -5,7 +5,7 @@
 
 ## 环境配置：
 * Python3.6/3.7/3.8
-* Pytorch1.6(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
+* Pytorch1.7.1(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
 * pycocotools(Linux:```pip install pycocotools```; Windows:```pip install pycocotools-windows```(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
@@ -21,7 +21,7 @@
   ├── train_multi_GPU.py: 针对使用多GPU的用户使用
   ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
   ├── validation.py: 利用训练好的权重验证/测试数据的COCO指标，并生成record_mAP.txt文件
-  └── pascal_voc_classes.json: pascal_voc标签文件
+  └── pascal_voc_classes.json: pascal_voc标签文件(注意索引从0开始，不包括背景)
 ```
 
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
@@ -33,6 +33,22 @@
 ## 数据集，本例程使用的是PASCAL VOC2012数据集
 * Pascal VOC2012 train/val数据集下载地址：http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
 * 如果不了解数据集或者想使用自己的数据集进行训练，请参考我的bilibili：https://b23.tv/F1kSCK
+* 基于迁移学习在PASCAL VOC2012训练集训练得到的权重： 链接: https://pan.baidu.com/s/1mqrBFWuJ_lfDloCfVjWqaA  密码: sw0t
+* 在PASCAL VOC2012验证集上结果：
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.563
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.798
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.616
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.236
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.434
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.626
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.486
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.688
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.707
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.421
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.604
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.758
+```
 
 ## 训练方法
 * 确保提前准备好数据集

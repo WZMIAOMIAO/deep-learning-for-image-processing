@@ -115,20 +115,20 @@ def main(parser_data):
     print('Using %g dataloader workers' % nw)
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      num_workers=nw,
-                                                      pin_memory=True,
-                                                      collate_fn=val_data_set.collate_fn)
+    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
+                                                     batch_size=batch_size,
+                                                     shuffle=False,
+                                                     num_workers=nw,
+                                                     pin_memory=True,
+                                                     collate_fn=val_dataset.collate_fn)
 
-    # create model num_classes equal background + 20 classes
+    # create model
     # 注意，这里的norm_layer要和训练脚本中保持一致
     backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
                                      returned_layers=[2, 3, 4],
                                      extra_blocks=LastLevelP6P7(256, 256))
-    model = RetinaNet(backbone, parser_data.num_classes + 1)
+    model = RetinaNet(backbone, parser_data.num_classes)
 
     # 载入你自己训练好的模型权重
     weights_path = parser_data.weights
@@ -140,14 +140,14 @@ def main(parser_data):
     model.to(device)
 
     # evaluate on the test dataset
-    coco = get_coco_api_from_dataset(val_data_set)
+    coco = get_coco_api_from_dataset(val_dataset)
     iou_types = ["bbox"]
     coco_evaluator = CocoEvaluator(coco, iou_types)
     cpu_device = torch.device("cpu")
 
     model.eval()
     with torch.no_grad():
-        for image, targets in tqdm(val_data_set_loader, desc="validation..."):
+        for image, targets in tqdm(val_dataset_loader, desc="validation..."):
             # 将图片传入指定设备device
             image = list(img.to(device) for img in image)
 
@@ -172,7 +172,7 @@ def main(parser_data):
     voc_map_info_list = []
     for i in range(len(category_index)):
         stats, _ = summarize(coco_eval, catId=i)
-        voc_map_info_list.append(" {:15}: {}".format(category_index[i + 1], stats[1]))
+        voc_map_info_list.append(" {:15}: {}".format(category_index[i], stats[1]))
 
     print_voc = "\n".join(voc_map_info_list)
     print(print_voc)
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('--num-classes', type=int, default='20', help='number of classes')
 
     # 数据集的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='./', help='dataset root')
+    parser.add_argument('--data-path', default='/data', help='dataset root')
 
     # 训练好的权重文件
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')

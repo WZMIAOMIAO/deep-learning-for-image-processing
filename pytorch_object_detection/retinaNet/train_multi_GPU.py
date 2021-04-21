@@ -93,8 +93,9 @@ def main(args):
         collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
-    # create model num_classes equal background + 20 classes
-    model = create_model(num_classes=args.num_classes + 1, device=device)
+    # create model
+    # 注意：不包含背景
+    model = create_model(num_classes=args.num_classes, device=device)
     model.to(device)
 
     model_without_ddp = model
@@ -187,7 +188,7 @@ if __name__ == "__main__":
         description=__doc__)
 
     # 训练文件的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='./', help='dataset')
+    parser.add_argument('--data-path', default='/data', help='dataset')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 检测目标类别数(不包含背景)
