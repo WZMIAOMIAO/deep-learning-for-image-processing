@@ -34,10 +34,11 @@ def main():
     print("using {} device.".format(device))
 
     # create model
-    model = create_model(num_classes=21)
+    # 注意：不包含背景
+    model = create_model(num_classes=20)
 
     # load train weights
-    train_weights = "./save_weights/model-14.pth"
+    train_weights = "./save_weights/model.pth"
     assert os.path.exists(train_weights), "{} file dose not exist.".format(train_weights)
     model.load_state_dict(torch.load(train_weights, map_location=device)["model"])
     model.to(device)
@@ -82,7 +83,7 @@ def main():
                  predict_classes,
                  predict_scores,
                  category_index,
-                 thresh=0.5,
+                 thresh=0.4,
                  line_thickness=3)
         plt.imshow(original_img)
         plt.show()

@@ -74,8 +74,9 @@ def main(parser_data):
                                                       num_workers=nw,
                                                       collate_fn=train_data_set.collate_fn)
 
-    # create model num_classes equal background + 20 classes
-    model = create_model(num_classes=parser_data.num_classes + 1, device=device)
+    # create model
+    # 注意：不包含背景
+    model = create_model(num_classes=parser_data.num_classes, device=device)
     # print(model)
 
     model.to(device)
@@ -143,11 +144,6 @@ def main(parser_data):
         from plot_curve import plot_map
         plot_map(val_map)
 
-    # model.eval()
-    # x = [torch.rand(3, 300, 400), torch.rand(3, 400, 400)]
-    # predictions = model(x)
-    # print(predictions)
-
 
 if __name__ == "__main__":
     import argparse
@@ -158,7 +154,7 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='./', help='dataset')
+    parser.add_argument('--data-path', default='/data', help='dataset')
     # 检测目标类别数(不包含背景)
     parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
     # 文件保存地址
