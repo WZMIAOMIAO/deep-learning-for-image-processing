@@ -115,13 +115,13 @@ def main(parser_data):
     print('Using %g dataloader workers' % nw)
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      num_workers=nw,
-                                                      pin_memory=True,
-                                                      collate_fn=val_data_set.collate_fn)
+    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
+                                                     batch_size=batch_size,
+                                                     shuffle=False,
+                                                     num_workers=nw,
+                                                     pin_memory=True,
+                                                     collate_fn=val_dataset.collate_fn)
 
     # create model num_classes equal background + 20 classes
     # 注意，这里的norm_layer要和训练脚本中保持一致
@@ -138,14 +138,14 @@ def main(parser_data):
     model.to(device)
 
     # evaluate on the test dataset
-    coco = get_coco_api_from_dataset(val_data_set)
+    coco = get_coco_api_from_dataset(val_dataset)
     iou_types = ["bbox"]
     coco_evaluator = CocoEvaluator(coco, iou_types)
     cpu_device = torch.device("cpu")
 
     model.eval()
     with torch.no_grad():
-        for image, targets in tqdm(val_data_set_loader, desc="validation..."):
+        for image, targets in tqdm(val_dataset_loader, desc="validation..."):
             # 将图片传入指定设备device
             image = list(img.to(device) for img in image)
 
@@ -204,8 +204,8 @@ if __name__ == "__main__":
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
-                        help='batch size when training.')
+    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+                        help='batch size when validation.')
 
     args = parser.parse_args()
 

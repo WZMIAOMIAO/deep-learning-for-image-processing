@@ -206,8 +206,8 @@ if __name__ == "__main__":
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
-                        help='batch size when training.')
+    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+                        help='batch size when validation.')
 
     args = parser.parse_args()
 

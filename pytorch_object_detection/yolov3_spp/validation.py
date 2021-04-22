@@ -106,12 +106,12 @@ def main(parser_data):
                                       hyp=parser_data.hyp,
                                       rect=True)  # 将每个batch的图像调整到合适大小，可减少运算量(并不是512x512标准尺寸)
 
-    val_data_set_loader = torch.utils.data.DataLoader(val_dataset,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      num_workers=nw,
-                                                      pin_memory=True,
-                                                      collate_fn=val_dataset.collate_fn)
+    val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
+                                                     batch_size=batch_size,
+                                                     shuffle=False,
+                                                     num_workers=nw,
+                                                     pin_memory=True,
+                                                     collate_fn=val_dataset.collate_fn)
 
     # create model
     model = Darknet(parser_data.cfg, parser_data.img_size)
@@ -126,7 +126,7 @@ def main(parser_data):
 
     model.eval()
     with torch.no_grad():
-        for imgs, targets, paths, shapes, img_index in tqdm(val_data_set_loader, desc="validation..."):
+        for imgs, targets, paths, shapes, img_index in tqdm(val_dataset_loader, desc="validation..."):
             imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
 
             pred = model(imgs)[0]  # only get inference result
@@ -204,8 +204,8 @@ if __name__ == "__main__":
     parser.add_argument('--weights', default='./weights/yolov3spp-voc-512.pt', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
-                        help='batch size when training.')
+    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+                        help='batch size when validation.')
 
     args = parser.parse_args()
 
