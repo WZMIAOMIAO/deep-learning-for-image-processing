@@ -112,13 +112,13 @@ def main(parser_data):
     print('Using %g dataloader workers' % nw)
 
     # load validation data set
-    val_data_set = CocoDetection(coco_root, "val", data_transform["val"])
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      pin_memory=True,
-                                                      num_workers=nw,
-                                                      collate_fn=val_data_set.collate_fn)
+    val_dataset = CocoDetection(coco_root, "val", data_transform["val"])
+    val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
+                                                     batch_size=batch_size,
+                                                     shuffle=False,
+                                                     pin_memory=True,
+                                                     num_workers=nw,
+                                                     collate_fn=val_dataset.collate_fn)
 
     # create model
     vgg_feature = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
@@ -149,13 +149,13 @@ def main(parser_data):
 
     # evaluate on the val dataset
     cpu_device = torch.device("cpu")
-    coco91to80 = val_data_set.coco91to80
+    coco91to80 = val_dataset.coco91to80
     coco80to91 = dict([(str(v), k) for k, v in coco91to80.items()])
     results = []
 
     model.eval()
     with torch.no_grad():
-        for image, targets in tqdm(val_data_set_loader, desc="validation..."):
+        for image, targets in tqdm(val_dataset_loader, desc="validation..."):
             # 将图片传入指定设备device
             image = list(img.to(device) for img in image)
 
@@ -201,7 +201,7 @@ def main(parser_data):
         json_file.write(json_str)
 
     # accumulate predictions from all images
-    coco_true = val_data_set.coco
+    coco_true = val_dataset.coco
     coco_pre = coco_true.loadRes('predict_tmp.json')
 
     coco_evaluator = COCOeval(cocoGt=coco_true, cocoDt=coco_pre, iouType="bbox")
@@ -250,8 +250,8 @@ if __name__ == "__main__":
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
-                        help='batch size when training.')
+    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+                        help='batch size when validation.')
 
     args = parser.parse_args()
 
