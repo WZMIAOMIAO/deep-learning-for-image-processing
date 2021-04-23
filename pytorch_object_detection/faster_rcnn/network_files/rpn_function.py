@@ -413,8 +413,14 @@ class RegionProposalNetwork(torch.nn.Module):
                 # NB: need to clamp the indices because we can have a single
                 # GT in the image, and matched_idxs can be -2, which goes
                 # out of bounds
+                # 这里使用clamp设置下限0是为了方便取每个anchors对应的gt_boxes信息
+                # 负样本和舍弃的样本都是负值，所以为了防止越界直接置为0
+                # 因为后面是通过labels_per_image变量来记录正样本位置的，
+                # 所以负样本和舍弃的样本对应的gt_boxes信息并没有什么意义，
+                # 反正计算目标边界框回归损失时只会用到正样本。
                 matched_gt_boxes_per_image = gt_boxes[matched_idxs.clamp(min=0)]
 
+                # 记录所有anchors匹配后的标签(正样本处标记为1，负样本处标记为0，丢弃样本处标记为-2)
                 labels_per_image = matched_idxs >= 0
                 labels_per_image = labels_per_image.to(dtype=torch.float32)
 
