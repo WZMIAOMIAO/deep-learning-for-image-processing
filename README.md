@@ -57,12 +57,14 @@
     * [使用Tensorflow2搭建EfficientNet](https://www.bilibili.com/video/BV1PK4y1S7Jf)
 
 * 目标检测篇
-  * Faster-RCNN/FPN（进行中）
+  * Faster-RCNN/FPN（已完成）
     * [Faster-RCNN理论讲解](https://www.bilibili.com/video/BV1af4y1m7iL)
+    * [FPN理论讲解](https://b23.tv/Qhn6xA)
     * [Faster-RCNN源码解析(Pytorch)](https://www.bilibili.com/video/BV1of4y1m7nj)
   
-  * SSD/RetinaNet (进行中)
+  * SSD/RetinaNet (已完成)
     * [SSD理论讲解](https://www.bilibili.com/video/BV1fT4y1L7Gi)
+    * [RetinaNet理论讲解](https://b23.tv/ZYCfd2)
     * [SSD源码解析(Pytorch)](https://www.bilibili.com/video/BV1vK411H771)
   
   * YOLOv3 SPP (进行中)
