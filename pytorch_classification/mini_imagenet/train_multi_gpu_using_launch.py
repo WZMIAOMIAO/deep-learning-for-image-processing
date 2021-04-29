@@ -11,8 +11,7 @@ from torchvision import transforms
 
 from model import shufflenet_v2_x1_0
 from my_dataset import MyDataSet
-from multi_train_utils.distributed_utils import init_distributed_mode, dist, cleanup
-from multi_train_utils.train_eval_utils import train_one_epoch, evaluate
+from multi_train_utils import train_one_epoch, evaluate, init_distributed_mode, dist, cleanup
 
 
 def main(args):
@@ -49,25 +48,25 @@ def main(args):
     data_root = args.data_path
     json_path = "./classes_name.json"
     # 实例化训练数据集
-    train_data_set = MyDataSet(root_dir=data_root,
-                               csv_name="new_train.csv",
-                               json_path=json_path,
-                               transform=data_transform["train"])
+    train_dataset = MyDataSet(root_dir=data_root,
+                              csv_name="new_train.csv",
+                              json_path=json_path,
+                              transform=data_transform["train"])
 
     # check num_classes
-    if args.num_classes != len(train_data_set.labels):
-        raise ValueError("dataset have {} classes, but input {}".format(len(train_data_set.labels),
+    if args.num_classes != len(train_dataset.labels):
+        raise ValueError("dataset have {} classes, but input {}".format(len(train_dataset.labels),
                                                                         args.num_classes))
 
     # 实例化验证数据集
-    val_data_set = MyDataSet(root_dir=data_root,
-                             csv_name="new_val.csv",
-                             json_path=json_path,
-                             transform=data_transform["val"])
+    val_dataset = MyDataSet(root_dir=data_root,
+                            csv_name="new_val.csv",
+                            json_path=json_path,
+                            transform=data_transform["val"])
 
     # 给每个rank对应的进程分配训练的样本索引
-    train_sampler = torch.utils.data.distributed.DistributedSampler(train_data_set)
-    val_sampler = torch.utils.data.distributed.DistributedSampler(val_data_set)
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
 
     # 将样本索引每batch_size个元素组成一个list
     train_batch_sampler = torch.utils.data.BatchSampler(
@@ -77,18 +76,18 @@ def main(args):
     if rank == 0:
         print('Using {} dataloader workers every process'.format(nw))
 
-    train_loader = torch.utils.data.DataLoader(train_data_set,
+    train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_sampler=train_batch_sampler,
                                                pin_memory=True,
                                                num_workers=nw,
-                                               collate_fn=train_data_set.collate_fn)
+                                               collate_fn=train_dataset.collate_fn)
 
-    val_loader = torch.utils.data.DataLoader(val_data_set,
-                                             batch_size=batch_size,
+    val_loader = torch.utils.data.DataLoader(val_dataset,
+                                             batch_size=1,
                                              sampler=val_sampler,
                                              pin_memory=True,
                                              num_workers=nw,
-                                             collate_fn=val_data_set.collate_fn)
+                                             collate_fn=val_dataset.collate_fn)
     # 实例化模型
     model = shufflenet_v2_x1_0(num_classes=num_classes).to(device)
 
@@ -141,10 +140,9 @@ def main(args):
 
         scheduler.step()
 
-        sum_num = evaluate(model=model,
-                           data_loader=val_loader,
-                           device=device)
-        acc = sum_num / val_sampler.total_size
+        acc = evaluate(model=model,
+                       data_loader=val_loader,
+                       device=device)
 
         if rank == 0:
             print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
