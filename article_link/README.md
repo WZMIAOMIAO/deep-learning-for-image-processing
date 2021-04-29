@@ -42,7 +42,8 @@
 - YOLOv2 [https://arxiv.org/abs/1612.08242](https://arxiv.org/abs/1506.02640)
 - YOLOv3 [https://arxiv.org/abs/1804.02767](https://arxiv.org/abs/1804.02767)
 - YOLOv4 [https://arxiv.org/abs/2004.10934](https://arxiv.org/abs/2004.10934)
-- PP-YOLOv2(A Practical Object Detector) [https://arxiv.org/abs/2104.10419](https://arxiv.org/abs/2104.10419)
+- PP-YOLO [https://arxiv.org/abs/2007.12099](https://arxiv.org/abs/2007.12099)
+- PP-YOLOv2 [https://arxiv.org/abs/2104.10419](https://arxiv.org/abs/2104.10419)
 
 
 ## 目标分割(Segmentation)
