@@ -28,6 +28,7 @@
 - RegNet [https://arxiv.org/abs/2003.13678](https://arxiv.org/abs/2003.13678)
 - NFNets(High-Performance Large-Scale Image Recognition Without Normalization) [https://arxiv.org/abs/2102.06171](https://arxiv.org/abs/2102.06171)
 - Vision Transformer [https://arxiv.org/abs/2010.11929](https://arxiv.org/abs/2010.11929)
+- DeiT(Training data-efficient image transformers ) [https://arxiv.org/abs/2012.12877](https://arxiv.org/abs/2012.12877)
 - Swin Transformer [https://arxiv.org/abs/2103.14030](https://arxiv.org/abs/2103.14030)
 ------
 
