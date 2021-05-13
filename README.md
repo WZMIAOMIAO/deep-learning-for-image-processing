@@ -51,10 +51,13 @@
     * [ShuffleNet_v1_v2理论讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
     * [使用Pytorch搭建ShuffleNetv2](https://www.bilibili.com/video/BV1dh411r76X)
     * [使用Tensorflow2搭建ShuffleNetv2](https://www.bilibili.com/video/BV1kr4y1N7bh)
+
   * EfficientNet（已完成）
     * [EfficientNet理论讲解](https://www.bilibili.com/video/BV1XK4y1U7PX)
     * [使用Pytorch搭建EfficientNet](https://www.bilibili.com/video/BV19z4y1179h/)
     * [使用Tensorflow2搭建EfficientNet](https://www.bilibili.com/video/BV1PK4y1S7Jf)
+
+  * Vision Transformer(准备中)
 
 * 目标检测篇
   * Faster-RCNN/FPN（已完成）
