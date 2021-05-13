@@ -1,0 +1,35 @@
+COCO results:
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.526
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.804
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.586
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.211
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.403
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.580
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.454
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.639
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.646
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.347
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.540
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.693
+
+mAP(IoU=0.5) for each category:
+ aeroplane      : 0.8759546352558178
+ bicycle        : 0.8554609242543677
+ bird           : 0.8434943725365999
+ boat           : 0.6753024837855667
+ bottle         : 0.7185899054232459
+ bus            : 0.8691082170432654
+ car            : 0.8771002682431779
+ cat            : 0.9169138943375639
+ chair          : 0.6403466317122392
+ cow            : 0.8285552434280278
+ diningtable    : 0.6437938565684241
+ dog            : 0.8745793980119227
+ horse          : 0.8718238708874728
+ motorbike      : 0.8910672301923952
+ person         : 0.9047338725598096
+ pottedplant    : 0.5808810399193133
+ sheep          : 0.86045368568359
+ sofa           : 0.7239390963388067
+ train          : 0.8652277764020805
+ tvmonitor      : 0.7683550206571649

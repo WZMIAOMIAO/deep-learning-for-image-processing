@@ -1,0 +1,2 @@
+baidupan_url = "https://pan.baidu.com/s/1w452Z5eXbQSDQfgEBNUdlg"
+extract_code = "8cwv"
