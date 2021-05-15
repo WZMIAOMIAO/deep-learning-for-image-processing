@@ -247,7 +247,8 @@ def main(opt, hyp):
 
                 # write into txt
                 with open(results_file, "a") as f:
-                    result_info = [str(round(i, 4)) for i in result_info]
+                    # 记录coco的12个指标加上训练总损失和lr
+                    result_info = [str(round(i, 4)) for i in result_info + [mloss.tolist()[-1]]] + [str(round(lr, 6))]
                     txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
                     f.write(txt + "\n")
 
