@@ -209,7 +209,7 @@ class EfficientNet(nn.Module):
                     cnf[-3] = 1  # strides
                     cnf[1] = cnf[2]  # input_channel equal output_channel
 
-                cnf[-1] *= b / num_blocks  # update dropout ratio
+                cnf[-1] = args[-2] * b / num_blocks  # update dropout ratio
                 index = str(stage + 1) + chr(i + 97)  # 1a, 2a, 2b, ...
                 inverted_residual_setting.append(bneck_conf(*cnf, index))
                 b += 1
