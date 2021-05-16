@@ -17,7 +17,9 @@
 - **R-CNN** 链接: https://pan.baidu.com/s/1l_ZxkfJdyp3KoMLqwWbx5A  密码: nm1l
 - **Fast R-CNN** 链接: https://pan.baidu.com/s/1Pe_Tg43OVo-yZWj7t-_L6Q  密码: fe73
 - **Faster R-CNN** 链接: https://pan.baidu.com/s/16AA-d7f15etLkgKajuzpSw  密码: 73h6
+- **FPN** 链接：https://pan.baidu.com/s/1O9H0iqQMg9f_FZezUEKZ9g 密码：qbl8 
 - **SSD** 链接: https://pan.baidu.com/s/15zF3GhIdg-E_tZX2Y2X-rw  密码: u7k1
+- **RetinaNet**  链接：https://pan.baidu.com/s/1beW612VCSnSu-v8iu_2-fA 密码：vqbu 
 - **YOLOv1** 链接: https://pan.baidu.com/s/1vVyUNQHYEGjqosezlx_1Mg  密码: b3i0
 - **YOLOv2** 链接: https://pan.baidu.com/s/132aW1e_NYbaxxGi3cDVLYg  密码: tak7
 - **YOLOv3** 链接: https://pan.baidu.com/s/10oqZewzJmx5ptT9A4t-64w  密码: npji
