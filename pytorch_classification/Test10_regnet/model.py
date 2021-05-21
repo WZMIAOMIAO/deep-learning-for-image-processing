@@ -1,4 +1,4 @@
-from typing import Optional, Callable
+from typing import Optional
 
 import numpy as np
 import torch
@@ -86,7 +86,7 @@ class ConvBNAct(nn.Module):
                  stride: int = 1,
                  padding: int = 0,
                  groups: int = 1,
-                 act: Optional[Callable[..., nn.Module]] = nn.ReLU(inplace=True)):
+                 act: Optional[nn.Module] = nn.ReLU(inplace=True)):
         super(ConvBNAct, self).__init__()
 
         self.conv = nn.Conv2d(in_channels=in_c,
@@ -103,7 +103,6 @@ class ConvBNAct(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.bn(x)
-        # if self.act is not None:
         x = self.act(x)
         return x
 

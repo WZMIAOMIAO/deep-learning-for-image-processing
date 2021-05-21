@@ -5,9 +5,9 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 import torchvision
 
-from network_files import det_utils
-from network_files import boxes as box_ops
-from network_files.image_list import ImageList
+from . import det_utils
+from . import boxes as box_ops
+from .image_list import ImageList
 
 
 @torch.jit.unused
@@ -182,8 +182,8 @@ class AnchorsGenerator(nn.Module):
 
         # one step in feature map equate n pixel stride in origin image
         # 计算特征层上的一步等于原始图像上的步长
-        strides = [[torch.tensor(image_size[0] / g[0], dtype=torch.int64, device=device),
-                    torch.tensor(image_size[1] / g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
+        strides = [[torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
+                    torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
 
         # 根据提供的sizes和aspect_ratios生成anchors模板
         self.set_cell_anchors(dtype, device)
@@ -345,7 +345,7 @@ class RegionProposalNetwork(torch.nn.Module):
     def __init__(self, anchor_generator, head,
                  fg_iou_thresh, bg_iou_thresh,
                  batch_size_per_image, positive_fraction,
-                 pre_nms_top_n, post_nms_top_n, nms_thresh):
+                 pre_nms_top_n, post_nms_top_n, nms_thresh, score_thresh=0.0):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
@@ -369,6 +369,7 @@ class RegionProposalNetwork(torch.nn.Module):
         self._pre_nms_top_n = pre_nms_top_n
         self._post_nms_top_n = post_nms_top_n
         self.nms_thresh = nms_thresh
+        self.score_thresh = score_thresh
         self.min_size = 1.
 
     def pre_nms_top_n(self):
@@ -412,8 +413,14 @@ class RegionProposalNetwork(torch.nn.Module):
                 # NB: need to clamp the indices because we can have a single
                 # GT in the image, and matched_idxs can be -2, which goes
                 # out of bounds
+                # 这里使用clamp设置下限0是为了方便取每个anchors对应的gt_boxes信息
+                # 负样本和舍弃的样本都是负值，所以为了防止越界直接置为0
+                # 因为后面是通过labels_per_image变量来记录正样本位置的，
+                # 所以负样本和舍弃的样本对应的gt_boxes信息并没有什么意义，
+                # 反正计算目标边界框回归损失时只会用到正样本。
                 matched_gt_boxes_per_image = gt_boxes[matched_idxs.clamp(min=0)]
 
+                # 记录所有anchors匹配后的标签(正样本处标记为1，负样本处标记为0，丢弃样本处标记为-2)
                 labels_per_image = matched_idxs >= 0
                 labels_per_image = labels_per_image.to(dtype=torch.float32)
 
@@ -447,7 +454,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
             else:
                 num_anchors = ob.shape[1]  # 预测特征层上的预测的anchors个数
-                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)  # self.pre_nms_top_n=1000
+                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
 
             # Returns the k largest elements of the given input tensor along a given dimension
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
@@ -497,20 +504,31 @@ class RegionProposalNetwork(torch.nn.Module):
         # 预测概率排前pre_nms_top_n的anchors索引值获取相应bbox坐标信息
         proposals = proposals[batch_idx, top_n_idx]
 
+        objectness_prob = torch.sigmoid(objectness)
+
         final_boxes = []
         final_scores = []
         # 遍历每张图像的相关预测信息
-        for boxes, scores, lvl, img_shape in zip(proposals, objectness, levels, image_shapes):
+        for boxes, scores, lvl, img_shape in zip(proposals, objectness_prob, levels, image_shapes):
             # 调整预测的boxes信息，将越界的坐标调整到图片边界上
             boxes = box_ops.clip_boxes_to_image(boxes, img_shape)
+
             # 返回boxes满足宽，高都大于min_size的索引
             keep = box_ops.remove_small_boxes(boxes, self.min_size)
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
+            # 移除小概率boxes，参考下面这个链接
+            # https://github.com/pytorch/vision/pull/3205
+            keep = torch.where(torch.ge(scores, self.score_thresh))[0]  # ge: >=
+            boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
             # non-maximum suppression, independently done per level
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh)
+
             # keep only topk scoring predictions
             keep = keep[: self.post_nms_top_n()]
             boxes, scores = boxes[keep], scores[keep]
+
             final_boxes.append(boxes)
             final_scores.append(scores)
         return final_boxes, final_scores

@@ -21,12 +21,10 @@ class VOC2012DataSet(Dataset):
                              for line in read.readlines()]
 
         # read class_indict
-        try:
-            json_file = open('./pascal_voc_classes.json', 'r')
-            self.class_dict = json.load(json_file)
-        except Exception as e:
-            print(e)
-            exit(-1)
+        json_file = "./pascal_voc_classes.json"
+        assert os.path.exists(json_file), "{} file not exist.".format(json_file)
+        json_file = open(json_file, 'r')
+        self.class_dict = json.load(json_file)
 
         self.transforms = transforms
 
@@ -46,7 +44,9 @@ class VOC2012DataSet(Dataset):
         img_path = os.path.join(self.img_root, data["filename"])
         image = Image.open(img_path)
         if image.format != "JPEG":
-            raise ValueError("Image format not JPEG")
+            raise ValueError("Image '{}' format not JPEG".format(img_path))
+
+        assert "object" in data, "{} lack of object information.".format(xml_path)
         boxes = []
         labels = []
         iscrowd = []
@@ -56,9 +56,18 @@ class VOC2012DataSet(Dataset):
             xmax = float(obj["bndbox"]["xmax"]) / data_width
             ymin = float(obj["bndbox"]["ymin"]) / data_height
             ymax = float(obj["bndbox"]["ymax"]) / data_height
+
+            # 进一步检查数据，有的标注信息中可能有w或h为0的情况，这样的数据会导致计算回归loss为nan
+            if xmax <= xmin or ymax <= ymin:
+                print("Warning: in '{}' xml, there are some bbox w/h <=0".format(xml_path))
+                continue
+                
             boxes.append([xmin, ymin, xmax, ymax])
             labels.append(self.class_dict[obj["name"]])
-            iscrowd.append(int(obj["difficult"]))
+            if "difficult" in obj:
+                iscrowd.append(int(obj["difficult"]))
+            else:
+                iscrowd.append(0)
 
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
@@ -211,7 +220,7 @@ class VOC2012DataSet(Dataset):
 # }
 #
 # # load train data set
-# train_data_set = VOC2012DataSet(os.getcwd(), data_transform["train"], True)
+# train_data_set = VOC2012DataSet(os.getcwd(), data_transform["train"], "train.txt")
 # print(len(train_data_set))
 # for index in random.sample(range(0, len(train_data_set)), k=5):
 #     img, target = train_data_set[index]

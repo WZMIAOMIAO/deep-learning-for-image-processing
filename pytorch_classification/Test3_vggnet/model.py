@@ -1,19 +1,27 @@
 import torch.nn as nn
 import torch
 
+# official pretrain weights
+model_urls = {
+    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
+    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
+    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
+    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'
+}
+
 
 class VGG(nn.Module):
     def __init__(self, features, num_classes=1000, init_weights=False):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(512*7*7, 2048),
+            nn.Linear(512*7*7, 4096),
             nn.ReLU(True),
             nn.Dropout(p=0.5),
-            nn.Linear(2048, 2048),
+            nn.Linear(4096, 4096),
             nn.ReLU(True),
-            nn.Linear(2048, num_classes)
+            nn.Dropout(p=0.5),
+            nn.Linear(4096, num_classes)
         )
         if init_weights:
             self._initialize_weights()
@@ -62,10 +70,8 @@ cfgs = {
 
 
 def vgg(model_name="vgg16", **kwargs):
-    try:
-        cfg = cfgs[model_name]
-    except:
-        print("Warning: model number {} not in cfgs dict!".format(model_name))
-        exit(-1)
+    assert model_name in cfgs, "Warning: model number {} not in cfgs dict!".format(model_name)
+    cfg = cfgs[model_name]
+
     model = VGG(make_features(cfg), **kwargs)
     return model

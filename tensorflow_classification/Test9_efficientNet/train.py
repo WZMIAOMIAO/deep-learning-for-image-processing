@@ -5,7 +5,7 @@ import datetime
 import tensorflow as tf
 from tqdm import tqdm
 
-from model import EfficientNetB0
+from model import efficientnet_b0 as create_model
 from utils import generate_ds
 
 assert tf.version.VERSION >= "2.4.0", "version of tf must greater/equal than 2.4.0"
@@ -26,8 +26,8 @@ def main():
                 "B6": 528,
                 "B7": 600}
 
-    im_height = img_size["B0"]
-    im_width = img_size["B0"]
+    num_model = "B0"
+    im_height = im_width = img_size[num_model]
     batch_size = 16
     epochs = 30
     num_classes = 5
@@ -42,7 +42,7 @@ def main():
     train_ds, val_ds = generate_ds(data_root, im_height, im_width, batch_size)
 
     # create model
-    model = EfficientNetB0(num_classes=num_classes)
+    model = create_model(num_classes=num_classes)
 
     # load weights
     pre_weights_path = './efficientnetb0.h5'
@@ -123,7 +123,7 @@ def main():
         optimizer.learning_rate = scheduler(epoch)
 
         # validate
-        val_bar = tqdm(val_ds, colour='green')
+        val_bar = tqdm(val_ds)
         for images, labels in val_bar:
             val_step(images, labels)
 

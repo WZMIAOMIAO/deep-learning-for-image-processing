@@ -4,8 +4,8 @@ from torch.cuda import amp
 import torch.nn.functional as F
 
 from build_utils.utils import *
-from train_utils.coco_eval import CocoEvaluator
-from train_utils.coco_utils import get_coco_api_from_dataset
+from .coco_eval import CocoEvaluator
+from .coco_utils import get_coco_api_from_dataset
 import train_utils.distributed_utils as utils
 
 
@@ -45,7 +45,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
         if multi_scale:
             # 每训练64张图片，就随机修改一次输入图片大小，
             # 由于label已转为相对坐标，故缩放图片不影响label的值
-            if ni % accumulate == 0:  #  adjust img_size (67% - 150%) every 1 batch
+            if ni % accumulate == 0:  # adjust img_size (67% - 150%) every 1 batch
                 # 在给定最大最小输入尺寸范围内随机选取一个size(size为32的整数倍)
                 img_size = random.randrange(grid_min, grid_max + 1) * gs
             sf = img_size / max(imgs.shape[2:])  # scale factor
@@ -126,6 +126,8 @@ def evaluate(model, data_loader, coco=None, device=None):
         model_time = time.time()
         pred = model(imgs)[0]  # only get inference result
         pred = non_max_suppression(pred, conf_thres=0.01, iou_thres=0.6, multi_label=False)
+        model_time = time.time() - model_time
+
         outputs = []
         for index, p in enumerate(pred):
             if p is None:
@@ -143,7 +145,6 @@ def evaluate(model, data_loader, coco=None, device=None):
                     "labels": p[:, 5].to(device=cpu_device, dtype=torch.int64),
                     "scores": p[:, 4].to(cpu_device)}
             outputs.append(info)
-        model_time = time.time() - model_time
 
         res = {img_id: output for img_id, output in zip(img_index, outputs)}
 

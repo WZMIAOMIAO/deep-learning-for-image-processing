@@ -19,7 +19,7 @@ train_txt = "train.txt"
 val_txt = "val.txt"
 
 # 转换后的文件保存目录
-save_file_root = "/data/my_yolo_dataset"
+save_file_root = "./my_yolo_dataset"
 
 # label标签对应json文件
 label_json_path = './data/pascal_voc_classes.json'
@@ -100,6 +100,7 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
 
         # write object info into txt
         with open(os.path.join(save_txt_path, file + ".txt"), "w") as f:
+            assert "object" in data.keys(), "file: '{}' lack of object key.".format(xml_path)
             for index, obj in enumerate(data["object"]):
                 # 获取每个object的box信息
                 xmin = float(obj["bndbox"]["xmin"])

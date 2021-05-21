@@ -12,8 +12,7 @@ from models import *
 from build_utils.datasets import *
 from build_utils.utils import *
 from train_utils import train_eval_utils as train_util
-from train_utils.distributed_utils import init_distributed_mode, torch_distributed_zero_first
-from train_utils.coco_utils import get_coco_api_from_dataset
+from train_utils import get_coco_api_from_dataset, init_distributed_mode, torch_distributed_zero_first
 
 
 def main(opt, hyp):
@@ -34,7 +33,7 @@ def main(opt, hyp):
 
     wdir = "weights" + os.sep  # weights dir
     best = wdir + "best.pt"
-    results_file = "results.txt"
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     cfg = opt.cfg
     data = opt.data
@@ -248,7 +247,8 @@ def main(opt, hyp):
 
                 # write into txt
                 with open(results_file, "a") as f:
-                    result_info = [str(round(i, 4)) for i in result_info]
+                    # 记录coco的12个指标加上训练总损失和lr
+                    result_info = [str(round(i, 4)) for i in result_info + [mloss.tolist()[-1]]] + [str(round(lr, 6))]
                     txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
                     f.write(txt + "\n")
 

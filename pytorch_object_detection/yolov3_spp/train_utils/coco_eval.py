@@ -9,7 +9,7 @@ from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
 import pycocotools.mask as mask_util
 
-from train_utils.distributed_utils import all_gather
+from .distributed_utils import all_gather
 
 
 class CocoEvaluator(object):

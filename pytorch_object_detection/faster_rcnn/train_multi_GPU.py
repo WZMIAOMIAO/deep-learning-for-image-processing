@@ -6,15 +6,17 @@ import torch
 
 import transforms
 from my_dataset import VOC2012DataSet
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
-from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
+from backbone import resnet50_fpn_backbone
+from network_files import FasterRCNN, FastRCNNPredictor
 import train_utils.train_eval_utils as utils
-from train_utils.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from train_utils.distributed_utils import init_distributed_mode, save_on_master, mkdir
+from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
 
 
 def create_model(num_classes, device):
-    backbone = resnet50_fpn_backbone()
+    # 如果显存很小，建议使用默认的FrozenBatchNorm2d
+    # trainable_layers包括['layer4', 'layer3', 'layer2', 'layer1', 'conv1']， 5代表全部训练
+    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
+                                     trainable_layers=3)
     # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
@@ -33,13 +35,14 @@ def create_model(num_classes, device):
     return model
 
 
-# def main_worker(args):
 def main(args):
-    print(args)
-    # mp.spawn(main_worker, args=(args,), nprocs=args.world_size, join=True)
     init_distributed_mode(args)
+    print(args)
 
     device = torch.device(args.device)
+
+    # 用来保存coco_info的文件
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     # Data loading code
     print("Loading data")
@@ -89,7 +92,8 @@ def main(args):
         collate_fn=train_data_set.collate_fn)
 
     print("Creating model")
-    model = create_model(num_classes=21, device=device)
+    # create model num_classes equal background + 20 classes
+    model = create_model(num_classes=args.num_classes + 1, device=device)
     model.to(device)
 
     model_without_ddp = model
@@ -119,13 +123,36 @@ def main(args):
         utils.evaluate(model, data_loader_test, device=device)
         return
 
+    train_loss = []
+    learning_rate = []
+    val_map = []
+
     print("Start training")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        utils.train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device,
+                                              epoch, args.print_freq, warmup=True)
+        train_loss.append(mean_loss.item())
+        learning_rate.append(lr)
+
+        # update learning rate
         lr_scheduler.step()
+
+        # evaluate after every epoch
+        coco_info = utils.evaluate(model, data_loader_test, device=device)
+        val_map.append(coco_info[1])  # pascal mAP
+
+        # 只在主进程上进行写操作
+        if args.rank in [-1, 0]:
+            # write into txt
+            with open(results_file, "a") as f:
+                # 写入的数据包括coco指标还有loss和learning rate
+                result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item()]] + [str(round(lr, 6))]
+                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                f.write(txt + "\n")
+
         if args.output_dir:
             # 只在主节点上执行保存权重操作
             save_on_master({
@@ -136,31 +163,36 @@ def main(args):
                 'epoch': epoch},
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
-        # evaluate after every epoch
-        utils.evaluate(model, data_loader_test, device=device)
-
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
 
+    if args.rank in [-1, 0]:
+        # plot loss and lr curve
+        if len(train_loss) != 0 and len(learning_rate) != 0:
+            from plot_curve import plot_loss_and_lr
+            plot_loss_and_lr(train_loss, learning_rate)
+
+        # plot mAP curve
+        if len(val_map) != 0:
+            from plot_curve import plot_map
+            plot_map(val_map)
+
 
 if __name__ == "__main__":
-    version = torch.version.__version__[:5]  # example: 1.6.0
-    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
-    if version < "1.6.0":
-        raise EnvironmentError("pytorch version must be 1.6.0 or above")
-
     import argparse
 
     parser = argparse.ArgumentParser(
         description=__doc__)
 
-    # 训练文件的根目录
+    # 训练文件的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
+    # 检测目标类别数(不包含背景)
+    parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
     # 每块GPU上的batch_size
-    parser.add_argument('-b', '--batch-size', default=2, type=int,
+    parser.add_argument('-b', '--batch-size', default=4, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
     # 指定接着从哪个epoch数开始训练
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')

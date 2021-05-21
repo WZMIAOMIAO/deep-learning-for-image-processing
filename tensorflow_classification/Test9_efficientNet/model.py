@@ -131,7 +131,7 @@ def block(inputs,
     if strides == 1 and input_channel == output_channel:
         if drop_rate > 0:
             x = layers.Dropout(rate=drop_rate,
-                               noise_shape=(None, 1, 1, 1),
+                               noise_shape=(None, 1, 1, 1),  # binary dropout mask
                                name=name + "drop")(x)
         x = layers.add([x, inputs], name=name + "add")
 
@@ -261,9 +261,9 @@ def efficient_net(width_coefficient,
     return model
 
 
-def EfficientNetB0(num_classes=1000,
-                   include_top=True,
-                   input_shape=(224, 224, 3)):
+def efficientnet_b0(num_classes=1000,
+                    include_top=True,
+                    input_shape=(224, 224, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb0.h5
     return efficient_net(width_coefficient=1.0,
                          depth_coefficient=1.0,
@@ -274,9 +274,9 @@ def EfficientNetB0(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB1(num_classes=1000,
-                   include_top=True,
-                   input_shape=(240, 240, 3)):
+def efficientnet_b1(num_classes=1000,
+                    include_top=True,
+                    input_shape=(240, 240, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb1.h5
     return efficient_net(width_coefficient=1.0,
                          depth_coefficient=1.1,
@@ -287,9 +287,9 @@ def EfficientNetB1(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB2(num_classes=1000,
-                   include_top=True,
-                   input_shape=(260, 260, 3)):
+def efficientnet_b2(num_classes=1000,
+                    include_top=True,
+                    input_shape=(260, 260, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb2.h5
     return efficient_net(width_coefficient=1.1,
                          depth_coefficient=1.2,
@@ -300,9 +300,9 @@ def EfficientNetB2(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB3(num_classes=1000,
-                   include_top=True,
-                   input_shape=(300, 300, 3)):
+def efficientnet_b3(num_classes=1000,
+                    include_top=True,
+                    input_shape=(300, 300, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb3.h5
     return efficient_net(width_coefficient=1.2,
                          depth_coefficient=1.4,
@@ -313,9 +313,9 @@ def EfficientNetB3(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB4(num_classes=1000,
-                   include_top=True,
-                   input_shape=(380, 380, 3)):
+def efficientnet_b4(num_classes=1000,
+                    include_top=True,
+                    input_shape=(380, 380, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb4.h5
     return efficient_net(width_coefficient=1.4,
                          depth_coefficient=1.8,
@@ -326,9 +326,9 @@ def EfficientNetB4(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB5(num_classes=1000,
-                   include_top=True,
-                   input_shape=(456, 456, 3)):
+def efficientnet_b5(num_classes=1000,
+                    include_top=True,
+                    input_shape=(456, 456, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb5.h5
     return efficient_net(width_coefficient=1.6,
                          depth_coefficient=2.2,
@@ -339,9 +339,9 @@ def EfficientNetB5(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB6(num_classes=1000,
-                   include_top=True,
-                   input_shape=(528, 528, 3)):
+def efficientnet_b6(num_classes=1000,
+                    include_top=True,
+                    input_shape=(528, 528, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb6.h5
     return efficient_net(width_coefficient=1.8,
                          depth_coefficient=2.6,
@@ -352,9 +352,9 @@ def EfficientNetB6(num_classes=1000,
                          num_classes=num_classes)
 
 
-def EfficientNetB7(num_classes=1000,
-                   include_top=True,
-                   input_shape=(600, 600, 3)):
+def efficientnet_b7(num_classes=1000,
+                    include_top=True,
+                    input_shape=(600, 600, 3)):
     # https://storage.googleapis.com/keras-applications/efficientnetb7.h5
     return efficient_net(width_coefficient=2.0,
                          depth_coefficient=3.1,

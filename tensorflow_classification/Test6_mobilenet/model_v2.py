@@ -56,11 +56,11 @@ class InvertedResidual(layers.Layer):
         ])
         self.main_branch = Sequential(layer_list, name='expanded_conv')
 
-    def call(self, inputs, training=False):
+    def call(self, inputs, training=False, **kwargs):
         if self.use_shortcut:
             return inputs + self.main_branch(inputs, training=training)
         else:
-            return self.main_branch(inputs)
+            return self.main_branch(inputs, training=training)
 
 
 def MobileNetV2(im_height=224,

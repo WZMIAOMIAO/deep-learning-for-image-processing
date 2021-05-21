@@ -11,11 +11,10 @@ from tqdm import tqdm
 import numpy as np
 
 import transforms
-from network_files.faster_rcnn_framework import FasterRCNN
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
+from network_files import FasterRCNN
+from backbone import resnet50_fpn_backbone
 from my_dataset import VOC2012DataSet
-from train_utils.coco_utils import get_coco_api_from_dataset
-from train_utils.coco_eval import CocoEvaluator
+from train_utils import get_coco_api_from_dataset, CocoEvaluator
 
 
 def summarize(self, catId=None):
@@ -116,15 +115,17 @@ def main(parser_data):
     print('Using %g dataloader workers' % nw)
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      num_workers=nw,
-                                                      collate_fn=val_data_set.collate_fn)
+    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
+                                                     batch_size=batch_size,
+                                                     shuffle=False,
+                                                     num_workers=nw,
+                                                     pin_memory=True,
+                                                     collate_fn=val_dataset.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    backbone = resnet50_fpn_backbone()
+    # 注意，这里的norm_layer要和训练脚本中保持一致
+    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d)
     model = FasterRCNN(backbone=backbone, num_classes=parser_data.num_classes + 1)
 
     # 载入你自己训练好的模型权重
@@ -137,14 +138,14 @@ def main(parser_data):
     model.to(device)
 
     # evaluate on the test dataset
-    coco = get_coco_api_from_dataset(val_data_set)
+    coco = get_coco_api_from_dataset(val_dataset)
     iou_types = ["bbox"]
     coco_evaluator = CocoEvaluator(coco, iou_types)
     cpu_device = torch.device("cpu")
 
     model.eval()
     with torch.no_grad():
-        for image, targets in tqdm(val_data_set_loader, desc="validation..."):
+        for image, targets in tqdm(val_dataset_loader, desc="validation..."):
             # 将图片传入指定设备device
             image = list(img.to(device) for img in image)
 
@@ -196,15 +197,15 @@ if __name__ == "__main__":
     # 检测目标类别数
     parser.add_argument('--num-classes', type=int, default='20', help='number of classes')
 
-    # 数据集的根目录(VOC2012根目录)
-    parser.add_argument('--data-path', default='./', help='dataset root')
+    # 数据集的根目录(VOCdevkit)
+    parser.add_argument('--data-path', default='/data/', help='dataset root')
 
     # 训练好的权重文件
     parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
-                        help='batch size when training.')
+    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+                        help='batch size when validation.')
 
     args = parser.parse_args()
 

@@ -1,13 +1,13 @@
 import os
 import json
+import time
+
 import torch
 import cv2
 import numpy as np
-import time
 from matplotlib import pyplot as plt
-from build_utils import img_utils
-from build_utils import torch_utils
-from build_utils import utils
+
+from build_utils import img_utils, torch_utils, utils
 from models import Darknet
 from draw_box_utils import draw_box
 
@@ -15,7 +15,7 @@ from draw_box_utils import draw_box
 def main():
     img_size = 512  # 必须是32的整数倍 [416, 512, 608]
     cfg = "cfg/my_yolov3.cfg"  # 改成生成的.cfg文件
-    weights = "weights/yolov3spp-voc-512.pth".format(img_size)  # 改成自己训练好的权重文件
+    weights = "weights/yolov3spp-voc-512.pth"  # 改成自己训练好的权重文件
     json_path = "./data/pascal_voc_classes.json"  # json标签文件
     img_path = "test.jpg"
     assert os.path.exists(cfg), "cfg file {} dose not exist.".format(cfg)

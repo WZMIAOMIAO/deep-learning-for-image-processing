@@ -1,16 +1,22 @@
 import os
+import datetime
 
 import torch
 
 import transforms
-from network_files.faster_rcnn_framework import FasterRCNN, FastRCNNPredictor
-from backbone.resnet50_fpn_model import resnet50_fpn_backbone
+from network_files import FasterRCNN, FastRCNNPredictor
+from backbone import resnet50_fpn_backbone
 from my_dataset import VOC2012DataSet
 from train_utils import train_eval_utils as utils
 
 
 def create_model(num_classes, device):
-    backbone = resnet50_fpn_backbone()
+    # 注意，这里的backbone默认使用的是FrozenBatchNorm2d，即不会去更新bn参数
+    # 目的是为了防止batch_size太小导致效果更差(如果显存很小，建议使用默认的FrozenBatchNorm2d)
+    # 如果GPU显存很大可以设置比较大的batch_size就可以将norm_layer设置为普通的BatchNorm2d
+    # trainable_layers包括['layer4', 'layer3', 'layer2', 'layer1', 'conv1']， 5代表全部训练
+    backbone = resnet50_fpn_backbone(norm_layer=torch.nn.BatchNorm2d,
+                                     trainable_layers=3)
     # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
@@ -32,6 +38,9 @@ def create_model(num_classes, device):
 def main(parser_data):
     device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
     print("Using {} device training.".format(device.type))
+
+    # 用来保存coco_info的文件
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     data_transform = {
         "train": transforms.Compose([transforms.ToTensor(),
@@ -55,6 +64,7 @@ def main(parser_data):
     train_data_loader = torch.utils.data.DataLoader(train_data_set,
                                                     batch_size=batch_size,
                                                     shuffle=True,
+                                                    pin_memory=True,
                                                     num_workers=nw,
                                                     collate_fn=train_data_set.collate_fn)
 
@@ -64,11 +74,12 @@ def main(parser_data):
     val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
                                                       batch_size=batch_size,
                                                       shuffle=False,
+                                                      pin_memory=True,
                                                       num_workers=nw,
                                                       collate_fn=train_data_set.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    model = create_model(num_classes=21, device=device)
+    model = create_model(num_classes=parser_data.num_classes + 1, device=device)
     # print(model)
 
     model.to(device)
@@ -80,7 +91,7 @@ def main(parser_data):
 
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                   step_size=5,
+                                                   step_size=3,
                                                    gamma=0.33)
 
     # 如果指定了上次训练保存的权重文件地址，则接着上次结果接着训练
@@ -94,18 +105,30 @@ def main(parser_data):
 
     train_loss = []
     learning_rate = []
-    val_mAP = []
+    val_map = []
 
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
         # train for one epoch, printing every 10 iterations
-        utils.train_one_epoch(model, optimizer, train_data_loader,
-                              device, epoch, train_loss=train_loss, train_lr=learning_rate,
-                              print_freq=50, warmup=True)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
+                                              device=device, epoch=epoch,
+                                              print_freq=50, warmup=True)
+        train_loss.append(mean_loss.item())
+        learning_rate.append(lr)
+
         # update the learning rate
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        utils.evaluate(model, val_data_set_loader, device=device, mAP_list=val_mAP)
+        coco_info = utils.evaluate(model, val_data_set_loader, device=device)
+
+        # write into txt
+        with open(results_file, "a") as f:
+            # 写入的数据包括coco指标还有loss和learning rate
+            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item()]] + [str(round(lr, 6))]
+            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            f.write(txt + "\n")
+
+        val_map.append(coco_info[1])  # pascal mAP
 
         # save weights
         save_files = {
@@ -121,22 +144,12 @@ def main(parser_data):
         plot_loss_and_lr(train_loss, learning_rate)
 
     # plot mAP curve
-    if len(val_mAP) != 0:
+    if len(val_map) != 0:
         from plot_curve import plot_map
-        plot_map(val_mAP)
-
-    # model.eval()
-    # x = [torch.rand(3, 300, 400), torch.rand(3, 400, 400)]
-    # predictions = model(x)
-    # print(predictions)
+        plot_map(val_map)
 
 
 if __name__ == "__main__":
-    version = torch.version.__version__[:5]  # example: 1.6.0
-    # 因为使用的官方的混合精度训练是1.6.0后才支持的，所以必须大于等于1.6.0
-    if version < "1.6.0":
-        raise EnvironmentError("pytorch version must be 1.6.0 or above")
-
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -144,8 +157,10 @@ if __name__ == "__main__":
 
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
-    # 训练数据集的根目录
+    # 训练数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
+    # 检测目标类别数(不包含背景)
+    parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
@@ -156,7 +171,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=8, type=int, metavar='N',
                         help='batch size when training.')
 
     args = parser.parse_args()

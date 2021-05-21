@@ -1,10 +1,9 @@
 # SSD: Single Shot MultiBox Detector
 
 ## 环境配置：
-* Python 3.6或者3.7
-* Pytorch 1.5(注意：是1.5)
-* pycocotools(Linux: pip install pycocotools;
-  Windows:pip install pycocotools-windows(不需要额外安装vs))
+* Python 3.6/3.7/3.8
+* Pytorch 1.6
+* pycocotools(Linux:```pip install pycocotools```; Windows:```pip install pycocotools-windows```(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
 
@@ -20,7 +19,8 @@
 ├── train_multi_GPU.py: 针对使用多GPU的用户使用    
 ├── predict_test.py: 简易的预测脚本，使用训练好的权重进行预测测试    
 ├── pascal_voc_classes.json: pascal_voc标签文件    
-├── plot_curve.py: 用于绘制训练过程的损失以及验证集的mAP     
+├── plot_curve.py: 用于绘制训练过程的损失以及验证集的mAP
+└── validation.py: 利用训练好的权重验证/测试数据的COCO指标，并生成record_mAP.txt文件
 ```
 
 ## 预训练权重下载地址（下载后放入src文件夹中）：
