@@ -26,6 +26,38 @@ def _make_divisible(ch, divisor=8, min_ch=None):
     return new_ch
 
 
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+    "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
+
+    This function is taken from the rwightman.
+    It can be seen here:
+    https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/layers/drop.py#L140
+    """
+    if drop_prob == 0. or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)  # work with diff dim tensors, not just 2D ConvNets
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor.floor_()  # binarize
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+
+class DropPath(nn.Module):
+    """
+    Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
+    "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
+    """
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training)
+
+
 class ConvBNActivation(nn.Sequential):
     def __init__(self,
                  in_planes: int,
@@ -147,7 +179,7 @@ class InvertedResidual(nn.Module):
 
         # 只有在使用shortcut连接时才使用dropout层
         if self.use_res_connect and cnf.drop_rate > 0:
-            self.dropout = nn.Dropout2d(p=cnf.drop_rate, inplace=True)
+            self.dropout = DropPath(cnf.drop_rate)
         else:
             self.dropout = nn.Identity()
 

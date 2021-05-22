@@ -3,7 +3,40 @@ from functools import partial
 from typing import Callable, Optional
 
 import torch.nn as nn
+import torch
 from torch import Tensor
+
+
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+    "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
+
+    This function is taken from the rwightman.
+    It can be seen here:
+    https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/layers/drop.py#L140
+    """
+    if drop_prob == 0. or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)  # work with diff dim tensors, not just 2D ConvNets
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor.floor_()  # binarize
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+
+class DropPath(nn.Module):
+    """
+    Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
+    "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
+    """
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training)
 
 
 class ConvBNAct(nn.Module):
@@ -115,7 +148,7 @@ class MBConv(nn.Module):
         # 只有在使用shortcut连接时才使用dropout层
         self.drop_rate = drop_rate
         if self.has_shortcut and drop_rate > 0:
-            self.dropout = nn.Dropout2d(p=drop_rate, inplace=True)
+            self.dropout = DropPath(drop_rate)
 
     def forward(self, x: Tensor) -> Tensor:
         result = self.expand_conv(x)
@@ -183,7 +216,7 @@ class FusedMBConv(nn.Module):
         # 只有在使用shortcut连接时才使用dropout层
         self.drop_rate = drop_rate
         if self.has_shortcut and drop_rate > 0:
-            self.dropout = nn.Dropout2d(p=drop_rate, inplace=True)
+            self.dropout = DropPath(drop_rate)
 
     def forward(self, x: Tensor) -> Tensor:
         if self.has_expansion:
