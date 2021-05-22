@@ -144,6 +144,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
 def evaluate(model, data_loader, device):
     model.eval()
 
+    # 验证样本总个数
+    total_num = len(data_loader.dataset)
+
     # 用于存储预测正确的样本个数
     sum_num = torch.zeros(1).to(device)
 
@@ -155,4 +158,4 @@ def evaluate(model, data_loader, device):
         pred = torch.max(pred, dim=1)[1]
         sum_num += torch.eq(pred, labels.to(device)).sum()
 
-    return sum_num.item()
+    return sum_num.item() / total_num
