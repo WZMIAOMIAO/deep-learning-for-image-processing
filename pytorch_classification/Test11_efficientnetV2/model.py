@@ -79,9 +79,9 @@ class SqueezeExcite(nn.Module):
     def __init__(self,
                  input_c: int,   # block input channel
                  expand_c: int,  # block expand channel
-                 squeeze_factor: int = 4):
+                 se_ratio: float = 0.25):
         super(SqueezeExcite, self).__init__()
-        squeeze_c = input_c // squeeze_factor
+        squeeze_c = int(input_c * se_ratio)
         self.conv_reduce = nn.Conv2d(expand_c, squeeze_c, 1)
         self.act1 = nn.SiLU()  # alias Swish
         self.conv_expand = nn.Conv2d(squeeze_c, expand_c, 1)
@@ -103,7 +103,7 @@ class MBConv(nn.Module):
                  out_c: int,
                  expand_ratio: int,
                  stride: int,
-                 use_se: bool,
+                 se_ratio: float,
                  drop_rate: float,
                  norm_layer: Callable[..., nn.Module]):
         super(MBConv, self).__init__()
@@ -134,7 +134,7 @@ class MBConv(nn.Module):
                                 norm_layer=norm_layer,
                                 activation_layer=activation_layer)
 
-        self.se = SqueezeExcite(input_c, expanded_c) if use_se else nn.Identity()
+        self.se = SqueezeExcite(input_c, expanded_c, se_ratio) if se_ratio > 0 else nn.Identity()
 
         # Point-wise linear projection
         self.project_conv = ConvBNAct(expanded_c,
@@ -171,13 +171,13 @@ class FusedMBConv(nn.Module):
                  out_c: int,
                  expand_ratio: int,
                  stride: int,
-                 use_se: bool,
+                 se_ratio: float,
                  drop_rate: float,
                  norm_layer: Callable[..., nn.Module]):
         super(FusedMBConv, self).__init__()
 
         assert stride in [1, 2]
-        assert use_se is False
+        assert se_ratio == 0
 
         self.has_shortcut = stride == 1 and input_c == out_c
         self.drop_rate = drop_rate
@@ -268,7 +268,7 @@ class EfficientNetV2(nn.Module):
                                  out_c=cnf[5],
                                  expand_ratio=cnf[3],
                                  stride=cnf[2] if i == 0 else 1,
-                                 use_se=cnf[-1] > 0,
+                                 se_ratio=cnf[-1],
                                  drop_rate=drop_connect_rate * block_id / total_blocks,
                                  norm_layer=norm_layer))
                 block_id += 1
