@@ -313,6 +313,10 @@ class EfficientNetV2(nn.Module):
 
 
 def efficientnetv2_s(num_classes: int = 1000):
+    """
+    EfficientNetV2
+    https://arxiv.org/abs/2104.00298
+    """
     # train_size: 300, eval_size: 384
 
     # repeat, kernel, stride, expansion, in_c, out_c, operator, se_ratio
@@ -330,6 +334,10 @@ def efficientnetv2_s(num_classes: int = 1000):
 
 
 def efficientnetv2_m(num_classes: int = 1000):
+    """
+    EfficientNetV2
+    https://arxiv.org/abs/2104.00298
+    """
     # train_size: 384, eval_size: 480
 
     # repeat, kernel, stride, expansion, in_c, out_c, operator, se_ratio
@@ -348,6 +356,10 @@ def efficientnetv2_m(num_classes: int = 1000):
 
 
 def efficientnetv2_l(num_classes: int = 1000):
+    """
+    EfficientNetV2
+    https://arxiv.org/abs/2104.00298
+    """
     # train_size: 384, eval_size: 480
 
     # repeat, kernel, stride, expansion, in_c, out_c, operator, se_ratio

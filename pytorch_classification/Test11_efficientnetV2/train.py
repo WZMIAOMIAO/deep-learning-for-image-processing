@@ -84,30 +84,33 @@ def main(args):
                 print("training {}".format(name))
 
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=1E-4)
+    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=1E-5)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     for epoch in range(args.epochs):
         # train
-        mean_loss = train_one_epoch(model=model,
-                                    optimizer=optimizer,
-                                    data_loader=train_loader,
-                                    device=device,
-                                    epoch=epoch)
+        train_loss, train_acc = train_one_epoch(model=model,
+                                                optimizer=optimizer,
+                                                data_loader=train_loader,
+                                                device=device,
+                                                epoch=epoch)
 
         scheduler.step()
 
         # validate
-        acc = evaluate(model=model,
-                       data_loader=val_loader,
-                       device=device)
-        print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
-        tags = ["train_loss", "val_accuracy", "learning_rate"]
-        tb_writer.add_scalar(tags[0], mean_loss, epoch)
-        tb_writer.add_scalar(tags[1], acc, epoch)
-        tb_writer.add_scalar(tags[2], optimizer.param_groups[0]["lr"], epoch)
+        val_loss, val_acc = evaluate(model=model,
+                                     data_loader=val_loader,
+                                     device=device,
+                                     epoch=epoch)
+
+        tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
+        tb_writer.add_scalar(tags[0], train_loss, epoch)
+        tb_writer.add_scalar(tags[1], train_acc, epoch)
+        tb_writer.add_scalar(tags[2], val_loss, epoch)
+        tb_writer.add_scalar(tags[3], val_acc, epoch)
+        tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
         torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
 

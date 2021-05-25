@@ -265,6 +265,10 @@ def mobilenet_v3_small(num_classes: int = 1000,
     """
     Constructs a large MobileNetV3 architecture from
     "Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>.
+
+    weights_link:
+    https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth
+
     Args:
         num_classes (int): number of classes
         reduced_tail (bool): If True, reduces the channel counts of all feature layers
