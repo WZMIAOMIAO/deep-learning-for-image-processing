@@ -7,19 +7,20 @@ from model import resnet34
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    net = resnet34()
     # load pretrain weights
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = "./resnet34-pre.pth"
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
 
     # option1
+    net = resnet34()
     net.load_state_dict(torch.load(model_weight_path, map_location=device))
     # change fc layer structure
     in_channel = net.fc.in_features
     net.fc = nn.Linear(in_channel, 5)
 
     # option2
+    # net = resnet34(num_classes=5)
     # pre_weights = torch.load(model_weight_path, map_location=device)
     # del_key = []
     # for key, _ in pre_weights.items():
