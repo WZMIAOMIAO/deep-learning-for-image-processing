@@ -25,6 +25,6 @@
 - **YOLOv3** 链接: https://pan.baidu.com/s/10oqZewzJmx5ptT9A4t-64w  密码: npji
 - **YOLOv3SPP** 链接: https://pan.baidu.com/s/15LRssnPez9pn6jRpW89Wlw  密码: nv9f
 - **Calculate mAP** 链接: https://pan.baidu.com/s/1jdA_n78J7nSUoOg6TTO5Bg  密码: eh62
-
+- **coco数据集简介** 链接：https://pan.baidu.com/s/1HfCvjt-8o9j5a916IYNVjw  密码：6rec 
 
 
