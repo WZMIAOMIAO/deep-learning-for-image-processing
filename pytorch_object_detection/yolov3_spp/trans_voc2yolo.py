@@ -110,6 +110,11 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
                 class_name = obj["name"]
                 class_index = class_dict[class_name] - 1  # 目标id从0开始
 
+                # 进一步检查数据，有的标注信息中可能有w或h为0的情况，这样的数据会导致计算回归loss为nan
+                if xmax <= xmin or ymax <= ymin:
+                    print("Warning: in '{}' xml, there are some bbox w/h <=0".format(xml_path))
+                    continue
+
                 # 将box信息转换到yolo格式
                 xcenter = xmin + (xmax - xmin) / 2
                 ycenter = ymin + (ymax - ymin) / 2
