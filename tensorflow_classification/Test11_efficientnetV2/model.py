@@ -1,3 +1,8 @@
+"""
+official code:
+https://github.com/google/automl/tree/master/efficientnetv2
+"""
+
 import itertools
 
 import tensorflow as tf
@@ -49,7 +54,7 @@ class SE(layers.Layer):
                                        name="conv2d_1")
 
     def call(self, inputs, **kwargs):
-        # Tensor: [N, H, W, C]
+        # Tensor: [N, H, W, C] -> [N, 1, 1, C]
         se_tensor = tf.reduce_mean(inputs, [1, 2], keepdims=True)
         se_tensor = self.se_reduce(se_tensor)
         se_tensor = self.se_expand(se_tensor)
@@ -134,6 +139,7 @@ class MBConv(layers.Layer):
 
         self.drop_rate = drop_rate
         if self.has_shortcut and drop_rate > 0:
+            # Stochastic Depth
             self.drop_path = layers.Dropout(rate=drop_rate,
                                             noise_shape=(None, 1, 1, 1),  # binary dropout mask
                                             name="drop_path")
@@ -191,7 +197,7 @@ class FusedMBConv(layers.Layer):
             next(cid) // 2))
 
         if expand_ratio != 1:
-            self.expand_conv = tf.keras.layers.Conv2D(
+            self.expand_conv = layers.Conv2D(
                 filters=expanded_c,
                 kernel_size=kernel_size,
                 strides=stride,
@@ -225,6 +231,7 @@ class FusedMBConv(layers.Layer):
 
         self.drop_rate = drop_rate
         if self.has_shortcut and drop_rate > 0:
+            # Stochastic Depth
             self.drop_path = layers.Dropout(rate=drop_rate,
                                             noise_shape=(None, 1, 1, 1),  # binary dropout mask
                                             name="drop_path")
@@ -243,7 +250,7 @@ class FusedMBConv(layers.Layer):
 
         if self.has_shortcut:
             if self.drop_rate > 0:
-                self.drop_path(x, training=training)
+                x = self.drop_path(x, training=training)
 
             x = tf.add(x, inputs)
 
@@ -253,7 +260,7 @@ class FusedMBConv(layers.Layer):
 class Stem(layers.Layer):
     def __init__(self, filters: int, name: str = None):
         super(Stem, self).__init__(name=name)
-        self.conv_stem = tf.keras.layers.Conv2D(
+        self.conv_stem = layers.Conv2D(
             filters=filters,
             kernel_size=3,
             strides=2,
