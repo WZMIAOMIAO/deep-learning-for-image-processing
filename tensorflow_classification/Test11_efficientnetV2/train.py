@@ -44,6 +44,8 @@ def main():
     model = create_model(num_classes=num_classes)
     model.build((1, img_size[num_model][0], img_size[num_model][0], 3))
 
+    # 下载我提前转好的预训练权重
+    # 链接: https://pan.baidu.com/s/1Pr-pO5sQVySPQnBY8pQH7w  密码: f6hi
     # load weights
     pre_weights_path = './efficientnetv2-s.h5'
     assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
