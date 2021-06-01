@@ -1,5 +1,4 @@
-import tensorflow as tf
-from model import efficientnetv2_s
+from model import *
 
 
 def main(ckpt_path: str,
@@ -32,3 +31,15 @@ if __name__ == '__main__':
     main(ckpt_path="./efficientnetv2-s-21k-ft1k/model",
          model_name="efficientnetv2-s",
          model=model)
+
+    # model = efficientnetv2_m()
+    # model.build((1, 224, 224, 3))
+    # main(ckpt_path="./efficientnetv2-m-21k-ft1k/model",
+    #      model_name="efficientnetv2-m",
+    #      model=model)
+
+    # model = efficientnetv2_l()
+    # model.build((1, 224, 224, 3))
+    # main(ckpt_path="./efficientnetv2-l-21k-ft1k/model",
+    #      model_name="efficientnetv2-l",
+    #      model=model)
