@@ -1,6 +1,4 @@
-import math
 import itertools
-from typing import Union, Callable
 
 import tensorflow as tf
 from tensorflow.keras import layers, Model, Input
@@ -186,7 +184,7 @@ class FusedMBConv(layers.Layer):
         expanded_c = input_c * expand_ratio
 
         bid = itertools.count(0)
-        get_norm_name = lambda: 'tpu_batch_normalization' + ('' if not next(
+        get_norm_name = lambda: 'batch_normalization' + ('' if not next(
             bid) else '_' + str(next(bid) // 2))
         cid = itertools.count(0)
         get_conv_name = lambda: 'conv2d' + ('' if not next(cid) else '_' + str(
@@ -266,7 +264,8 @@ class Stem(layers.Layer):
         self.norm = layers.BatchNormalization(
             axis=-1,
             momentum=0.9,
-            epsilon=1e-3)
+            epsilon=1e-3,
+            name="batch_normalization")
         self.act = layers.Activation("swish")
 
     def call(self, inputs, training=None):
@@ -294,7 +293,8 @@ class Head(layers.Layer):
         self.norm = layers.BatchNormalization(
             axis=-1,
             momentum=0.9,
-            epsilon=1e-3)
+            epsilon=1e-3,
+            name="batch_normalization")
         self.act = layers.Activation("swish")
 
         self.avg = layers.GlobalAveragePooling2D()
@@ -353,10 +353,10 @@ class EfficientNetV2(Model):
 
         self.head = Head(num_features, num_classes, dropout_rate)
 
-    def summary(self, input_shape=(224, 224, 3), **kwargs):
-        x = Input(shape=input_shape)
-        model = Model(inputs=[x], outputs=self.call(x, training=True))
-        return model.summary()
+    # def summary(self, input_shape=(224, 224, 3), **kwargs):
+    #     x = Input(shape=input_shape)
+    #     model = Model(inputs=[x], outputs=self.call(x, training=True))
+    #     return model.summary()
 
     def call(self, inputs, training=None):
         x = self.stem(inputs, training)
@@ -387,7 +387,8 @@ def efficientnetv2_s(num_classes: int = 1000):
 
     model = EfficientNetV2(model_cnf=model_config,
                            num_classes=num_classes,
-                           dropout_rate=0.2)
+                           dropout_rate=0.2,
+                           name="efficientnetv2-s")
     return model
 
 
@@ -409,7 +410,8 @@ def efficientnetv2_m(num_classes: int = 1000):
 
     model = EfficientNetV2(model_cnf=model_config,
                            num_classes=num_classes,
-                           dropout_rate=0.3)
+                           dropout_rate=0.3,
+                           name="efficientnetv2-m")
     return model
 
 
@@ -431,9 +433,10 @@ def efficientnetv2_l(num_classes: int = 1000):
 
     model = EfficientNetV2(model_cnf=model_config,
                            num_classes=num_classes,
-                           dropout_rate=0.4)
+                           dropout_rate=0.4,
+                           name="efficientnetv2-l")
     return model
 
 
-m = efficientnetv2_s()
-m.summary()
+# m = efficientnetv2_s()
+# m.summary()

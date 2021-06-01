@@ -23,7 +23,7 @@ def main(ckpt_path: str,
             msg = "Not found {} in {}".format(key, ckpt_path)
             print(msg)
 
-    model.save_weights("./model/{}.ckpt".format(model_name))
+    model.save_weights("./{}.h5".format(model_name))
 
 
 if __name__ == '__main__':
