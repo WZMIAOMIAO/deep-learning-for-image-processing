@@ -60,7 +60,7 @@
   * EfficientNetV2 (进行中)
     * [EfficientNetV2理论讲解](https://b23.tv/NDR7Ug)
     * [使用Pytorch搭建EfficientNetV2](https://b23.tv/M4hagB)
-    * 使用Tensorflow搭建EfficientNetV2
+    * [使用Tensorflow搭建EfficientNetV2](https://b23.tv/KUPbdr)
 
   * Vision Transformer(准备中)
 
