@@ -57,7 +57,7 @@
     * [使用Pytorch搭建EfficientNet](https://www.bilibili.com/video/BV19z4y1179h/)
     * [使用Tensorflow2搭建EfficientNet](https://www.bilibili.com/video/BV1PK4y1S7Jf)
 
-  * EfficientNetV2 (进行中)
+  * EfficientNetV2 (已完成)
     * [EfficientNetV2理论讲解](https://b23.tv/NDR7Ug)
     * [使用Pytorch搭建EfficientNetV2](https://b23.tv/M4hagB)
     * [使用Tensorflow搭建EfficientNetV2](https://b23.tv/KUPbdr)
