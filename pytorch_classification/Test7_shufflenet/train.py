@@ -63,11 +63,14 @@ def main(args):
 
     # 如果存在预训练权重则载入
     model = shufflenet_v2_x1_0(num_classes=args.num_classes).to(device)
-    if os.path.exists(args.weights):
-        weights_dict = torch.load(args.weights, map_location=device)
-        load_weights_dict = {k: v for k, v in weights_dict.items()
-                             if model.state_dict()[k].numel() == v.numel()}
-        print(model.load_state_dict(load_weights_dict, strict=False))
+    if args.weights != "":
+        if os.path.exists(args.weights):
+            weights_dict = torch.load(args.weights, map_location=device)
+            load_weights_dict = {k: v for k, v in weights_dict.items()
+                                 if model.state_dict()[k].numel() == v.numel()}
+            print(model.load_state_dict(load_weights_dict, strict=False))
+        else:
+            raise FileNotFoundError("not found weights file: {}".format(args.weights))
 
     # 是否冻结权重
     if args.freeze_layers:
