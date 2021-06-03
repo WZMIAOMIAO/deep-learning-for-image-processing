@@ -63,8 +63,11 @@ def main(args):
 
     # 如果存在预训练权重则载入
     model = densenet121(num_classes=args.num_classes).to(device)
-    if os.path.exists(args.weights):
-        load_state_dict(model, args.weights)
+    if args.weights != "":
+        if os.path.exists(args.weights):
+            load_state_dict(model, args.weights)
+        else:
+            raise FileNotFoundError("not found weights file: {}".format(args.weights))
 
     # 是否冻结权重
     if args.freeze_layers:

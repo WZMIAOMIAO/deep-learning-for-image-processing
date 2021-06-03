@@ -63,11 +63,14 @@ def main(args):
 
     # 如果存在预训练权重则载入
     model = shufflenet_v2_x1_0(num_classes=args.num_classes).to(device)
-    if os.path.exists(args.weights):
-        weights_dict = torch.load(args.weights, map_location=device)
-        load_weights_dict = {k: v for k, v in weights_dict.items()
-                             if model.state_dict()[k].numel() == v.numel()}
-        print(model.load_state_dict(load_weights_dict, strict=False))
+    if args.weights != "":
+        if os.path.exists(args.weights):
+            weights_dict = torch.load(args.weights, map_location=device)
+            load_weights_dict = {k: v for k, v in weights_dict.items()
+                                 if model.state_dict()[k].numel() == v.numel()}
+            print(model.load_state_dict(load_weights_dict, strict=False))
+        else:
+            raise FileNotFoundError("not found weights file: {}".format(args.weights))
 
     # 是否冻结权重
     if args.freeze_layers:
@@ -121,7 +124,7 @@ if __name__ == '__main__':
 
     # shufflenetv2_x1.0 官方权重下载地址
     # https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth
-    parser.add_argument('--weights', type=str, default='',
+    parser.add_argument('--weights', type=str, default='./shufflenetv2_x1.pth',
                         help='initial weights path')
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

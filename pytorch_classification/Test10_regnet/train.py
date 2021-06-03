@@ -66,11 +66,14 @@ def main(args):
                           num_classes=args.num_classes).to(device)
     # print(model)
 
-    if os.path.exists(args.weights):
-        weights_dict = torch.load(args.weights, map_location=device)
-        load_weights_dict = {k: v for k, v in weights_dict.items()
-                             if model.state_dict()[k].numel() == v.numel()}
-        print(model.load_state_dict(load_weights_dict, strict=False))
+    if args.weights != "":
+        if os.path.exists(args.weights):
+            weights_dict = torch.load(args.weights, map_location=device)
+            load_weights_dict = {k: v for k, v in weights_dict.items()
+                                 if model.state_dict()[k].numel() == v.numel()}
+            print(model.load_state_dict(load_weights_dict, strict=False))
+        else:
+            raise FileNotFoundError("not found weights file: {}".format(args.weights))
 
     # 是否冻结权重
     if args.freeze_layers:
@@ -99,8 +102,8 @@ def main(args):
 
         # validate
         acc = evaluate(model=model,
-                           data_loader=val_loader,
-                           device=device)
+                       data_loader=val_loader,
+                       device=device)
 
         print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
         tags = ["loss", "accuracy", "learning_rate"]
