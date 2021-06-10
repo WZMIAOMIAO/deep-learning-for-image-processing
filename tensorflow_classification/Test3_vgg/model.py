@@ -1,4 +1,22 @@
-from tensorflow.keras import layers, models, Model, Sequential
+from tensorflow.keras import layers, Model, Sequential
+
+CONV_KERNEL_INITIALIZER = {
+    'class_name': 'VarianceScaling',
+    'config': {
+        'scale': 2.0,
+        'mode': 'fan_out',
+        'distribution': 'truncated_normal'
+    }
+}
+
+DENSE_KERNEL_INITIALIZER = {
+    'class_name': 'VarianceScaling',
+    'config': {
+        'scale': 1. / 3.,
+        'mode': 'fan_out',
+        'distribution': 'uniform'
+    }
+}
 
 
 def VGG(feature, im_height=224, im_width=224, num_classes=1000):
@@ -7,22 +25,26 @@ def VGG(feature, im_height=224, im_width=224, num_classes=1000):
     x = feature(input_image)
     x = layers.Flatten()(x)
     x = layers.Dropout(rate=0.5)(x)
-    x = layers.Dense(2048, activation='relu')(x)
+    x = layers.Dense(2048, activation='relu',
+                     kernel_initializer=DENSE_KERNEL_INITIALIZER)(x)
     x = layers.Dropout(rate=0.5)(x)
-    x = layers.Dense(2048, activation='relu')(x)
-    x = layers.Dense(num_classes)(x)
+    x = layers.Dense(2048, activation='relu',
+                     kernel_initializer=DENSE_KERNEL_INITIALIZER)(x)
+    x = layers.Dense(num_classes,
+                     kernel_initializer=DENSE_KERNEL_INITIALIZER)(x)
     output = layers.Softmax()(x)
-    model = models.Model(inputs=input_image, outputs=output)
+    model = Model(inputs=input_image, outputs=output)
     return model
 
 
-def features(cfg):
+def make_feature(cfg):
     feature_layers = []
     for v in cfg:
         if v == "M":
             feature_layers.append(layers.MaxPool2D(pool_size=2, strides=2))
         else:
-            conv2d = layers.Conv2D(v, kernel_size=3, padding="SAME", activation="relu")
+            conv2d = layers.Conv2D(v, kernel_size=3, padding="SAME", activation="relu",
+                                   kernel_initializer=CONV_KERNEL_INITIALIZER)
             feature_layers.append(conv2d)
     return Sequential(feature_layers, name="feature")
 
@@ -38,5 +60,5 @@ cfgs = {
 def vgg(model_name="vgg16", im_height=224, im_width=224, num_classes=1000):
     assert model_name in cfgs.keys(), "not support model {}".format(model_name)
     cfg = cfgs[model_name]
-    model = VGG(features(cfg), im_height=im_height, im_width=im_width, num_classes=num_classes)
+    model = VGG(make_feature(cfg), im_height=im_height, im_width=im_width, num_classes=num_classes)
     return model

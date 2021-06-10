@@ -54,7 +54,7 @@ def main():
     print("using {} images for training, {} images for validation.".format(total_train,
                                                                            total_val))
 
-    model = vgg("vgg16", 224, 224, 5)
+    model = vgg("vgg16", im_height, im_width, num_classes=5)
     model.summary()
 
     # using keras high level api for training
@@ -74,6 +74,30 @@ def main():
                         validation_data=val_data_gen,
                         validation_steps=total_val // batch_size,
                         callbacks=callbacks)
+
+    # plot loss and accuracy image
+    history_dict = history.history
+    train_loss = history_dict["loss"]
+    train_accuracy = history_dict["accuracy"]
+    val_loss = history_dict["val_loss"]
+    val_accuracy = history_dict["val_accuracy"]
+
+    # figure 1
+    plt.figure()
+    plt.plot(range(epochs), train_loss, label='train_loss')
+    plt.plot(range(epochs), val_loss, label='val_loss')
+    plt.legend()
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
+
+    # figure 2
+    plt.figure()
+    plt.plot(range(epochs), train_accuracy, label='train_accuracy')
+    plt.plot(range(epochs), val_accuracy, label='val_accuracy')
+    plt.legend()
+    plt.xlabel('epochs')
+    plt.ylabel('accuracy')
+    plt.show()
 
 
 if __name__ == '__main__':
