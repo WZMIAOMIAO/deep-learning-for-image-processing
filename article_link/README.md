@@ -58,6 +58,9 @@
 - DeepLabv3+(Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation) [https://arxiv.org/abs/1802.02611](https://arxiv.org/abs/1802.02611)
 
 
+## 自然语言处理
+- Attention Is All You Need [https://arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)
+
 ## Others
 - Microsoft COCO: Common Objects in Context [https://arxiv.org/abs/1405.0312](https://arxiv.org/abs/1405.0312)
 - The PASCALVisual Object Classes Challenge: A Retrospective [http://host.robots.ox.ac.uk/pascal/VOC/pubs/everingham15.pdf](http://host.robots.ox.ac.uk/pascal/VOC/pubs/everingham15.pdf)
