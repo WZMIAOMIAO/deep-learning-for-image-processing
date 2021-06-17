@@ -74,9 +74,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
 
 @torch.no_grad()
 def evaluate(model, data_loader, device, data_set=None):
-    n_threads = torch.get_num_threads()
-    # FIXME remove this and make paste_masks_in_image run on the GPU
-    torch.set_num_threads(1)
+
     cpu_device = torch.device("cpu")
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -126,7 +124,6 @@ def evaluate(model, data_loader, device, data_set=None):
     # accumulate predictions from all images
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
-    torch.set_num_threads(n_threads)
 
     coco_info = coco_evaluator.coco_eval[iou_types[0]].stats.tolist()  # numpy to list
 
