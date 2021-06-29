@@ -10,6 +10,8 @@
 - **MobileNet_v3**  链接：https://pan.baidu.com/s/13mzSpyxuA4T4ki7kEN1Xqw 密码：fp5g 
 - **ShuffleNet_v1_v2** 链接：https://pan.baidu.com/s/1-DDwePMPCDvjw08YU8nAAA 密码：ad6n
 - **EfficientNet_v1** 链接：https://pan.baidu.com/s/1Sep9W0vLzfjhcHAXr6Bv0Q  密码：eufl 
+- **EfficientNet_v2** 链接：https://pan.baidu.com/s/1tesrgY4CHLmq6P7s7TcHCw  密码：y2kz
+- **Transformer** 链接：https://pan.baidu.com/s/1sWEdeXd2AqIKWlwLJnuDQw   密码：tvxc 
 - **ConfusionMatrix** 链接: https://pan.baidu.com/s/1EtKzHkZyv2XssYtqmGYCLg  密码: uoo5
 
 
