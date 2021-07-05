@@ -65,7 +65,7 @@
   * Vision Transformer(进行中)
     * [Multi-Head Attention讲解](https://b23.tv/gucpvt)
     * [Vision Transformer网络讲解](https://www.bilibili.com/video/BV1Jh411Y7WQ)
-    * 使用Pytorch搭建Vision Transformer
+    * [使用Pytorch搭建Vision Transformer](https://b23.tv/TT4VBM)
     * 使用tensorflow2搭建Vision Transformer
 
 * 目标检测篇
