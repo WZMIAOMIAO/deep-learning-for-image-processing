@@ -99,6 +99,7 @@ def main(args):
 
     print("Creating model")
     model = create_model(num_classes=args.num_classes+1, device=device)
+    model.to(device)
 
     model_without_ddp = model
     if args.distributed:
