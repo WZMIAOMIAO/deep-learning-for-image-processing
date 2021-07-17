@@ -29,6 +29,35 @@ class PatchEmbed(layers.Layer):
         return x
 
 
+class ConcatClassTokenAddPosEmbed(layers.Layer):
+    def __init__(self, embed_dim=768, num_patches=196, name=None):
+        super(ConcatClassTokenAddPosEmbed, self).__init__(name=name)
+        self.embed_dim = embed_dim
+        self.num_patches = num_patches
+
+    def build(self, input_shape):
+        self.cls_token = self.add_weight(name="cls",
+                                         shape=[1, 1, self.embed_dim],
+                                         initializer=initializers.Zeros(),
+                                         trainable=True,
+                                         dtype=tf.float32)
+        self.pos_embed = self.add_weight(name="pos_embed",
+                                         shape=[1, self.num_patches + 1, self.embed_dim],
+                                         initializer=initializers.RandomNormal(stddev=0.02),
+                                         trainable=True,
+                                         dtype=tf.float32)
+
+    def call(self, inputs, **kwargs):
+        batch_size, _, _ = inputs.shape
+
+        # [1, 1, 768] -> [B, 1, 768]
+        cls_token = tf.broadcast_to(self.cls_token, shape=[batch_size, 1, self.embed_dim])
+        x = tf.concat([cls_token, inputs], axis=1)  # [B, 197, 768]
+        x = x + self.pos_embed
+
+        return x
+
+
 class Attention(layers.Layer):
     k_ini = initializers.GlorotUniform()
     b_ini = initializers.Zeros()
@@ -66,14 +95,12 @@ class Attention(layers.Layer):
         q, k, v = qkv[0], qkv[1], qkv[2]
 
         # transpose: -> [batch_size, num_heads, embed_dim_per_head, num_patches + 1]
-        # @: multiply -> [batch_size, num_heads, num_patches + 1, num_patches + 1]
-        # attn = q @ tf.transpose(k, [0, 1, 3, 2]) * self.scale
+        # multiply -> [batch_size, num_heads, num_patches + 1, num_patches + 1]
         attn = tf.matmul(a=q, b=k, transpose_b=True) * self.scale
         attn = tf.nn.softmax(attn, axis=-1)
         attn = self.attn_drop(attn, training=training)
 
-        # @: multiply -> [batch_size, num_heads, num_patches + 1, embed_dim_per_head]
-        # x = attn @ v
+        # multiply -> [batch_size, num_heads, num_patches + 1, embed_dim_per_head]
         x = tf.matmul(attn, v)
         # transpose: -> [batch_size, num_patches + 1, num_heads, embed_dim_per_head]
         x = tf.transpose(x, [0, 2, 1, 3])
@@ -135,35 +162,6 @@ class Block(layers.Layer):
     def call(self, inputs, training=None):
         x = inputs + self.drop_path(self.attn(self.norm1(inputs)), training=training)
         x = x + self.drop_path(self.mlp(self.norm2(x)), training=training)
-        return x
-
-
-class ConcatClassTokenAddPosEmbed(layers.Layer):
-    def __init__(self, embed_dim=768, num_patches=196, name=None):
-        super(ConcatClassTokenAddPosEmbed, self).__init__(name=name)
-        self.embed_dim = embed_dim
-        self.num_patches = num_patches
-
-    def build(self, input_shape):
-        self.cls_token = self.add_weight(name="cls",
-                                         shape=[1, 1, self.embed_dim],
-                                         initializer=initializers.Zeros(),
-                                         trainable=True,
-                                         dtype=tf.float32)
-        self.pos_embed = self.add_weight(name="pos_embed",
-                                         shape=[1, self.num_patches + 1, self.embed_dim],
-                                         initializer=initializers.RandomNormal(stddev=0.02),
-                                         trainable=True,
-                                         dtype=tf.float32)
-
-    def call(self, inputs, **kwargs):
-        batch_size, _, _ = inputs.shape
-
-        # [1, 1, 768] -> [B, 1, 768]
-        cls_token = tf.broadcast_to(self.cls_token, shape=[batch_size, 1, self.embed_dim])
-        x = tf.concat([cls_token, inputs], axis=1)  # [B, 197, 768]
-        x = x + self.pos_embed
-
         return x
 
 
