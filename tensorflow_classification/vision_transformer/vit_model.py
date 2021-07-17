@@ -154,6 +154,7 @@ class Block(layers.Layer):
                               qkv_bias=qkv_bias, qk_scale=qk_scale,
                               attn_drop_ratio=attn_drop_ratio, proj_drop_ratio=drop_ratio,
                               name="MultiHeadAttention")
+        # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = layers.Dropout(rate=drop_path_ratio, noise_shape=(None, 1, 1)) if drop_path_ratio > 0. \
             else layers.Activation("linear")
         self.norm2 = layers.LayerNormalization(epsilon=1e-6, name="LayerNorm_1")
@@ -221,8 +222,6 @@ def vit_base_patch16_224_in21k(num_classes: int = 21843, has_logits: bool = True
     """
     ViT-Base model (ViT-B/16) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.
-    weights ported from official Google JAX impl:
-    https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_base_patch16_224_in21k-e5005f0a.pth
     """
     model = VisionTransformer(img_size=224,
                               patch_size=16,
@@ -239,8 +238,6 @@ def vit_base_patch32_224_in21k(num_classes: int = 21843, has_logits: bool = True
     """
     ViT-Base model (ViT-B/32) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.
-    weights ported from official Google JAX impl:
-    https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_base_patch32_224_in21k-8db57226.pth
     """
     model = VisionTransformer(img_size=224,
                               patch_size=32,
@@ -257,8 +254,6 @@ def vit_large_patch16_224_in21k(num_classes: int = 21843, has_logits: bool = Tru
     """
     ViT-Large model (ViT-L/16) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.
-    weights ported from official Google JAX impl:
-    https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_large_patch16_224_in21k-606da67d.pth
     """
     model = VisionTransformer(img_size=224,
                               patch_size=16,
@@ -275,8 +270,6 @@ def vit_large_patch32_224_in21k(num_classes: int = 21843, has_logits: bool = Tru
     """
     ViT-Large model (ViT-L/32) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.
-    weights ported from official Google JAX impl:
-    https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_large_patch32_224_in21k-9046d2e7.pth
     """
     model = VisionTransformer(img_size=224,
                               patch_size=32,
@@ -293,7 +286,6 @@ def vit_huge_patch14_224_in21k(num_classes: int = 21843, has_logits: bool = True
     """
     ViT-Huge model (ViT-H/14) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.
-    NOTE: converted weights not currently available, too large for github release hosting.
     """
     model = VisionTransformer(img_size=224,
                               patch_size=14,
