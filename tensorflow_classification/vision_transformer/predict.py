@@ -42,7 +42,7 @@ def main():
     model = create_model(num_classes=num_classes, has_logits=False)
     model.build([1, 224, 224, 3])
 
-    weights_path = './save_weights/model.h5'
+    weights_path = './save_weights/model.ckpt'
     assert len(glob.glob(weights_path+"*")), "cannot find {}".format(weights_path)
     model.load_weights(weights_path)
 
