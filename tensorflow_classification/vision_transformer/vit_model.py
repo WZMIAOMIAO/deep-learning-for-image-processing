@@ -1,3 +1,7 @@
+"""
+refer to:
+https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+"""
 import tensorflow as tf
 from tensorflow.keras import Model, layers, initializers
 import numpy as np
