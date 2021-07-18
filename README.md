@@ -66,7 +66,7 @@
     * [Multi-Head Attention讲解](https://b23.tv/gucpvt)
     * [Vision Transformer网络讲解](https://www.bilibili.com/video/BV1Jh411Y7WQ)
     * [使用Pytorch搭建Vision Transformer](https://b23.tv/TT4VBM)
-    * 使用tensorflow2搭建Vision Transformer
+    * [使用tensorflow2搭建Vision Transformer](https://www.bilibili.com/video/BV1q64y1X7GY)
 
 * 目标检测篇
   * Faster-RCNN/FPN（已完成）
