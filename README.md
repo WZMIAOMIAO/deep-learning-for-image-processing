@@ -62,7 +62,7 @@
     * [使用Pytorch搭建EfficientNetV2](https://b23.tv/M4hagB)
     * [使用Tensorflow搭建EfficientNetV2](https://b23.tv/KUPbdr)
 
-  * Vision Transformer(进行中)
+  * Vision Transformer(已完成)
     * [Multi-Head Attention讲解](https://b23.tv/gucpvt)
     * [Vision Transformer网络讲解](https://www.bilibili.com/video/BV1Jh411Y7WQ)
     * [使用Pytorch搭建Vision Transformer](https://b23.tv/TT4VBM)
