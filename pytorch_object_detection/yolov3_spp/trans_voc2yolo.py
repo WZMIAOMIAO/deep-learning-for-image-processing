@@ -135,7 +135,9 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
                     f.write("\n" + " ".join(info))
 
         # copy image into save_images_path
-        shutil.copyfile(img_path, os.path.join(save_images_path, img_path.split(os.sep)[-1]))
+        path_copy_to = os.path.join(save_images_path, img_path.split(os.sep)[-1])
+        if os.path.exists(path_copy_to) is False:
+            shutil.copyfile(img_path, path_copy_to)
 
 
 def create_class_names(class_dict: dict):
