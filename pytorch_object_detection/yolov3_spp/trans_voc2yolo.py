@@ -99,8 +99,13 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
         img_width = int(data["size"]["width"])
 
         # write object info into txt
+        assert "object" in data.keys(), "file: '{}' lack of object key.".format(xml_path)
+        if len(data["object"]) == 0:
+            # 如果xml文件中没有目标就直接忽略该样本
+            print("Warning: in '{}' xml, there are no objects.".format(xml_path))
+            continue
+
         with open(os.path.join(save_txt_path, file + ".txt"), "w") as f:
-            assert "object" in data.keys(), "file: '{}' lack of object key.".format(xml_path)
             for index, obj in enumerate(data["object"]):
                 # 获取每个object的box信息
                 xmin = float(obj["bndbox"]["xmin"])
@@ -135,7 +140,9 @@ def translate_info(file_names: list, save_root: str, class_dict: dict, train_val
                     f.write("\n" + " ".join(info))
 
         # copy image into save_images_path
-        shutil.copyfile(img_path, os.path.join(save_images_path, img_path.split(os.sep)[-1]))
+        path_copy_to = os.path.join(save_images_path, img_path.split(os.sep)[-1])
+        if os.path.exists(path_copy_to) is False:
+            shutil.copyfile(img_path, path_copy_to)
 
 
 def create_class_names(class_dict: dict):
