@@ -6,8 +6,8 @@
 """
 import os
 
-train_annotation_dir = "/data/my_yolo_dataset/train/labels"
-val_annotation_dir = "/data/my_yolo_dataset/val/labels"
+train_annotation_dir = "./my_yolo_dataset/train/labels"
+val_annotation_dir = "./my_yolo_dataset/val/labels"
 classes_label = "./data/my_data_label.names"
 cfg_path = "./cfg/yolov3-spp.cfg"
 
