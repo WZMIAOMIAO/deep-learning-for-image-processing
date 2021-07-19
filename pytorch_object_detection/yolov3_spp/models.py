@@ -91,11 +91,12 @@ def create_modules(modules_defs: list, img_size):
             # Initialize preceding Conv2d() bias (https://arxiv.org/pdf/1708.02002.pdf section 3.3)
             try:
                 j = -1
-                bias_ = module_list[j][0].bias  # shape(255,) 索引0对应Sequential中的Conv2d
-                bias = bias_.view(modules.na, -1)  # shape(3, 85)
-                bias[:, 4] += -4.5  # obj
-                bias[:, 5:] += math.log(0.6 / (modules.nc - 0.99))  # cls (sigmoid(p) = 1/nc)
-                module_list[j][0].bias = torch.nn.Parameter(bias_, requires_grad=bias_.requires_grad)
+                # bias: shape(255,) 索引0对应Sequential中的Conv2d
+                # view: shape(3, 85)
+                b = module_list[j][0].bias.view(modules.na, -1)
+                b.data[:, 4] += -4.5  # obj
+                b.data[:, 5:] += math.log(0.6 / (modules.nc - 0.99))  # cls (sigmoid(p) = 1/nc)
+                module_list[j][0].bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
             except Exception as e:
                 print('WARNING: smart bias initialization failure.', e)
         else:
