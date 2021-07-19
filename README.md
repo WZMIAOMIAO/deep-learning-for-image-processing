@@ -62,7 +62,7 @@
     * [使用Pytorch搭建EfficientNetV2](https://b23.tv/M4hagB)
     * [使用Tensorflow搭建EfficientNetV2](https://b23.tv/KUPbdr)
 
-  * Vision Transformer(进行中)
+  * Vision Transformer(已完成)
     * [Multi-Head Attention讲解](https://b23.tv/gucpvt)
     * [Vision Transformer网络讲解](https://www.bilibili.com/video/BV1Jh411Y7WQ)
     * [使用Pytorch搭建Vision Transformer](https://b23.tv/TT4VBM)
@@ -93,8 +93,8 @@
 * Anaconda3（建议使用）
 * python3.6/3.7/3.8
 * pycharm (IDE)
-* pytorch 1.6 (pip package)
-* torchvision 0.7.0 (pip package)
+* pytorch 1.7.1 (pip package)
+* torchvision 0.8.1 (pip package)
 * tensorflow 2.4.1 (pip package)
 
 [你可能遇到的问题](./summary_problem.md)
