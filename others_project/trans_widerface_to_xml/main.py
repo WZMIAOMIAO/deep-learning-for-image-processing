@@ -28,7 +28,7 @@ def create_xml(labels: list, img_root: str, img_path: str, save_root: str) -> bo
             print(f"Warning: find bbox w or h <= 0, in {img_path}, skip.")
             continue
 
-        ob_dict = {'name': 'person',
+        ob_dict = {'name': 'face',
                    'truncated': '0' if ob[8] == '0' else '1',
                    'difficult': '1' if ob[4] == '2' or ob[8] == '2' else '0',
                    'xmin': ob[0], 'ymin': ob[1],
