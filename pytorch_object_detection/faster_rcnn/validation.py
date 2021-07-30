@@ -117,7 +117,7 @@ def main(parser_data):
     # load validation data set
     val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
     val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
-                                                     batch_size=batch_size,
+                                                     batch_size=1,
                                                      shuffle=False,
                                                      num_workers=nw,
                                                      pin_memory=True,

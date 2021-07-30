@@ -61,36 +61,36 @@ def main(args):
 
     # load train data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
+    train_dataset = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
 
     # load validation data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data_set)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(val_data_set)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
     else:
-        train_sampler = torch.utils.data.RandomSampler(train_data_set)
-        test_sampler = torch.utils.data.SequentialSampler(val_data_set)
+        train_sampler = torch.utils.data.RandomSampler(train_dataset)
+        test_sampler = torch.utils.data.SequentialSampler(val_dataset)
 
     if args.aspect_ratio_group_factor >= 0:
         # 统计所有图像比例在bins区间中的位置索引
-        group_ids = create_aspect_ratio_groups(train_data_set, k=args.aspect_ratio_group_factor)
+        group_ids = create_aspect_ratio_groups(train_dataset, k=args.aspect_ratio_group_factor)
         train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
     else:
         train_batch_sampler = torch.utils.data.BatchSampler(
             train_sampler, args.batch_size, drop_last=True)
 
     data_loader = torch.utils.data.DataLoader(
-        train_data_set, batch_sampler=train_batch_sampler, num_workers=args.workers,
-        collate_fn=train_data_set.collate_fn)
+        train_dataset, batch_sampler=train_batch_sampler, num_workers=args.workers,
+        collate_fn=train_dataset.collate_fn)
 
     data_loader_test = torch.utils.data.DataLoader(
-        val_data_set, batch_size=1,
+        val_dataset, batch_size=1,
         sampler=test_sampler, num_workers=args.workers,
-        collate_fn=train_data_set.collate_fn)
+        collate_fn=train_dataset.collate_fn)
 
     print("Creating model")
     # create model
