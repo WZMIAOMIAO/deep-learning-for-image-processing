@@ -187,7 +187,7 @@ def _quantize(x, bins):
 def create_aspect_ratio_groups(dataset, k=0):
     # 计算所有数据集中的图片width/height比例
     aspect_ratios = compute_aspect_ratios(dataset)
-    # 将[0.5, 2]区间划分成2*k+1等份
+    # 将[0.5, 2]区间划分成2*k等份(2k+1个点，2k个区间)
     bins = (2 ** np.linspace(-1, 1, 2 * k + 1)).tolist() if k > 0 else [1.0]
 
     # 统计所有图像比例在bins区间中的位置索引

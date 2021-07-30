@@ -8,6 +8,7 @@ import transforms
 from network_files import FasterRCNN, AnchorsGenerator
 from backbone import MobileNetV2, vgg
 from my_dataset import VOC2012DataSet
+from train_utils import GroupedBatchSampler, create_aspect_ratio_groups
 from train_utils import train_eval_utils as utils
 
 
@@ -55,32 +56,55 @@ def main():
     }
 
     VOC_root = "./"  # VOCdevkit
+    aspect_ratio_group_factor = 3
+    batch_size = 8
+    
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
 
     # load train data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
-    # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
-    batch_size = 8
+    train_dataset = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
+    train_sampler = None
+
+    # 是否按图片相似高宽比采样图片组成batch
+    # 使用的话能够减小训练时所需GPU显存，默认使用
+    if aspect_ratio_group_factor >= 0:
+        train_sampler = torch.utils.data.RandomSampler(train_dataset)
+        # 统计所有图像高宽比例在bins区间中的位置索引
+        group_ids = create_aspect_ratio_groups(train_dataset, k=aspect_ratio_group_factor)
+        # 每个batch图片从同一高宽比例区间中取
+        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, batch_size)
+
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using %g dataloader workers' % nw)
-    train_data_loader = torch.utils.data.DataLoader(train_data_set,
-                                                    batch_size=batch_size,
-                                                    shuffle=True,
-                                                    num_workers=nw,
-                                                    collate_fn=train_data_set.collate_fn)
+
+    # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
+    if train_sampler:
+        # 如果按照图片高宽比采样图片，dataloader中需要使用batch_sampler
+        train_data_loader = torch.utils.data.DataLoader(train_dataset,
+                                                        batch_sampler=train_batch_sampler,
+                                                        pin_memory=True,
+                                                        num_workers=nw,
+                                                        collate_fn=train_dataset.collate_fn)
+    else:
+        train_data_loader = torch.utils.data.DataLoader(train_dataset,
+                                                        batch_size=batch_size,
+                                                        shuffle=True,
+                                                        pin_memory=True,
+                                                        num_workers=nw,
+                                                        collate_fn=train_dataset.collate_fn)
 
     # load validation data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      pin_memory=True,
-                                                      num_workers=nw,
-                                                      collate_fn=train_data_set.collate_fn)
+    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_data_loader = torch.utils.data.DataLoader(val_dataset,
+                                                  batch_size=1,
+                                                  shuffle=False,
+                                                  pin_memory=True,
+                                                  num_workers=nw,
+                                                  collate_fn=val_dataset.collate_fn)
 
     # create model num_classes equal background + 20 classes
     model = create_model(num_classes=21)
@@ -113,7 +137,7 @@ def main():
         learning_rate.append(lr)
 
         # evaluate on the test dataset
-        coco_info = utils.evaluate(model, val_data_set_loader, device=device)
+        coco_info = utils.evaluate(model, val_data_loader, device=device)
 
         # write into txt
         with open(results_file, "a") as f:
@@ -151,7 +175,7 @@ def main():
     for epoch in range(init_epochs, num_epochs+init_epochs, 1):
         # train for one epoch, printing every 50 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
-                                              device, epoch, print_freq=50)
+                                              device, epoch, print_freq=50, warmup=True)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
@@ -159,7 +183,7 @@ def main():
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        coco_info = utils.evaluate(model, val_data_set_loader, device=device)
+        coco_info = utils.evaluate(model, val_data_loader, device=device)
 
         # write into txt
         with open(results_file, "a") as f:
