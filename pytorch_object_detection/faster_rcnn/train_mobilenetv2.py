@@ -58,7 +58,7 @@ def main():
     VOC_root = "./"  # VOCdevkit
     aspect_ratio_group_factor = 3
     batch_size = 8
-    
+
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
