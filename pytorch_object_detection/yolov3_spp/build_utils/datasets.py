@@ -475,7 +475,7 @@ def load_mosaic(self, index):
         np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
     # Augment
-    # img4 = img4[s // 2: int(s * 1.5), s // 2:int(s * 1.5)]  # center crop (WARNING, requires box pruning)
+    # 随机旋转，缩放，平移以及错切
     img4, labels4 = random_affine(img4, labels4,
                                   degrees=self.hyp['degrees'],
                                   translate=self.hyp['translate'],
@@ -487,6 +487,7 @@ def load_mosaic(self, index):
 
 
 def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, border=0):
+    """随机旋转，缩放，平移以及错切"""
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # https://medium.com/uruvideo/dataset-augmentation-with-random-homographies-a8f4b44830d4
     # targets = [cls, xyxy]
@@ -496,17 +497,20 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
     width = img.shape[1] + border * 2
 
     # Rotation and Scale
+    # 生成旋转以及缩放矩阵
     R = np.eye(3)  # 生成对角阵
     a = random.uniform(-degrees, degrees)  # 随机旋转角度
     s = random.uniform(1 - scale, 1 + scale)  # 随机缩放因子
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(img.shape[1] / 2, img.shape[0] / 2), scale=s)
 
     # Translation
+    # 生成平移矩阵
     T = np.eye(3)
     T[0, 2] = random.uniform(-translate, translate) * img.shape[0] + border  # x translation (pixels)
     T[1, 2] = random.uniform(-translate, translate) * img.shape[1] + border  # y translation (pixels)
 
     # Shear
+    # 生成错切矩阵
     S = np.eye(3)
     S[0, 1] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
     S[1, 0] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
@@ -526,6 +530,7 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
         xy = (xy @ M.T)[:, :2].reshape(n, 8)
 
         # create new boxes
+        # 对transform后的bbox进行修正(假设变换后的bbox变成了菱形，此时要修正成矩形)
         x = xy[:, [0, 2, 4, 6]]  # [n, 4]
         y = xy[:, [1, 3, 5, 7]]  # [n, 4]
         xy = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T  # [n, 4]
