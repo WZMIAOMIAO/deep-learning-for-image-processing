@@ -333,7 +333,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         if self.augment:
             # random left-right flip
-            lr_flip = True
+            lr_flip = True  # 随机水平翻转
             if lr_flip and random.random() < 0.5:
                 img = np.fliplr(img)
                 if nL:
@@ -348,7 +348,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         labels_out = torch.zeros((nL, 6))  # nL: number of labels
         if nL:
-            # labels_out[:, 0] = index
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert BGR to RGB, and HWC to CHW(3x512x512)
@@ -458,14 +457,15 @@ def load_mosaic(self, index):
         padh = y1a - y1b
 
         # Labels 获取对应拼接图像的labels信息
+        # [class_index, x_center, y_center, w, h]
         x = self.labels[index]
         labels = x.copy()  # 深拷贝，防止修改原数据
         if x.size > 0:  # Normalized xywh to pixel xyxy format
-            # 计算标注数据在马赛克图像中的
-            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padw
-            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + padh
-            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padw
-            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + padh
+            # 计算标注数据在马赛克图像中的坐标(绝对坐标)
+            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padw   # xmin
+            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + padh   # ymin
+            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padw   # xmax
+            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + padh   # ymax
         labels4.append(labels)
 
     # Concat/clip labels
@@ -475,7 +475,7 @@ def load_mosaic(self, index):
         np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
     # Augment
-    # img4 = img4[s // 2: int(s * 1.5), s // 2:int(s * 1.5)]  # center crop (WARNING, requires box pruning)
+    # 随机旋转，缩放，平移以及错切
     img4, labels4 = random_affine(img4, labels4,
                                   degrees=self.hyp['degrees'],
                                   translate=self.hyp['translate'],
@@ -487,6 +487,7 @@ def load_mosaic(self, index):
 
 
 def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, border=0):
+    """随机旋转，缩放，平移以及错切"""
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # https://medium.com/uruvideo/dataset-augmentation-with-random-homographies-a8f4b44830d4
     # targets = [cls, xyxy]
@@ -496,19 +497,20 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
     width = img.shape[1] + border * 2
 
     # Rotation and Scale
-    R = np.eye(3)
-    a = random.uniform(-degrees, degrees)
-    # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
-    s = random.uniform(1 - scale, 1 + scale)
-    # s = 2 ** random.uniform(-scale, scale)
+    # 生成旋转以及缩放矩阵
+    R = np.eye(3)  # 生成对角阵
+    a = random.uniform(-degrees, degrees)  # 随机旋转角度
+    s = random.uniform(1 - scale, 1 + scale)  # 随机缩放因子
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(img.shape[1] / 2, img.shape[0] / 2), scale=s)
 
     # Translation
+    # 生成平移矩阵
     T = np.eye(3)
     T[0, 2] = random.uniform(-translate, translate) * img.shape[0] + border  # x translation (pixels)
     T[1, 2] = random.uniform(-translate, translate) * img.shape[1] + border  # y translation (pixels)
 
     # Shear
+    # 生成错切矩阵
     S = np.eye(3)
     S[0, 1] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
     S[1, 0] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
@@ -528,18 +530,10 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
         xy = (xy @ M.T)[:, :2].reshape(n, 8)
 
         # create new boxes
+        # 对transform后的bbox进行修正(假设变换后的bbox变成了菱形，此时要修正成矩形)
         x = xy[:, [0, 2, 4, 6]]  # [n, 4]
         y = xy[:, [1, 3, 5, 7]]  # [n, 4]
         xy = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T  # [n, 4]
-
-        # # apply angle-based reduction of bounding boxes
-        # radians = a * math.pi / 180
-        # reduction = max(abs(math.sin(radians)), abs(math.cos(radians))) ** 0.5
-        # x = (xy[:, 2] + xy[:, 0]) / 2
-        # y = (xy[:, 3] + xy[:, 1]) / 2
-        # w = (xy[:, 2] - xy[:, 0]) * reduction
-        # h = (xy[:, 3] - xy[:, 1]) * reduction
-        # xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
 
         # reject warped points outside of image
         # 对坐标进行裁剪，防止越界
