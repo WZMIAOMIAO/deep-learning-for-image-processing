@@ -5,7 +5,7 @@ import datetime
 import torch
 
 import transforms
-from my_dataset import VOC2012DataSet
+from my_dataset import VOCDataSet
 from src import SSD300, Backbone
 import train_utils.train_eval_utils as utils
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
@@ -67,10 +67,12 @@ def main(args):
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
 
     # load train data set
-    train_data_set = VOC2012DataSet(VOC_root, data_transform["train"], train_set='train.txt')
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
+    train_data_set = VOCDataSet(VOC_root, "2012", data_transform["train"], train_set='train.txt')
 
     # load validation data set
-    val_data_set = VOC2012DataSet(VOC_root, data_transform["val"], train_set='val.txt')
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
+    val_data_set = VOCDataSet(VOC_root, "2012", data_transform["val"], train_set='val.txt')
 
     print("Creating data loaders")
     if args.distributed:

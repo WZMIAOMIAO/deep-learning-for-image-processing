@@ -4,7 +4,7 @@ import datetime
 import torch
 
 import transforms
-from my_dataset import VOC2012DataSet
+from my_dataset import VOCDataSet
 from src import SSD300, Backbone
 import train_utils.train_eval_utils as utils
 from train_utils import get_coco_api_from_dataset
@@ -66,7 +66,8 @@ def main(parser_data):
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
 
-    train_dataset = VOC2012DataSet(VOC_root, data_transform['train'], train_set='train.txt')
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
+    train_dataset = VOCDataSet(VOC_root, "2012", data_transform['train'], train_set='train.txt')
     # 注意训练时，batch_size必须大于1
     batch_size = parser_data.batch_size
     assert batch_size > 1, "batch size must be greater than 1"
@@ -81,7 +82,8 @@ def main(parser_data):
                                                     collate_fn=train_dataset.collate_fn,
                                                     drop_last=drop_last)
 
-    val_dataset = VOC2012DataSet(VOC_root, data_transform['val'], train_set='val.txt')
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
+    val_dataset = VOCDataSet(VOC_root, "2012", data_transform['val'], train_set='val.txt')
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=batch_size,
                                                   shuffle=False,

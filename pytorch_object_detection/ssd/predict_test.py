@@ -45,6 +45,7 @@ def main():
     assert os.path.exists(json_path), "file '{}' dose not exist.".format(json_path)
     json_file = open(json_path, 'r')
     class_dict = json.load(json_file)
+    json_file.close()
     category_index = {v: k for k, v in class_dict.items()}
 
     # load image

@@ -7,7 +7,7 @@ import torch
 import transforms
 from backbone import resnet50_fpn_backbone, LastLevelP6P7
 from network_files import RetinaNet
-from my_dataset import VOC2012DataSet
+from my_dataset import VOCDataSet
 from train_utils import train_eval_utils as utils
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
 
@@ -61,11 +61,11 @@ def main(args):
 
     # load train data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
+    train_dataset = VOCDataSet(VOC_root, "2012", data_transform["train"], "train.txt")
 
     # load validation data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset = VOCDataSet(VOC_root, "2012", data_transform["val"], "val.txt")
 
     print("Creating data loaders")
     if args.distributed:
