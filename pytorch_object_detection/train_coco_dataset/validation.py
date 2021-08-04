@@ -103,6 +103,7 @@ def main(parser_data):
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
     json_file = open(label_json_path, 'r')
     category_index = json.load(json_file)
+    json_file.close()
 
     coco_root = parser_data.data_path
 

@@ -6,7 +6,7 @@ import torch
 import transforms
 from backbone import resnet50_fpn_backbone, LastLevelP6P7
 from network_files import RetinaNet
-from my_dataset import VOC2012DataSet
+from my_dataset import VOCDataSet
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups
 from train_utils import train_eval_utils as utils
 
@@ -54,7 +54,7 @@ def main(parser_data):
 
     # load train data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
+    train_dataset = VOCDataSet(VOC_root, "2012", data_transform["train"], "train.txt")
     train_sampler = None
 
     # 是否按图片相似高宽比采样图片组成batch
@@ -87,7 +87,7 @@ def main(parser_data):
 
     # load validation data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset = VOCDataSet(VOC_root, "2012", data_transform["val"], "val.txt")
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=1,
                                                   shuffle=False,

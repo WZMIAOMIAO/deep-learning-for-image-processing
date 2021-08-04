@@ -5,7 +5,7 @@ import datetime
 import torch
 
 import transforms
-from my_dataset import VOC2012DataSet
+from my_dataset import VOCDataSet
 from backbone import resnet50_fpn_backbone
 from network_files import FasterRCNN, FastRCNNPredictor
 import train_utils.train_eval_utils as utils
@@ -60,11 +60,11 @@ def main(args):
 
     # load train data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOC2012DataSet(VOC_root, data_transform["train"], "train.txt")
+    train_dataset = VOCDataSet(VOC_root, "2012", data_transform["train"], "train.txt")
 
     # load validation data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOC2012DataSet(VOC_root, data_transform["val"], "val.txt")
+    val_dataset = VOCDataSet(VOC_root, "2012", data_transform["val"], "val.txt")
 
     print("Creating data loaders")
     if args.distributed:
