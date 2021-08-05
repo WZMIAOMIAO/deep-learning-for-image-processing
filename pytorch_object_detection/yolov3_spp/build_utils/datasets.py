@@ -518,6 +518,7 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
     # Combined rotation matrix
     M = S @ T @ R  # ORDER IS IMPORTANT HERE!!
     if (border != 0) or (M != np.eye(3)).any():  # image changed
+        # 进行仿射变化
         img = cv2.warpAffine(img, M[:2], dsize=(width, height), flags=cv2.INTER_LINEAR, borderValue=(114, 114, 114))
 
     # Transform label coordinates
