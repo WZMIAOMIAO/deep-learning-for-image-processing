@@ -398,7 +398,7 @@ def load_image(self, index):
         h0, w0 = img.shape[:2]  # orig hw
         # img_size 设置的是预处理后输出的图片尺寸
         r = self.img_size / max(h0, w0)  # resize image to img_size
-        if r != 1:  # always resize down, only resize up if training with augmentation
+        if r != 1:  # if sizes are not equal
             interp = cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR
             img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
         return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
@@ -471,7 +471,7 @@ def load_mosaic(self, index):
     # Concat/clip labels
     if len(labels4):
         labels4 = np.concatenate(labels4, 0)
-        # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
+        # 设置上下限防止越界
         np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
     # Augment
@@ -490,9 +490,10 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
     """随机旋转，缩放，平移以及错切"""
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # https://medium.com/uruvideo/dataset-augmentation-with-random-homographies-a8f4b44830d4
+    # 这里可以参考我写的博文: https://blog.csdn.net/qq_37541097/article/details/119420860
     # targets = [cls, xyxy]
 
-    # 给定的输入图像的尺寸(416/512/640)，等于img4.shape / 2
+    # 最终输出的图像尺寸，等于img4.shape / 2
     height = img.shape[0] + border * 2
     width = img.shape[1] + border * 2
 
@@ -559,6 +560,7 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
 
 
 def augment_hsv(img, h_gain=0.5, s_gain=0.5, v_gain=0.5):
+    # 这里可以参考我写的博文:https://blog.csdn.net/qq_37541097/article/details/119478023
     r = np.random.uniform(-1, 1, 3) * [h_gain, s_gain, v_gain] + 1  # random gains
     hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
     dtype = img.dtype  # uint8
@@ -570,11 +572,6 @@ def augment_hsv(img, h_gain=0.5, s_gain=0.5, v_gain=0.5):
 
     img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))).astype(dtype)
     cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)  # no return needed
-
-    # Histogram equalization
-    # if random.random() < 0.2:
-    #     for i in range(3):
-    #         img[:, :, i] = cv2.equalizeHist(img[:, :, i])
 
 
 def letterbox(img: np.ndarray,
