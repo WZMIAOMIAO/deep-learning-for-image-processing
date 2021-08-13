@@ -4,14 +4,7 @@ from tqdm import tqdm
 from scipy.cluster.vq import kmeans
 
 from read_voc import VOCDataSet
-
-
-def wh_iou(wh1, wh2):
-    # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
-    wh1 = wh1[:, None]  # [N,1,2]
-    wh2 = wh2[None]  # [1,M,2]
-    inter = np.minimum(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
+from yolo_kmeans import k_means, wh_iou
 
 
 def anchor_fitness(k: np.ndarray, wh: np.ndarray, thr: float):  # mutation fitness
@@ -41,11 +34,12 @@ def main(img_size=512, n=9, thr=0.25, gen=1000):
     wh = wh0[(wh0 >= 2.0).any(1)]  # 只保留wh都大于等于2个像素的box
 
     # Kmeans calculation
-    print(f'Running kmeans for {n} anchors on {len(wh)} points...')
-    s = wh.std(0)  # sigmas for whitening
-    k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
-    assert len(k) == n, print(f'ERROR: scipy.cluster.vq.kmeans requested {n} points but returned only {len(k)}')
-    k *= s
+    # print(f'Running kmeans for {n} anchors on {len(wh)} points...')
+    # s = wh.std(0)  # sigmas for whitening
+    # k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
+    # assert len(k) == n, print(f'ERROR: scipy.cluster.vq.kmeans requested {n} points but returned only {len(k)}')
+    # k *= s
+    k = k_means(wh, n)
 
     # 按面积排序
     k = k[np.argsort(k.prod(1))]  # sort small to large
