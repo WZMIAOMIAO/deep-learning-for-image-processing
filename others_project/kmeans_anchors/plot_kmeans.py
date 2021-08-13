@@ -47,6 +47,10 @@ def k_means(data, k, dist=np.mean):
     while True:
         d = distances(data, clusters)
         current_nearest = np.argmin(d, axis=1)
+
+        # plot
+        plot_clusters(data, current_nearest, clusters, f"step {step}")
+        
         if (last_nearest == current_nearest).all():
             break  # clusters won't change
         for cluster in range(k):
@@ -54,9 +58,6 @@ def k_means(data, k, dist=np.mean):
             clusters[cluster] = dist(data[current_nearest == cluster], axis=0)
         last_nearest = current_nearest
         step += 1
-
-        # plot
-        plot_clusters(data, current_nearest, clusters, f"step {step}")
 
     return clusters
 
