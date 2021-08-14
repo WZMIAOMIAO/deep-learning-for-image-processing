@@ -374,10 +374,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # img = np.ascontiguousarray(img)
 
         # load labels
-        labels = []
         x = self.labels[index]
-        if x.size > 0:
-            labels = x.copy()  # label: class, x, y, w, h
+        labels = x.copy()  # label: class, x, y, w, h
         return torch.from_numpy(labels), o_shapes
 
     @staticmethod
