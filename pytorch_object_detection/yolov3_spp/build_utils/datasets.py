@@ -358,20 +358,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
     def coco_index(self, index):
         """该方法是专门为cocotools统计标签信息准备，不对图像和标签作任何处理"""
-        # load image
-        # path = self.img_files[index]
-        # img = cv2.imread(path)  # BGR
-        # import matplotlib.pyplot as plt
-        # plt.imshow(img[:, :, ::-1])
-        # plt.show()
-
-        # assert img is not None, "Image Not Found " + path
-        # o_shapes = img.shape[:2]  # orig hw
         o_shapes = self.shapes[index][::-1]  # wh to hw
-
-        # Convert BGR to RGB, and HWC to CHW(3x512x512)
-        # img = img[:, :, ::-1].transpose(2, 0, 1)
-        # img = np.ascontiguousarray(img)
 
         # load labels
         x = self.labels[index]
