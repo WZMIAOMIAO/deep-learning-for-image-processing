@@ -12,6 +12,7 @@
 - **EfficientNet_v1** 链接：https://pan.baidu.com/s/1Sep9W0vLzfjhcHAXr6Bv0Q  密码：eufl 
 - **EfficientNet_v2** 链接：https://pan.baidu.com/s/1tesrgY4CHLmq6P7s7TcHCw  密码：y2kz
 - **Transformer** 链接：https://pan.baidu.com/s/1DE6RDySr7NS0HQ35gBqP_g 密码：y9e7
+- **Vision Transformer** 链接：https://pan.baidu.com/s/1wzpHG8EK5gxg6UCMscYqMw 密码：cm1m
 - **ConfusionMatrix** 链接: https://pan.baidu.com/s/1EtKzHkZyv2XssYtqmGYCLg  密码: uoo5
 
 
