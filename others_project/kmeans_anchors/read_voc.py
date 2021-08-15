@@ -15,7 +15,7 @@ class VOCDataSet(object):
 
         with open(txt_path) as read:
             self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
-                             for line in read.readlines()]
+                             for line in read.readlines() if len(line.strip()) > 0]
 
         # check file
         assert len(self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
