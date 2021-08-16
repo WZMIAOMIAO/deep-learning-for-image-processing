@@ -185,6 +185,7 @@ class Normalization(object):
 
 
 class AssignGTtoDefaultBox(object):
+    """将DefaultBox与GT进行匹配"""
     def __init__(self):
         self.default_box = dboxes300_coco()
         self.encoder = Encoder(self.default_box)
