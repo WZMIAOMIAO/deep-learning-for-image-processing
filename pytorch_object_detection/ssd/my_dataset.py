@@ -19,7 +19,7 @@ class VOCDataSet(Dataset):
 
         with open(txt_list) as read:
             self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
-                             for line in read.readlines()]
+                             for line in read.readlines() if len(line.strip()) > 0]
 
         # read class_indict
         json_file = "./pascal_voc_classes.json"
