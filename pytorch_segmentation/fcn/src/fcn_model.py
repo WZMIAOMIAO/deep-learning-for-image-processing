@@ -92,7 +92,7 @@ class FCN(nn.Module):
         if self.aux_classifier is not None:
             x = features["aux"]
             x = self.aux_classifier(x)
-            # 原论文中虽然使用的是ConvTranspose2d，但权重是冻结的，所以就是一个bilinear上采样
+            # 原论文中虽然使用的是ConvTranspose2d，但权重是冻结的，所以就是一个bilinear插值
             x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
             result["aux"] = x
 
