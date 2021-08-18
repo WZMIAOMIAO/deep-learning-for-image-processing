@@ -142,8 +142,7 @@ def main(parser_data):
     # 载入你自己训练好的模型权重
     weights_path = parser_data.weights
     assert os.path.exists(weights_path), "not found {} file.".format(weights_path)
-    weights_dict = torch.load(weights_path, map_location=device)
-    model.load_state_dict(weights_dict['model'])
+    model.load_state_dict(torch.load(weights_path, map_location=device)['model'])
     # print(model)
 
     model.to(device)

@@ -115,7 +115,7 @@ def main(parser_data):
 
     # 如果指定了上次训练保存的权重文件地址，则接着上次结果接着训练
     if parser_data.resume != "":
-        checkpoint = torch.load(parser_data.resume, map_location=device)
+        checkpoint = torch.load(parser_data.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
