@@ -11,7 +11,7 @@ from train_utils import GroupedBatchSampler, create_aspect_ratio_groups
 from train_utils import train_eval_utils as utils
 
 
-def create_model(num_classes, device):
+def create_model(num_classes):
     # 注意，这里的backbone默认使用的是FrozenBatchNorm2d，即不会去更新bn参数
     # 目的是为了防止batch_size太小导致效果更差(如果显存很小，建议使用默认的FrozenBatchNorm2d)
     # 如果GPU显存很大可以设置比较大的batch_size就可以将norm_layer设置为普通的BatchNorm2d
@@ -22,7 +22,7 @@ def create_model(num_classes, device):
     model = FasterRCNN(backbone=backbone, num_classes=91)
     # 载入预训练模型权重
     # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location=device)
+    weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location='cpu')
     missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
         print("missing_keys: ", missing_keys)
@@ -98,7 +98,7 @@ def main(parser_data):
                                                       collate_fn=val_dataset.collate_fn)
 
     # create model num_classes equal background + 20 classes
-    model = create_model(num_classes=parser_data.num_classes + 1, device=device)
+    model = create_model(num_classes=parser_data.num_classes + 1)
     # print(model)
 
     model.to(device)
