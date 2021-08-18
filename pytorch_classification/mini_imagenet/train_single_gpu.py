@@ -100,7 +100,8 @@ def main(args):
                                     optimizer=optimizer,
                                     data_loader=train_loader,
                                     device=device,
-                                    epoch=epoch)
+                                    epoch=epoch,
+                                    warmup=True)
 
         scheduler.step()
 
