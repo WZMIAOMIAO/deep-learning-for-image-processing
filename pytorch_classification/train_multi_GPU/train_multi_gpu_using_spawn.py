@@ -44,7 +44,6 @@ def main_fun(rank, world_size, args):
     rank = args.rank
     device = torch.device(args.device)
     batch_size = args.batch_size
-    num_classes = args.num_classes
     weights_path = args.weights
     args.lr *= args.world_size  # 学习率要根据并行GPU的数量进行倍增
 
