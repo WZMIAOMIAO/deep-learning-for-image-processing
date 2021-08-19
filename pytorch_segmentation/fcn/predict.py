@@ -50,7 +50,7 @@ def main():
     # load image
     original_img = Image.open(img_path)
 
-    # from pil image to tensor, do not normalize image
+    # from pil image to tensor and normalize
     data_transform = transforms.Compose([transforms.Resize(520),
                                          transforms.ToTensor(),
                                          transforms.Normalize(mean=(0.485, 0.456, 0.406),
