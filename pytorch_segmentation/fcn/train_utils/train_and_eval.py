@@ -58,4 +58,5 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, warmup=True, p
         if lr_scheduler is not None:
             lr_scheduler.step()
 
-        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
+        lr = optimizer.param_groups[0]["lr"]
+        metric_logger.update(loss=loss.item(), lr=round(lr, 5))

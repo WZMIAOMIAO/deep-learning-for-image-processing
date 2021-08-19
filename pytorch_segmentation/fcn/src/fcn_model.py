@@ -128,6 +128,7 @@ def fcn_resnet50(aux, num_classes=21):
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None
+    # why using aux: https://github.com/pytorch/vision/issues/4292
     if aux:
         aux_classifier = FCNHead(aux_inplanes, num_classes)
 
@@ -152,6 +153,7 @@ def fcn_resnet101(aux, num_classes=21):
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None
+    # why using aux: https://github.com/pytorch/vision/issues/4292
     if aux:
         aux_classifier = FCNHead(aux_inplanes, num_classes)
 

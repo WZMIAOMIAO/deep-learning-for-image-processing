@@ -116,9 +116,17 @@ def main(args):
         optimizer,
         lambda x: (1 - x / args.epochs) ** 0.9)
 
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location='cpu')
+        model.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        args.start_epoch = checkpoint['epoch'] + 1
+
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
-        train_one_epoch(model, optimizer, train_loader, lr_scheduler, device, epoch, args.print_freq)
+        train_one_epoch(model, optimizer, train_loader, device, epoch,
+                        warmup=True, print_freq=args.print_freq)
 
         lr_scheduler.step()
 
