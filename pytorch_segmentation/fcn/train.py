@@ -98,27 +98,30 @@ def main(args):
     model = create_model(aux=args.aux, num_classes=num_classes)
     model.to(device)
 
-    params_to_optimaze = [
+    params_to_optimize = [
         {"params": [p for p in model.backbone.parameters() if p.requires_grad]},
         {"params": [p for p in model.classifier.parameters() if p.requires_grad]}
     ]
 
     if args.aux:
         params = [p for p in model.aux_classifier.parameters() if p.requires_grad]
-        params_to_optimaze.append({"params": params, "lr": args.lr * 10})
+        params_to_optimize.append({"params": params, "lr": args.lr * 10})
 
     optimizer = torch.optim.SGD(
-        params_to_optimaze,
+        params_to_optimize,
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay
     )
 
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
-        lambda x: (1 - x / (len(train_loader) * args.epochs)) ** 0.9)
+        lambda x: (1 - x / args.epochs) ** 0.9)
 
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         train_one_epoch(model, optimizer, train_loader, lr_scheduler, device, epoch, args.print_freq)
+
+        lr_scheduler.step()
+
         confmat = evaluate(model, val_loader, device=device, num_classes=num_classes)
         print(confmat)
 

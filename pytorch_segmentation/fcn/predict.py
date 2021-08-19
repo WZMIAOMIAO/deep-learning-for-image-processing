@@ -16,7 +16,7 @@ def time_synchronized():
 
 
 def main():
-    aux = True
+    aux = False  # inference time not need aux_classifier
     classes = 20
     weights_path = "./save_weights/model_29.pth"
     img_path = "./test.jpg"
@@ -34,8 +34,17 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
 
+    # create model
     model = fcn_resnet50(aux=aux, num_classes=classes+1)
-    model.load_state_dict(torch.load(weights_path, map_location=device)['model'])
+
+    # 删除辅助分类器对应权重
+    weights_dict = torch.load(weights_path, map_location='cpu')['model']
+    for k in list(weights_dict.keys()):
+        if "aux" in k:
+            del weights_dict[k]
+
+    # load weights
+    model.load_state_dict(weights_dict)
     model.to(device)
 
     # load image

@@ -33,11 +33,19 @@ def evaluate(model, data_loader, device, num_classes):
     return confmat
 
 
-def train_one_epoch(model, optimizer, data_loader, lr_scheduler, device, epoch, print_freq):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, warmup=True, print_freq=10):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
     header = 'Epoch: [{}]'.format(epoch)
+
+    lr_scheduler = None
+    if epoch == 0 and warmup is True:  # 当训练第一轮（epoch=0）时，启用warmup训练方式，可理解为热身训练
+        warmup_factor = 1.0 / 1000
+        warmup_iters = min(1000, len(data_loader) - 1)
+
+        lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
+
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
         output = model(image)
@@ -47,6 +55,7 @@ def train_one_epoch(model, optimizer, data_loader, lr_scheduler, device, epoch, 
         loss.backward()
         optimizer.step()
 
-        lr_scheduler.step()
+        if lr_scheduler is not None:
+            lr_scheduler.step()
 
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])

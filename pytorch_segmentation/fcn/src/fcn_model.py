@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import Dict
 from torch import nn
 from torch.nn import functional as F
-from .backbone import resnet50
+from .backbone import resnet50, resnet101
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
@@ -117,6 +117,30 @@ class FCNHead(nn.Sequential):
 def fcn_resnet50(aux, num_classes=21):
     # 'fcn_resnet50_coco': 'https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth'
     backbone = resnet50(replace_stride_with_dilation=[False, True, True])
+    out_layer = 'layer4'
+    out_inplanes = 2048
+    aux_layer = 'layer3'
+    aux_inplanes = 1024
+
+    return_layers = {out_layer: 'out'}
+    if aux:
+        return_layers[aux_layer] = 'aux'
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
+
+    aux_classifier = None
+    if aux:
+        aux_classifier = FCNHead(aux_inplanes, num_classes)
+
+    classifier = FCNHead(out_inplanes, num_classes)
+
+    model = FCN(backbone, classifier, aux_classifier)
+
+    return model
+
+
+def fcn_resnet101(aux, num_classes=21):
+    # 'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth'
+    backbone = resnet101(replace_stride_with_dilation=[False, True, True])
     out_layer = 'layer4'
     out_inplanes = 2048
     aux_layer = 'layer3'
