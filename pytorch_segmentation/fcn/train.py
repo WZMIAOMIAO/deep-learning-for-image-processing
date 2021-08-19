@@ -6,7 +6,7 @@ import torch
 
 from src import fcn_resnet50
 from train_utils import train_one_epoch, evaluate
-from my_dataset import VOCSegmentation2012
+from my_dataset import VOCSegmentation
 import transforms as T
 
 
@@ -48,32 +48,54 @@ def get_transform(train):
     return SegmentationPresetTrain(base_size, crop_size) if train else SegmentationPresetEval(base_size)
 
 
+def create_model(aux, num_classes):
+    model = fcn_resnet50(aux=aux, num_classes=num_classes)
+    weights_dict = torch.load("./fcn_resnet50_coco.pth", map_location='cpu')
+
+    if num_classes != 21:
+        # 官方提供的预训练权重是21类(包括背景)
+        # 如果训练自己的数据集，将和类别相关的权重删除，防止权重shape不一致报错
+        for k in list(weights_dict.keys()):
+            if "classifier.4" in k:
+                del weights_dict[k]
+
+    missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
+    if len(missing_keys) != 0 or len(unexpected_keys) != 0:
+        print("missing_keys: ", missing_keys)
+        print("unexpected_keys: ", unexpected_keys)
+
+    return model
+
+
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     batch_size = args.batch_size
     # segmentation nun_classes + background
     num_classes = args.num_classes + 1
 
-    train_dataset = VOCSegmentation2012(args.data_path,
-                                        transforms=get_transform(train=True),
-                                        txt_name="train.txt")
+    train_dataset = VOCSegmentation(args.data_path,
+                                    transforms=get_transform(train=True),
+                                    txt_name="train.txt")
 
-    val_dataset = VOCSegmentation2012(args.data_path,
-                                      transforms=get_transform(train=False),
-                                      txt_name="val.txt")
+    val_dataset = VOCSegmentation(args.data_path,
+                                  transforms=get_transform(train=False),
+                                  txt_name="val.txt")
 
     num_workers = 8
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
                                                num_workers=num_workers,
+                                               shuffle=True,
+                                               pin_memory=True,
                                                collate_fn=train_dataset.collate_fn)
 
     val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=batch_size,
+                                             batch_size=1,
                                              num_workers=num_workers,
+                                             pin_memory=True,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = fcn_resnet50(aux=args.aux, num_classes=num_classes)
+    model = create_model(aux=args.aux, num_classes=num_classes)
     model.to(device)
 
     params_to_optimaze = [
@@ -87,7 +109,7 @@ def main(args):
 
     optimizer = torch.optim.SGD(
         params_to_optimaze,
-        lr=args.lr, momentum=args.momentum, weight_decay=args. weight_decay
+        lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay
     )
 
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -118,13 +140,13 @@ def parse_args():
 
     parser.add_argument("--data-path", default="/data/", help="VOCdevkit root")
     parser.add_argument("--num-classes", default=20, type=int)
-    parser.add_argument("--aux", action="store_true", help="auxilier loss")
+    parser.add_argument("--aux", default=True, type=bool, help="auxilier loss")
     parser.add_argument("--device", default="cuda", help="training device")
-    parser.add_argument("-b", "--batch-size", default=2, type=int)
+    parser.add_argument("-b", "--batch-size", default=4, type=int)
     parser.add_argument("--epochs", default=30, type=int, metavar="N",
                         help="number of total epochs to train")
 
-    parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--lr', default=0.001, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,

@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import Dict
 from torch import nn
 from torch.nn import functional as F
-from torchvision.models import resnet
+from .backbone import resnet50
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
@@ -86,6 +86,7 @@ class FCN(nn.Module):
         result = OrderedDict()
         x = features["out"]
         x = self.classifier(x)
+        # 原论文中虽然使用的是ConvTranspose2d，但权重是冻结的，所以就是一个bilinear插值
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
         result["out"] = x
 
@@ -115,9 +116,7 @@ class FCNHead(nn.Sequential):
 
 def fcn_resnet50(aux, num_classes=21):
     # 'fcn_resnet50_coco': 'https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth'
-    backbone = resnet.__dict__["resnet50"](
-        pretrained=False,
-        replace_stride_with_dilation=[False, True, True])
+    backbone = resnet50(replace_stride_with_dilation=[False, True, True])
     out_layer = 'layer4'
     out_inplanes = 2048
     aux_layer = 'layer3'
