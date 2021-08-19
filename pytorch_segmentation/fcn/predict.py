@@ -37,7 +37,7 @@ def main():
     # create model
     model = fcn_resnet50(aux=aux, num_classes=classes+1)
 
-    # 删除辅助分类器对应权重
+    # delete weights about aux_classifier
     weights_dict = torch.load(weights_path, map_location='cpu')['model']
     for k in list(weights_dict.keys()):
         if "aux" in k:
