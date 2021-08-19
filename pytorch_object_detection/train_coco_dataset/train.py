@@ -100,7 +100,7 @@ def main(args):
         # If map_location is missing, torch.load will first load the module to CPU
         # and then copy each parameter to where it was saved,
         # which would result in all processes on the same machine using the same set of devices.
-        checkpoint = torch.load(args.resume, map_location=device)  # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        checkpoint = torch.load(args.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])

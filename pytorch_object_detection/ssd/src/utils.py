@@ -126,29 +126,30 @@ class Encoder(object):
             output : bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
             criteria : IoU threshold of bboexes
         """
-        ious = calc_iou_tensor(bboxes_in, self.dboxes)   # [nboxes, 8732]
+        # [nboxes, 8732]
+        ious = calc_iou_tensor(bboxes_in, self.dboxes)  # 计算每个GT与default box的iou
         # [8732,]
-        best_dbox_ious, best_dbox_idx = ious.max(dim=0)  # 寻找每个default box匹配到的最大IoU bboxes_in
+        best_dbox_ious, best_dbox_idx = ious.max(dim=0)  # 寻找每个default box匹配到的最大IoU
         # [nboxes,]
-        best_bbox_ious, best_bbox_idx = ious.max(dim=1)  # 寻找每个bboxes_in匹配到的最大IoU default box
+        best_bbox_ious, best_bbox_idx = ious.max(dim=1)  # 寻找每个GT匹配到的最大IoU
 
+        # 将每个GT匹配到的最佳default box设置为正样本（对应论文中Matching strategy的第一条）
         # set best ious 2.0
-        # 将每个bboxes_in匹配到的最佳default box设置为正样本（对应论文中Matching strategy的第一条）
-        best_dbox_ious.index_fill_(0, best_bbox_idx, 2.0)
-
-        # 将相应default box的匹配最大IoU bboxes_in信息替换成best_bbox_idx
+        best_dbox_ious.index_fill_(0, best_bbox_idx, 2.0)  # dim, index, value
+        # 将相应default box匹配最大IOU的GT索引进行替换
         idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64)
         best_dbox_idx[best_bbox_idx[idx]] = idx
 
         # filter IoU > 0.5
-        # 寻找与bbox_in iou大于0.5的default box,对应论文中Matching strategy的第二条(这里包括了第一条匹配到的信息)
+        # 寻找与GT iou大于0.5的default box,对应论文中Matching strategy的第二条(这里包括了第一条匹配到的信息)
         masks = best_dbox_ious > criteria
         # [8732,]
         labels_out = torch.zeros(self.nboxes, dtype=torch.int64)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
+        # 将default box匹配到正样本的位置设置成对应GT的box信息
         bboxes_out = self.dboxes.clone()
-        # 将default box匹配到正样本的地方设置成对应正样本box信息
         bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
+
         # Transform format to xywh format
         x = 0.5 * (bboxes_out[:, 0] + bboxes_out[:, 2])  # x
         y = 0.5 * (bboxes_out[:, 1] + bboxes_out[:, 3])  # y

@@ -10,7 +10,7 @@ import train_utils.train_eval_utils as utils
 from train_utils import get_coco_api_from_dataset
 
 
-def create_model(num_classes=21, device=torch.device('cpu')):
+def create_model(num_classes=21):
     # https://download.pytorch.org/models/resnet50-19c8e357.pth
     # pre_train_path = "./src/resnet50.pth"
     backbone = Backbone()
@@ -20,7 +20,7 @@ def create_model(num_classes=21, device=torch.device('cpu')):
     pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
     if os.path.exists(pre_ssd_path) is False:
         raise FileNotFoundError("nvidia_ssdpyt_fp32.pt not find in {}".format(pre_ssd_path))
-    pre_model_dict = torch.load(pre_ssd_path, map_location=device)
+    pre_model_dict = torch.load(pre_ssd_path, map_location='cpu')
     pre_weights_dict = pre_model_dict["model"]
 
     # 删除类别预测器权重，注意，回归预测器的权重可以重用，因为不涉及num_classes
@@ -36,7 +36,7 @@ def create_model(num_classes=21, device=torch.device('cpu')):
         print("missing_keys: ", missing_keys)
         print("unexpected_keys: ", unexpected_keys)
 
-    return model.to(device)
+    return model
 
 
 def main(parser_data):
@@ -90,7 +90,8 @@ def main(parser_data):
                                                   num_workers=nw,
                                                   collate_fn=train_dataset.collate_fn)
 
-    model = create_model(num_classes=args.num_classes+1, device=device)
+    model = create_model(num_classes=args.num_classes+1)
+    model.to(device)
 
     # define optimizer
     params = [p for p in model.parameters() if p.requires_grad]
@@ -103,7 +104,7 @@ def main(parser_data):
 
     # 如果指定了上次训练保存的权重文件地址，则接着上次结果接着训练
     if parser_data.resume != "":
-        checkpoint = torch.load(parser_data.resume)
+        checkpoint = torch.load(parser_data.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])

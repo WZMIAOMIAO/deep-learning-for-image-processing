@@ -12,7 +12,7 @@ from train_utils import train_eval_utils as utils
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
 
 
-def create_model(num_classes, device):
+def create_model(num_classes):
     # 创建retinanet_res50_fpn模型
     # skip P2 because it generates too many anchors (according to their paper)
     # 注意，这里的backbone默认使用的是FrozenBatchNorm2d，即不会去更新bn参数
@@ -26,7 +26,7 @@ def create_model(num_classes, device):
 
     # 载入预训练权重
     # https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth
-    weights_dict = torch.load("./backbone/retinanet_resnet50_fpn.pth", map_location=device)
+    weights_dict = torch.load("./backbone/retinanet_resnet50_fpn.pth", map_location='cpu')
     # 删除分类器部分的权重，因为自己的数据集类别与预训练数据集类别(91)不一定致，如果载入会出现冲突
     del_keys = ["head.classification_head.cls_logits.weight", "head.classification_head.cls_logits.bias"]
     for k in del_keys:
@@ -95,7 +95,7 @@ def main(args):
     print("Creating model")
     # create model
     # 注意：不包含背景
-    model = create_model(num_classes=args.num_classes, device=device)
+    model = create_model(num_classes=args.num_classes)
     model.to(device)
 
     model_without_ddp = model

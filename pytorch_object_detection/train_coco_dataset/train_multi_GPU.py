@@ -13,7 +13,7 @@ import train_utils.train_eval_utils as utils
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups, init_distributed_mode, save_on_master, mkdir
 
 
-def create_model(num_classes, device):
+def create_model(num_classes):
     # https://download.pytorch.org/models/vgg16-397923af.pth
     # 如果使用mobilenetv2的话就下载对应预训练权重并注释下面三行，接着把mobilenetv2模型对应的两行代码注释取消掉
     vgg_feature = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
@@ -94,7 +94,7 @@ def main(args):
 
     print("Creating model")
     # create model num_classes equal background + 80 classes
-    model = create_model(num_classes=args.num_classes + 1, device=device)
+    model = create_model(num_classes=args.num_classes + 1)
     model.to(device)
 
     model_without_ddp = model
@@ -114,7 +114,7 @@ def main(args):
         # If map_location is missing, torch.load will first load the module to CPU
         # and then copy each parameter to where it was saved,
         # which would result in all processes on the same machine using the same set of devices.
-        checkpoint = torch.load(args.resume, map_location=device)  # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        checkpoint = torch.load(args.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
         model_without_ddp.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
