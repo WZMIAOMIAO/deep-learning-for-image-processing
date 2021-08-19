@@ -59,6 +59,6 @@ def cat_list(images, fill_value=0):
     return batched_imgs
 
 
-# dataset = VOCSegmentation2012(voc_root="/data/", transforms=get_transform(train=True))
+# dataset = VOCSegmentation(voc_root="/data/", transforms=get_transform(train=True))
 # d1 = dataset[0]
 # print(d1)
