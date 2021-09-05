@@ -56,6 +56,7 @@
 - DeepLabv2(Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs) [https://arxiv.org/abs/1606.00915](https://arxiv.org/abs/1606.00915)
 - DeepLabv3(Rethinking Atrous Convolution for Semantic Image Segmentation) [https://arxiv.org/abs/1706.05587](https://arxiv.org/abs/1706.05587)
 - DeepLabv3+(Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation) [https://arxiv.org/abs/1802.02611](https://arxiv.org/abs/1802.02611)
+- Mask R-CNN [https://arxiv.org/abs/1703.06870](https://arxiv.org/abs/1703.06870)
 
 
 ## 自然语言处理
