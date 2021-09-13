@@ -3,6 +3,7 @@
 -----
 
 ## 图像分类(Classification)
+- LeNet [http://yann.lecun.com/exdb/lenet/index.html](http://yann.lecun.com/exdb/lenet/index.html)
 - AlexNet [http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
 - ZFNet(Visualizing and Understanding Convolutional Networks) [https://arxiv.org/abs/1311.2901](https://arxiv.org/abs/1311.2901)
 - VGG [https://arxiv.org/abs/1409.1556](https://arxiv.org/abs/1409.1556)
