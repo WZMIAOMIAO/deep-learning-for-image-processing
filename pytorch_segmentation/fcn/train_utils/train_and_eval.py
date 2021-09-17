@@ -36,7 +36,7 @@ def evaluate(model, data_loader, device, num_classes):
 def train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler, print_freq=10):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
+    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
 
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
@@ -51,7 +51,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler, 
         lr_scheduler.step()
 
         lr = optimizer.param_groups[0]["lr"]
-        metric_logger.update(loss=loss.item(), lr=round(lr, 5))
+        metric_logger.update(loss=loss.item(), lr=lr)
 
     return metric_logger.meters["loss"].avg, lr
 
