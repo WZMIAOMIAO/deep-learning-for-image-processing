@@ -137,8 +137,10 @@ def main(args):
         print(val_info)
         # write into txt
         with open(results_file, "a") as f:
-            # 记录每个epoch对应的train_loss、lr以及验证集指标
-            train_info = f"[epoch: {epoch}] \ntrain_loss: {mean_loss:.4f} \nlr: {lr:.6f}\n"
+            # 记录每个epoch对应的train_loss、lr以及验证集各指标
+            train_info = f"[epoch: {epoch}]\n" \
+                         f"train_loss: {mean_loss:.4f}\n" \
+                         f"lr: {lr:.6f}\n"
             f.write(train_info + val_info + "\n\n")
 
         save_file = {"model": model.state_dict(),
