@@ -33,18 +33,11 @@ def evaluate(model, data_loader, device, num_classes):
     return confmat
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, warmup=True, print_freq=10):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler, print_freq=10):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
     header = 'Epoch: [{}]'.format(epoch)
-
-    lr_scheduler = None
-    if epoch == 0 and warmup is True:  # 当训练第一轮（epoch=0）时，启用warmup训练方式，可理解为热身训练
-        warmup_factor = 1.0 / 1000
-        warmup_iters = min(1000, len(data_loader) - 1)
-
-        lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
@@ -55,8 +48,31 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, warmup=True, p
         loss.backward()
         optimizer.step()
 
-        if lr_scheduler is not None:
-            lr_scheduler.step()
+        lr_scheduler.step()
 
         lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(loss=loss.item(), lr=round(lr, 5))
+
+    return metric_logger.meters["loss"].avg, lr
+
+
+def create_lr_scheduler(optimizer,
+                        num_step: int,
+                        num_epochs: int,
+                        warmup=True,
+                        warmup_epochs=1,
+                        warmup_factor=1e-3):
+    assert num_step > 0 and num_epochs > 0
+
+    def f(x):
+        """根据step数返回一个学习率倍率因子"""
+        if warmup is True and x <= (warmup_epochs * num_step):
+            alpha = float(x) / (warmup_epochs * num_step)
+            # warmup过程中lr倍率因子从warmup_factor -> 1
+            return warmup_factor * (1 - alpha) + alpha
+        else:
+            # warmup后lr倍率因子从1 -> 0
+            # 参考deeplab_v2: Learning rate policy
+            return (1 - (x - warmup_epochs * num_step) / ((num_epochs - warmup_epochs) * num_step)) ** 0.9
+
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=f)

@@ -5,7 +5,7 @@ import datetime
 import torch
 
 from src import fcn_resnet50
-from train_utils import train_one_epoch, evaluate
+from train_utils import train_one_epoch, evaluate, create_lr_scheduler
 from my_dataset import VOCSegmentation
 import transforms as T
 
@@ -73,6 +73,9 @@ def main(args):
     # segmentation nun_classes + background
     num_classes = args.num_classes + 1
 
+    # 用来保存训练以及验证过程中信息
+    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+
     train_dataset = VOCSegmentation(args.data_path,
                                     transforms=get_transform(train=True),
                                     txt_name="train.txt")
@@ -112,9 +115,8 @@ def main(args):
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay
     )
 
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer,
-        lambda x: (1 - x / args.epochs) ** 0.9)
+    # 创建学习率更新策略，这里是每个step更新一次
+    lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.num_epochs, warmup=True)
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -125,13 +127,19 @@ def main(args):
 
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
-        train_one_epoch(model, optimizer, train_loader, device, epoch,
-                        warmup=True, print_freq=args.print_freq)
+        mean_loss, lr = train_one_epoch(model, optimizer, train_loader, device, epoch,
+                                        lr_scheduler=lr_scheduler, print_freq=args.print_freq)
 
         lr_scheduler.step()
 
         confmat = evaluate(model, val_loader, device=device, num_classes=num_classes)
-        print(confmat)
+        val_info = str(confmat)
+        print(val_info)
+        # write into txt
+        with open(results_file, "a") as f:
+            # 记录每个epoch对应的train_loss、lr以及验证集指标
+            train_info = f"[epoch: {epoch}] \ntrain_loss: {mean_loss:.4f} \nlr: {lr:.6f}\n"
+            f.write(train_info + val_info + "\n")
 
         save_file = {"model": model.state_dict(),
                      "optimizer": optimizer.state_dict(),
