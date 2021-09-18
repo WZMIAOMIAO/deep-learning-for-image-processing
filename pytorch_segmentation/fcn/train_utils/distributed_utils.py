@@ -15,7 +15,7 @@ class SmoothedValue(object):
 
     def __init__(self, window_size=20, fmt=None):
         if fmt is None:
-            fmt = "{median:.4f} ({global_avg:.4f})"
+            fmt = "{value:.4f} ({global_avg:.4f})"
         self.deque = deque(maxlen=window_size)
         self.total = 0.0
         self.count = 0
@@ -209,19 +209,6 @@ class MetricLogger(object):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('{} Total time: {}'.format(header, total_time_str))
-
-
-def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):
-
-    def f(x):
-        """根据step数返回一个学习率倍率因子"""
-        if x >= warmup_iters:  # 当迭代数大于给定的warmup_iters时，倍率因子为1
-            return 1
-        alpha = float(x) / warmup_iters
-        # 迭代过程中倍率因子从warmup_factor -> 1
-        return warmup_factor * (1 - alpha) + alpha
-
-    return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=f)
 
 
 def mkdir(path):

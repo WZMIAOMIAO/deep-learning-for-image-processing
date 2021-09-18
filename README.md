@@ -85,7 +85,7 @@
     * [YOLO系列网络讲解](https://www.bilibili.com/video/BV1yi4y1g7ro)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
-* 图像分割 
+* 语义分割 
   * FCN (准备中)
     * FCN网络详解
     * FCN源码解析(Pytorch版)
