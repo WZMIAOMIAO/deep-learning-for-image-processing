@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from typing import Dict
-from torch import nn
+from torch import nn, Tensor
 from torch.nn import functional as F
 from .backbone import resnet50, resnet101
 
@@ -47,7 +47,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         super(IntermediateLayerGetter, self).__init__(layers)
         self.return_layers = orig_return_layers
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Dict[str, Tensor]:
         out = OrderedDict()
         for name, module in self.items():
             x = module(x)
@@ -78,7 +78,7 @@ class FCN(nn.Module):
         self.classifier = classifier
         self.aux_classifier = aux_classifier
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Dict[str, Tensor]:
         input_shape = x.shape[-2:]
         # contract: features is a dict of tensors
         features = self.backbone(x)

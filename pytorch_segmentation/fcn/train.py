@@ -115,8 +115,9 @@ def main(args):
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay
     )
 
-    # 创建学习率更新策略，这里是每个step更新一次
-    lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.num_epochs, warmup=True)
+    # 创建学习率更新策略，这里是每个step更新一次(不是每个epoch)
+    lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.epochs, warmup=True)
+    print(len(train_loader))
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -129,8 +130,6 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         mean_loss, lr = train_one_epoch(model, optimizer, train_loader, device, epoch,
                                         lr_scheduler=lr_scheduler, print_freq=args.print_freq)
-
-        lr_scheduler.step()
 
         confmat = evaluate(model, val_loader, device=device, num_classes=num_classes)
         val_info = str(confmat)
