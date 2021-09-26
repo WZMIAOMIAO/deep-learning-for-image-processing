@@ -26,7 +26,9 @@ def main(args):
     # segmentation nun_classes + background
     num_classes = args.num_classes + 1
 
+    # VOCdevkit -> VOC2012 -> ImageSets -> Segmentation -> val.txt
     val_dataset = VOCSegmentation(args.data_path,
+                                  year="2012",
                                   transforms=SegmentationPresetEval(520),
                                   txt_name="val.txt")
 

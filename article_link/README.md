@@ -48,6 +48,9 @@
 - YOLOv4 [https://arxiv.org/abs/2004.10934](https://arxiv.org/abs/2004.10934)
 - PP-YOLO [https://arxiv.org/abs/2007.12099](https://arxiv.org/abs/2007.12099)
 - PP-YOLOv2 [https://arxiv.org/abs/2104.10419](https://arxiv.org/abs/2104.10419)
+- CornerNet [https://arxiv.org/abs/1808.01244](https://arxiv.org/abs/1808.01244)
+- FCOS [https://arxiv.org/abs/1904.01355](https://arxiv.org/abs/1904.01355)
+- CenterNet [https://arxiv.org/abs/1904.07850](https://arxiv.org/abs/1904.07850)
 
 
 ## 目标分割(Segmentation)

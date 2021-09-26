@@ -76,15 +76,19 @@ def main(args):
     # 用来保存训练以及验证过程中信息
     results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
+    # VOCdevkit -> VOC2012 -> ImageSets -> Segmentation -> train.txt
     train_dataset = VOCSegmentation(args.data_path,
+                                    year="2012",
                                     transforms=get_transform(train=True),
                                     txt_name="train.txt")
 
+    # VOCdevkit -> VOC2012 -> ImageSets -> Segmentation -> val.txt
     val_dataset = VOCSegmentation(args.data_path,
+                                  year="2012",
                                   transforms=get_transform(train=False),
                                   txt_name="val.txt")
 
-    num_workers = 8
+    num_workers = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
                                                num_workers=num_workers,
@@ -117,7 +121,6 @@ def main(args):
 
     # 创建学习率更新策略，这里是每个step更新一次(不是每个epoch)
     lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.epochs, warmup=True)
-    print(len(train_loader))
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
