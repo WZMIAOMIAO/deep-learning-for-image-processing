@@ -119,6 +119,9 @@ def main(args):
     model = create_model(aux=args.aux, num_classes=num_classes)
     model.to(device)
 
+    if args.sync_bn:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
     model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
@@ -213,6 +216,8 @@ if __name__ == "__main__":
     # 训练的总epoch数
     parser.add_argument('--epochs', default=20, type=int, metavar='N',
                         help='number of total epochs to run')
+    # 是否使用同步BN(在多个GPU之间同步)，默认不开启，开启后训练速度会变慢
+    parser.add_argument('--sync_bn', type=bool, default=False, help='whether using SyncBatchNorm')
     # 数据加载以及预处理的线程数
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
