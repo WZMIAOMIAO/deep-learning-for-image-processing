@@ -1,5 +1,4 @@
 import numpy as np
-from PIL import Image
 import random
 
 import torch
@@ -39,7 +38,9 @@ class RandomResize(object):
         size = random.randint(self.min_size, self.max_size)
         # 这里size传入的是int类型，所以是将图像的最小边长缩放到size大小
         image = F.resize(image, size)
-        target = F.resize(target, size, interpolation=Image.NEAREST)
+        # 这里的interpolation注意下，在torchvision(0.9.0)以后才有InterpolationMode.NEAREST
+        # 如果是之前的版本需要使用PIL.Image.NEAREST
+        target = F.resize(target, size, interpolation=T.InterpolationMode.NEAREST)
         return image, target
 
 
