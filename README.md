@@ -86,8 +86,8 @@
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 * 语义分割 
-  * FCN (准备中)
-    * FCN网络详解
+  * FCN (进行中)
+    * [FCN网络详解](https://www.bilibili.com/video/BV1J3411C7zd)
     * FCN源码解析(Pytorch版)
 
   * DeepLabV3 (规划中)
