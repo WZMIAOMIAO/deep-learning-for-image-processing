@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torch import nn
 import train_utils.distributed_utils as utils
