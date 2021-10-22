@@ -53,5 +53,5 @@
 ## 进一步了解该项目，以及对FCN代码的分析可参考我的bilibili
 
 ## FCN网络框架图
-![torch_fcn](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_segmentation/fcn/torch_fcn.png)
+![torch_fcn](torch.png)
 
