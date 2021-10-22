@@ -46,4 +46,4 @@
 * https://www.bilibili.com/video/BV1vK411H771/
 
 ## Resnet50 + SSD算法框架图
-![Resnet50 SSD](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_object_detection/ssd/res50_ssd.png) 
+![Resnet50 SSD](res50_ssd.png) 

@@ -60,4 +60,4 @@
 * https://b23.tv/HvMiDy
 
 ## Faster RCNN框架图
-![Faster R-CNN](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_object_detection/faster_rcnn/fasterRCNN.png) 
+![Faster R-CNN](fasterRCNN.png) 

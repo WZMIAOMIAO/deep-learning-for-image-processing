@@ -129,4 +129,4 @@ cfg_path = "./cfg/yolov3-spp.cfg"
 [https://www.bilibili.com/video/BV1t54y1C7ra](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 ## YOLOv3 SPP框架图
-![yolov3spp](https://github.com/WZMIAOMIAO/deep-learning-for-image-processing/raw/master/pytorch_object_detection/yolov3_spp/yolov3spp.png) 
+![yolov3spp](yolov3spp.png) 
