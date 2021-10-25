@@ -245,8 +245,8 @@ if __name__ == "__main__":
         action="store_true",
     )
 
-    # 开启的进程数(注意不是线程)
-    parser.add_argument('--world-size', default=4, type=int,
+    # 分布式进程数
+    parser.add_argument('--world-size', default=1, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
 
