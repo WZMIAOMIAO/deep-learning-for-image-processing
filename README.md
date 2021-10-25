@@ -88,7 +88,7 @@
 * 语义分割 
   * FCN (进行中)
     * [FCN网络详解](https://www.bilibili.com/video/BV1J3411C7zd)
-    * FCN源码解析(Pytorch版)
+    * [FCN源码解析(Pytorch版)](https://www.bilibili.com/video/BV19q4y1971Q)
 
   * DeepLabV3 (规划中)
     * DeepLabV3网络详解
