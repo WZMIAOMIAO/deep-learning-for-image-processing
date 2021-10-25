@@ -81,9 +81,9 @@ class ConfusionMatrix(object):
             # 创建混淆矩阵
             self.mat = torch.zeros((n, n), dtype=torch.int64, device=a.device)
         with torch.no_grad():
-            # 寻找预测为目标的像素索引
+            # 寻找GT中为目标的像素索引
             k = (a >= 0) & (a < n)
-            # 统计像素真实类别b[k]被预测成类别a[k]的个数(这里的做法很巧妙)
+            # 统计像素真实类别a[k]被预测成类别b[k]的个数(这里的做法很巧妙)
             inds = n * a[k].to(torch.int64) + b[k]
             self.mat += torch.bincount(inds, minlength=n**2).reshape(n, n)
 
