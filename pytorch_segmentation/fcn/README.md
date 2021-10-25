@@ -5,7 +5,7 @@
 
 ## 环境配置：
 * Python3.6/3.7/3.8
-* Pytorch1.9
+* Pytorch1.10
 * Ubuntu或Centos(Windows暂不支持多GPU训练)
 * 最好使用GPU训练
 * 详细环境配置见```requirements.txt```
