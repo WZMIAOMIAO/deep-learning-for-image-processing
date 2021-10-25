@@ -49,8 +49,10 @@
 
 ## 如果对FCN原理不是很理解可参考我的bilibili
 * https://www.bilibili.com/video/BV1J3411C7zd
+* https://www.bilibili.com/video/BV1ev411u7TX
 
 ## 进一步了解该项目，以及对FCN代码的分析可参考我的bilibili
+* https://www.bilibili.com/video/BV19q4y1971Q
 
 ## Pytorch官方实现的FCN网络框架图
 ![torch_fcn](torch_fcn.png)
