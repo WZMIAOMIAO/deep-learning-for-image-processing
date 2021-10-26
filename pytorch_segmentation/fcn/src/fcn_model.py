@@ -38,6 +38,8 @@ class IntermediateLayerGetter(nn.ModuleDict):
             raise ValueError("return_layers are not present in model")
         orig_return_layers = return_layers
         return_layers = {str(k): str(v) for k, v in return_layers.items()}
+
+        # 重新构建backbone，将没有使用到的模块全部删掉
         layers = OrderedDict()
         for name, module in model.named_children():
             layers[name] = module
