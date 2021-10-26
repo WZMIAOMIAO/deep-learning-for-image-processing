@@ -48,21 +48,23 @@ def get_transform(train):
     return SegmentationPresetTrain(base_size, crop_size) if train else SegmentationPresetEval(base_size)
 
 
-def create_model(aux, num_classes):
+def create_model(aux, num_classes, pretrain=True):
     model = fcn_resnet50(aux=aux, num_classes=num_classes)
-    weights_dict = torch.load("./fcn_resnet50_coco.pth", map_location='cpu')
 
-    if num_classes != 21:
-        # 官方提供的预训练权重是21类(包括背景)
-        # 如果训练自己的数据集，将和类别相关的权重删除，防止权重shape不一致报错
-        for k in list(weights_dict.keys()):
-            if "classifier.4" in k:
-                del weights_dict[k]
+    if pretrain:
+        weights_dict = torch.load("./fcn_resnet50_coco.pth", map_location='cpu')
 
-    missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
-    if len(missing_keys) != 0 or len(unexpected_keys) != 0:
-        print("missing_keys: ", missing_keys)
-        print("unexpected_keys: ", unexpected_keys)
+        if num_classes != 21:
+            # 官方提供的预训练权重是21类(包括背景)
+            # 如果训练自己的数据集，将和类别相关的权重删除，防止权重shape不一致报错
+            for k in list(weights_dict.keys()):
+                if "classifier.4" in k:
+                    del weights_dict[k]
+
+        missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
+        if len(missing_keys) != 0 or len(unexpected_keys) != 0:
+            print("missing_keys: ", missing_keys)
+            print("unexpected_keys: ", unexpected_keys)
 
     return model
 
