@@ -1,6 +1,8 @@
 from collections import OrderedDict
 
 from typing import Dict
+
+import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 from .backbone import resnet50, resnet101
@@ -114,9 +116,15 @@ class FCNHead(nn.Sequential):
         super(FCNHead, self).__init__(*layers)
 
 
-def fcn_resnet50(aux, num_classes=21):
+def fcn_resnet50(aux, num_classes=21, pretrain_backbone=False):
+    # 'resnet50_imagenet': 'https://download.pytorch.org/models/resnet50-0676ba61.pth'
     # 'fcn_resnet50_coco': 'https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth'
     backbone = resnet50(replace_stride_with_dilation=[False, True, True])
+
+    # 载入resnet50 backbone预训练权重
+    if pretrain_backbone:
+        backbone.load_state_dict(torch.load("resnet50.pth", map_location='cpu'))
+
     out_layer = 'layer4'
     out_inplanes = 2048
     aux_layer = 'layer3'
@@ -139,9 +147,15 @@ def fcn_resnet50(aux, num_classes=21):
     return model
 
 
-def fcn_resnet101(aux, num_classes=21):
+def fcn_resnet101(aux, num_classes=21, pretrain_backbone=False):
+    # 'resnet101_imagenet': 'https://download.pytorch.org/models/resnet101-63fe2227.pth'
     # 'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth'
     backbone = resnet101(replace_stride_with_dilation=[False, True, True])
+
+    # 载入resnet101 backbone预训练权重
+    if pretrain_backbone:
+        backbone.load_state_dict(torch.load("resnet101.pth", map_location='cpu'))
+
     out_layer = 'layer4'
     out_inplanes = 2048
     aux_layer = 'layer3'
