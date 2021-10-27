@@ -50,7 +50,7 @@
 ## 如果对DeepLabV3原理不是很理解可参考我的bilibili
 
 
-## 进一步了解该项目，以及对FCN代码的分析可参考我的bilibili
+## 进一步了解该项目，以及对DeepLabV3代码的分析可参考我的bilibili
 
 
 ## Pytorch官方实现的DeeplabV3网络框架图
