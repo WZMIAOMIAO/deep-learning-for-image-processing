@@ -123,18 +123,16 @@ def fcn_resnet50(aux, num_classes=21, pretrain_backbone=False):
     # 'fcn_resnet50_coco': 'https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth'
     backbone = resnet50(replace_stride_with_dilation=[False, True, True])
 
-    # 载入resnet50 backbone预训练权重
     if pretrain_backbone:
+        # 载入resnet50 backbone预训练权重
         backbone.load_state_dict(torch.load("resnet50.pth", map_location='cpu'))
 
-    out_layer = 'layer4'
     out_inplanes = 2048
-    aux_layer = 'layer3'
     aux_inplanes = 1024
 
-    return_layers = {out_layer: 'out'}
+    return_layers = {'layer4': 'out'}
     if aux:
-        return_layers[aux_layer] = 'aux'
+        return_layers['layer3'] = 'aux'
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None
@@ -154,18 +152,16 @@ def fcn_resnet101(aux, num_classes=21, pretrain_backbone=False):
     # 'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth'
     backbone = resnet101(replace_stride_with_dilation=[False, True, True])
 
-    # 载入resnet101 backbone预训练权重
     if pretrain_backbone:
+        # 载入resnet101 backbone预训练权重
         backbone.load_state_dict(torch.load("resnet101.pth", map_location='cpu'))
 
-    out_layer = 'layer4'
     out_inplanes = 2048
-    aux_layer = 'layer3'
     aux_inplanes = 1024
 
-    return_layers = {out_layer: 'out'}
+    return_layers = {'layer4': 'out'}
     if aux:
-        return_layers[aux_layer] = 'aux'
+        return_layers['layer3'] = 'aux'
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None
