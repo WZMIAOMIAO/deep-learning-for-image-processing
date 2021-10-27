@@ -161,7 +161,7 @@ def main(args):
 
 def parse_args():
     import argparse
-    parser = argparse.ArgumentParser(description="pytorch fcn training")
+    parser = argparse.ArgumentParser(description="pytorch deeplabv3 training")
 
     parser.add_argument("--data-path", default="/data/", help="VOCdevkit root")
     parser.add_argument("--num-classes", default=20, type=int)
