@@ -51,6 +51,7 @@ class VOCSegmentation(data.Dataset):
 
 
 def cat_list(images, fill_value=0):
+    # 计算该batch数据中，channel, h, w的最大值
     max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
     batch_shape = (len(images),) + max_size
     batched_imgs = images[0].new(*batch_shape).fill_(fill_value)
