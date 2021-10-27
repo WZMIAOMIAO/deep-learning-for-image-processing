@@ -6,6 +6,7 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 from .resnet_backbone import resnet50, resnet101
+from .mobilenet_backbone import mobilenet_v3_large
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
@@ -230,6 +231,42 @@ def deeplabv3_resnet101(aux, num_classes=21, pretrain_backbone=False):
     return_layers = {'layer4': 'out'}
     if aux:
         return_layers['layer3'] = 'aux'
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
+
+    aux_classifier = None
+    # why using aux: https://github.com/pytorch/vision/issues/4292
+    if aux:
+        aux_classifier = FCNHead(aux_inplanes, num_classes)
+
+    classifier = DeepLabHead(out_inplanes, num_classes)
+
+    model = DeepLabV3(backbone, classifier, aux_classifier)
+
+    return model
+
+
+def deeplabv3_mobilenetv3_large(aux, num_classes=21, pretrain_backbone=False):
+    # 'mobilenetv3_large_imagenet': 'https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth'
+    # 'depv3_mobilenetv3_large_coco': "https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth"
+    backbone = mobilenet_v3_large(num_classes=num_classes, dilated=True)
+
+    if pretrain_backbone:
+        # 载入mobilenetv3 large backbone预训练权重
+        backbone.load_state_dict(torch.load("mobilenet_v3_large.pth", map_location='cpu'))
+
+    backbone = backbone.features
+
+    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "is_strided", False)] + [len(backbone) - 1]
+    out_pos = stage_indices[-1]  # use C5 which has output_stride = 16
+    out_inplanes = backbone[out_pos].out_channels
+    aux_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
+    aux_inplanes = backbone[aux_pos].out_channels
+    return_layers = {str(out_pos): "out"}
+    if aux:
+        return_layers[str(aux_pos)] = "aux"
+
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None

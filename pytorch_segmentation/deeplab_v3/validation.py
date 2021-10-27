@@ -49,7 +49,7 @@ def main(args):
 
 def parse_args():
     import argparse
-    parser = argparse.ArgumentParser(description="pytorch fcn training")
+    parser = argparse.ArgumentParser(description="pytorch deeplabv3 validation")
 
     parser.add_argument("--data-path", default="/data/", help="VOCdevkit root")
     parser.add_argument("--weights", default="./save_weights/model_29.pth")
@@ -65,8 +65,4 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-
-    if not os.path.exists("./save_weights"):
-        os.mkdir("./save_weights")
-
     main(args)
