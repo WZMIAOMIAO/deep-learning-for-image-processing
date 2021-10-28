@@ -70,6 +70,9 @@
     * [使用Pytorch搭建Vision Transformer](https://b23.tv/TT4VBM)
     * [使用tensorflow2搭建Vision Transformer](https://www.bilibili.com/video/BV1q64y1X7GY)
 
+  * Swin Transformer(准备中)
+    * Swin Transformer网络讲解
+
 * 目标检测篇
   * Faster-RCNN/FPN（已完成）
     * [Faster-RCNN网络讲解](https://www.bilibili.com/video/BV1af4y1m7iL)
@@ -86,7 +89,7 @@
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 * 语义分割 
-  * FCN (进行中)
+  * FCN (已完成)
     * [FCN网络详解](https://www.bilibili.com/video/BV1J3411C7zd)
     * [FCN源码解析(Pytorch版)](https://www.bilibili.com/video/BV19q4y1971Q)
 
