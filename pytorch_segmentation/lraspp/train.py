@@ -112,10 +112,6 @@ def main(args):
         {"params": [p for p in model.classifier.parameters() if p.requires_grad]}
     ]
 
-    if args.aux:
-        params = [p for p in model.aux_classifier.parameters() if p.requires_grad]
-        params_to_optimize.append({"params": params, "lr": args.lr * 10})
-
     optimizer = torch.optim.SGD(
         params_to_optimize,
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay
