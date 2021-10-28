@@ -12,10 +12,10 @@
 
 ## 文件结构：
 ```
-  ├── src: 模型的backbone以及FCN的搭建
+  ├── src: 模型的backbone以及DeepLabv3的搭建
   ├── train_utils: 训练、验证以及多GPU训练相关模块
   ├── my_dataset.py: 自定义dataset用于读取VOC数据集
-  ├── train.py: 以fcn_resnet50(这里使用了Dilated/Atrous Convolution)进行训练
+  ├── train.py: 以deeplabv3_resnet50为例进行训练
   ├── train_multi_GPU.py: 针对使用多GPU的用户使用
   ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
   ├── validation.py: 利用训练好的权重验证/测试数据的mIoU等指标，并生成record_mAP.txt文件
