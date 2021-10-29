@@ -44,7 +44,7 @@
 ## 注意事项
 * 在使用训练脚本时，注意要将'--data-path'(VOC_root)设置为自己存放'VOCdevkit'文件夹所在的**根目录**
 * 在使用预测脚本时，要将'weights_path'设置为你自己生成的权重路径。
-* 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时只需要修改'--num-classes'、'--aux'、'--data-path'和'--weights'即可，其他代码尽量不要改动
+* 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时只需要修改'--num-classes'、'--data-path'和'--weights'即可，其他代码尽量不要改动
 
 ## 如果对LRASPP原理不是很理解可参考我的bilibili
 
@@ -53,3 +53,4 @@
 
 
 ## Pytorch官方实现的LRASPP网络框架图
+![lraspp](lraspp.png)
