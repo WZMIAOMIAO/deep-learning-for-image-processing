@@ -28,7 +28,7 @@ def create_model(num_classes):
 
     return model
 
-device = torch.device("cpu")
+device = torch.device("cuda")
 print(device.type)
 
 data_transform = {
@@ -47,7 +47,7 @@ if os.path.exists(data_set) is False:
 train_dataset = VOCDataSet(data_transform["train"], 0)
 
 # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
-batch_size = 32
+batch_size = 16
 nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
 print('Using %g dataloader workers' % nw)
 
@@ -72,7 +72,7 @@ val_data_set_loader = torch.utils.data.DataLoader(val_dataset,
 model = create_model(7)
 # print(model)
 
-model.to("cpu")
+model.to(device)
 
 # define optimizer
 params = [p for p in model.parameters() if p.requires_grad]
@@ -117,7 +117,7 @@ for epoch in range(0, 200):
         'optimizer': optimizer.state_dict(),
         'lr_scheduler': lr_scheduler.state_dict(),
         'epoch': epoch}
-    torch.save(save_files, "./save_weights/resNetFpn-model-{}.pth".format(epoch))
+    torch.save(save_files, "/home/chaoc/Desktop/deep-learning-for-image-processing/pytorch_object_detection/faster_rcnn/save_weights/resNetFpn-model-{}.pth".format(epoch))
 
     print("ok{epoch}")
 

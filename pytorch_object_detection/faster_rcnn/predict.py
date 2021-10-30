@@ -49,16 +49,16 @@ def main():
     print("using {} device.".format(device))
 
     # create model
-    model = create_model(num_classes=21)
+    model = create_model(num_classes=7)
 
     # load train weights
-    train_weights = "./save_weights/model.pth"
+    train_weights = "/home/chaoc/Desktop/deep-learning-for-image-processing/pytorch_object_detection/faster_rcnn/save_weights/resNetFpn-model-199.pth"
     assert os.path.exists(train_weights), "{} file dose not exist.".format(train_weights)
     model.load_state_dict(torch.load(train_weights, map_location=device)["model"])
     model.to(device)
 
     # read class_indict
-    label_json_path = './pascal_voc_classes.json'
+    label_json_path = '/home/chaoc/Desktop/deep-learning-for-image-processing/pytorch_object_detection/faster_rcnn/pascal_voc_classes.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
     json_file = open(label_json_path, 'r')
     class_dict = json.load(json_file)
@@ -66,7 +66,7 @@ def main():
     category_index = {v: k for k, v in class_dict.items()}
 
     # load image
-    original_img = Image.open("./test.jpg")
+    original_img = Image.open("/home/chaoc/Desktop/deep-learning-for-image-processing/data_set/test/IMAGES/1727.jpg")
 
     # from pil image to tensor, do not normalize image
     data_transform = transforms.Compose([transforms.ToTensor()])
