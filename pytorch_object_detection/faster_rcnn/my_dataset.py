@@ -4,32 +4,30 @@ import torch
 import json
 from PIL import Image
 from lxml import etree
+import random
 
 
 class VOCDataSet(Dataset):
     """读取解析PASCAL VOC2007/2012数据集"""
 
-    def __init__(self, voc_root, year="2012", transforms=None, txt_name: str = "train.txt"):
-        assert year in ["2007", "2012"], "year must be in ['2007', '2012']"
-        self.root = os.path.join(voc_root, "VOCdevkit", f"VOC{year}")
-        self.img_root = os.path.join(self.root, "JPEGImages")
-        self.annotations_root = os.path.join(self.root, "Annotations")
+    def __init__(self, transforms=None, settype=0):
 
-        # read train.txt or val.txt file
-        txt_path = os.path.join(self.root, "ImageSets", "Main", txt_name)
-        assert os.path.exists(txt_path), "not found {} file.".format(txt_name)
-
-        with open(txt_path) as read:
-            self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
-                             for line in read.readlines() if len(line.strip()) > 0]
+        self.root = "/home/chaoc/Desktop/deep-learning-for-image-processing/data_set/train"
+        self.img_root = "/home/chaoc/Desktop/deep-learning-for-image-processing/data_set/train/IMAGES"
+        self.annotations_root = "/home/chaoc/Desktop/deep-learning-for-image-processing/data_set/train/ANNOTATIONS"
+        self.xml_list = os.listdir(self.annotations_root)
+        num = len(self.xml_list)
+        if settype==1:
+            self.xml_list=random.sample(self.xml_list, k=int(num*0.2))
+        
 
         # check file
-        assert len(self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
         for xml_path in self.xml_list:
-            assert os.path.exists(xml_path), "not found '{}' file.".format(xml_path)
+            assert os.path.exists(os.path.join(self.annotations_root,xml_path)), "not found '{}' file.".format(xml_path)
+            self.xml_list = [os.path.join(self.annotations_root,xml_path) for xml_path in self.xml_list]
 
         # read class_indict
-        json_file = './pascal_voc_classes.json'
+        json_file = '/home/chaoc/Desktop/deep-learning-for-image-processing/pytorch_object_detection/faster_rcnn/pascal_voc_classes.json'
         assert os.path.exists(json_file), "{} file not exist.".format(json_file)
         json_file = open(json_file, 'r')
         self.class_dict = json.load(json_file)
