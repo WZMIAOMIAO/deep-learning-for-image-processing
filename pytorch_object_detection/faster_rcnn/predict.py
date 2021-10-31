@@ -66,7 +66,7 @@ def main():
     category_index = {v: k for k, v in class_dict.items()}
 
     # load image
-    original_img = Image.open("/home/chaoc/Desktop/deep-learning-for-image-processing/data_set/test/IMAGES/1727.jpg")
+    original_img = Image.open("/home/chaoc/Desktop/deep-learning-for-image-processing/data_set/train/IMAGES/170.jpg")
 
     # from pil image to tensor, do not normalize image
     data_transform = transforms.Compose([transforms.ToTensor()])
@@ -98,10 +98,8 @@ def main():
                  predict_classes,
                  predict_scores,
                  category_index,
-                 thresh=0.5,
+                 thresh=0.15,
                  line_thickness=3)
-        plt.imshow(original_img)
-        plt.show()
         # 保存预测的图片结果
         original_img.save("test_result.jpg")
 
