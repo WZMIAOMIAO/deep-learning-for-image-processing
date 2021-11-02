@@ -2,7 +2,7 @@
 A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`
     - https://arxiv.org/pdf/2103.14030
 
-Code/weights from https://github.com/microsoft/Swin-Transformer, original copyright/license info below
+Code/weights from https://github.com/microsoft/Swin-Transformer
 
 """
 
