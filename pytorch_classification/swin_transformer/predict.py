@@ -12,9 +12,10 @@ from model import swin_small_patch4_window7_224 as create_model
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    img_size = 224
     data_transform = transforms.Compose(
-        [transforms.Resize(256),
-         transforms.CenterCrop(224),
+        [transforms.Resize(int(img_size * 1.14)),
+         transforms.CenterCrop(img_size),
          transforms.ToTensor(),
          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
