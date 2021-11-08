@@ -57,8 +57,8 @@ def window_partition(x, window_size: int):
     """
     B, H, W, C = x.shape
     x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
-    # permute: [B, H//M, M, W//M, M, C] -> [B, H//M, W//M, M, M, C]
-    # view: [B, H//M, W//M, M, M, C] -> [B*num_windows, M, M, C]
+    # permute: [B, H//Mh, Mh, W//Mw, Mw, C] -> [B, H//Mh, W//Mh, Mw, Mw, C]
+    # view: [B, H//Mh, W//Mw, Mh, Mw, C] -> [B*num_windows, Mh, Mw, C]
     windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
     return windows
 
@@ -76,10 +76,10 @@ def window_reverse(windows, window_size: int, H: int, W: int):
         x: (B, H, W, C)
     """
     B = int(windows.shape[0] / (H * W / window_size / window_size))
-    # view: [B*num_windows, M, M, C] -> [B, H//M, W//M, M, M, C]
+    # view: [B*num_windows, Mh, Mw, C] -> [B, H//Mh, W//Mw, Mh, Mw, C]
     x = windows.view(B, H // window_size, W // window_size, window_size, window_size, -1)
-    # permute: [B, H//M, W//M, M, M, C] -> [B, H//M, M, W//M, M, C]
-    # view: [B, H//M, M, W//M, M, C] -> [B, H, W, C]
+    # permute: [B, H//Mh, W//Mw, Mh, Mw, C] -> [B, H//Mh, Mh, W//Mw, Mw, C]
+    # view: [B, H//Mh, Mh, W//Mw, Mw, C] -> [B, H, W, C]
     x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
     return x
 
@@ -219,6 +219,7 @@ class WindowAttention(nn.Module):
         coords_w = torch.arange(self.window_size[1])
         coords = torch.stack(torch.meshgrid([coords_h, coords_w], indexing="ij"))  # [2, Mh, Mw]
         coords_flatten = torch.flatten(coords, 1)  # [2, Mh*Mw]
+        # [2, Mh*Mw, 1] - [2, 1, Mh*Mw]
         relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # [2, Mh*Mw, Mh*Mw]
         relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # [Mh*Mw, Mh*Mw, 2]
         relative_coords[:, :, 0] += self.window_size[0] - 1  # shift to start from 0
@@ -255,7 +256,7 @@ class WindowAttention(nn.Module):
         q = q * self.scale
         attn = (q @ k.transpose(-2, -1))
 
-        # view: [Mh*Mw*Mh*Mw,nH] -> [Mh*Mw,Mh*Mw,nH]
+        # relative_position_bias_table.view: [Mh*Mw*Mh*Mw,nH] -> [Mh*Mw,Mh*Mw,nH]
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
             self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # [nH, Mh*Mw, Mh*Mw]
@@ -346,14 +347,14 @@ class SwinTransformerBlock(nn.Module):
             attn_mask = None
 
         # partition windows
-        x_windows = window_partition(shifted_x, self.window_size)  # [nW*B, M, M, C]
-        x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # [nW*B, M*M, C]
+        x_windows = window_partition(shifted_x, self.window_size)  # [nW*B, Mh, Mw, C]
+        x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # [nW*B, Mh*Mw, C]
 
         # W-MSA/SW-MSA
-        attn_windows = self.attn(x_windows, mask=attn_mask)  # [nW*B, M*M, C]
+        attn_windows = self.attn(x_windows, mask=attn_mask)  # [nW*B, Mh*Mw, C]
 
         # merge windows
-        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)  # [nW*B, M, M, C]
+        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)  # [nW*B, Mh, Mw, C]
         shifted_x = window_reverse(attn_windows, self.window_size, Hp, Wp)  # [B, H', W', C]
 
         # reverse cyclic shift
@@ -446,13 +447,13 @@ class BasicLayer(nn.Module):
 
         mask_windows = window_partition(img_mask, self.window_size)  # [nW, Mh, Mw, 1]
         mask_windows = mask_windows.view(-1, self.window_size * self.window_size)  # [nW, Mh*Mw]
-        attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
+        attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)  # [nW, 1, Mh*Mw] - [nW, Mh*Mw, 1]
         # [nW, Mh*Mw, Mh*Mw]
         attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
         return attn_mask
 
     def forward(self, x, H, W):
-        attn_mask = self.create_mask(x, H, W)  # # [nW, Mh*Mw, Mh*Mw]
+        attn_mask = self.create_mask(x, H, W)  # [nW, Mh*Mw, Mh*Mw]
         for blk in self.blocks:
             blk.H, blk.W = H, W
             if not torch.jit.is_scripting() and self.use_checkpoint:
