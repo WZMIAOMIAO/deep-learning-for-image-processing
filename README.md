@@ -70,8 +70,9 @@
     * [使用Pytorch搭建Vision Transformer](https://b23.tv/TT4VBM)
     * [使用tensorflow2搭建Vision Transformer](https://www.bilibili.com/video/BV1q64y1X7GY)
 
-  * Swin Transformer(准备中)
-    * Swin Transformer网络讲解
+  * Swin Transformer(进行中)
+    * [Swin Transformer网络讲解](https://www.bilibili.com/video/BV1pL4y1v7jC)
+    * 使用Pytorch搭建Swin Transformer
 
 * 目标检测篇
   * Faster-RCNN/FPN（已完成）
