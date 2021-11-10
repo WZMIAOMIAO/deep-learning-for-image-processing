@@ -72,7 +72,7 @@
 
   * Swin Transformer(进行中)
     * [Swin Transformer网络讲解](https://www.bilibili.com/video/BV1pL4y1v7jC)
-    * 使用Pytorch搭建Swin Transformer
+    * [使用Pytorch搭建Swin Transformer](https://b23.tv/vZnpJf)
 
 * 目标检测篇
   * Faster-RCNN/FPN（已完成）
