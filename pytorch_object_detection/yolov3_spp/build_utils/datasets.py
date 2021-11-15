@@ -73,6 +73,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             # 检查每张图片后缀格式是否在支持的列表中，保存支持的图像路径
             # img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']
             self.img_files = [x for x in f if os.path.splitext(x)[-1].lower() in img_formats]
+            self.img_files.sort()  # 防止不同系统排序不同，导致shape文件出现差异
         except Exception as e:
             raise FileNotFoundError("Error loading data from {}. {}".format(path, e))
 
