@@ -21,7 +21,7 @@ def parse_model_cfg(path: str):
         if line.startswith("["):  # this marks the start of a new block
             mdefs.append({})
             mdefs[-1]["type"] = line[1:-1].strip()  # 记录module类型
-            # 如果是卷积模块，设置默认不使用BN
+            # 如果是卷积模块，设置默认不使用BN(普通卷积层后面会重写成1，最后的预测层conv保持为0)
             if mdefs[-1]["type"] == "convolutional":
                 mdefs[-1]["batch_normalize"] = 0
         else:
