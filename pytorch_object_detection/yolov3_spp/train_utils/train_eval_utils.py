@@ -12,7 +12,7 @@ import train_utils.distributed_utils as utils
 def train_one_epoch(model, optimizer, data_loader, device, epoch,
                     print_freq, accumulate, img_size,
                     grid_min, grid_max, gs,
-                    multi_scale=False, warmup=False):
+                    multi_scale=False, warmup=False, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -25,9 +25,6 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
 
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
         accumulate = 1
-
-    enable_amp = True if "cuda" in device.type else False
-    scaler = amp.GradScaler(enabled=enable_amp)
 
     mloss = torch.zeros(4).to(device)  # mean losses
     now_lr = 0.
@@ -57,37 +54,43 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
                 imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
         # 混合精度训练上下文管理器，如果在CPU环境中不起任何作用
-        with amp.autocast(enabled=enable_amp):
+        with amp.autocast(enabled=scaler is not None):
             pred = model(imgs)
 
             # loss
             loss_dict = compute_loss(pred, targets, model)
-
             losses = sum(loss for loss in loss_dict.values())
 
-            # reduce losses over all GPUs for logging purpose
-            loss_dict_reduced = utils.reduce_dict(loss_dict)
-            losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-            loss_items = torch.cat((loss_dict_reduced["box_loss"],
-                                    loss_dict_reduced["obj_loss"],
-                                    loss_dict_reduced["class_loss"],
-                                    losses_reduced)).detach()
-            mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
+        # reduce losses over all GPUs for logging purpose
+        loss_dict_reduced = utils.reduce_dict(loss_dict)
+        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        loss_items = torch.cat((loss_dict_reduced["box_loss"],
+                                loss_dict_reduced["obj_loss"],
+                                loss_dict_reduced["class_loss"],
+                                losses_reduced)).detach()
+        mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
 
-            if not torch.isfinite(losses_reduced):
-                print('WARNING: non-finite loss, ending training ', loss_dict_reduced)
-                print("training image path: {}".format(",".join(paths)))
-                sys.exit(1)
+        if not torch.isfinite(losses_reduced):
+            print('WARNING: non-finite loss, ending training ', loss_dict_reduced)
+            print("training image path: {}".format(",".join(paths)))
+            sys.exit(1)
 
-            losses *= 1. / accumulate  # scale loss
+        losses *= 1. / accumulate  # scale loss
 
         # backward
-        scaler.scale(losses).backward()
+        if scaler is not None:
+            scaler.scale(losses).backward()
+        else:
+            losses.backward()
+
         # optimize
         # 每训练64张图片更新一次权重
         if ni % accumulate == 0:
-            scaler.step(optimizer)
-            scaler.update()
+            if scaler is not None:
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                optimizer.step()
             optimizer.zero_grad()
 
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)

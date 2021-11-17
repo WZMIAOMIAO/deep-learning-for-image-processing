@@ -91,6 +91,8 @@ def train(hyp):
     optimizer = optim.SGD(pg, lr=hyp["lr0"], momentum=hyp["momentum"],
                           weight_decay=hyp["weight_decay"], nesterov=True)
 
+    scaler = torch.cuda.amp.GradScaler() if opt.amp else None
+
     start_epoch = 0
     best_map = 0.0
     if weights.endswith(".pt") or weights.endswith(".pth"):
@@ -122,6 +124,9 @@ def train(hyp):
             print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                   (opt.weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
+
+        if opt.amp and "scaler" in ckpt:
+            scaler.load_state_dict(ckpt["scaler"])
 
         del ckpt
 
@@ -199,7 +204,8 @@ def train(hyp):
                                                grid_max=grid_max,  # grid的最大尺寸
                                                gs=gs,  # grid step: 32
                                                print_freq=50,  # 每训练多少个step打印一次信息
-                                               warmup=True)
+                                               warmup=True,
+                                               scaler=scaler)
         # update scheduler
         scheduler.step()
 
@@ -240,6 +246,8 @@ def train(hyp):
                         'training_results': f.read(),
                         'epoch': epoch,
                         'best_map': best_map}
+                    if opt.amp:
+                        save_files["scaler"] = scaler.state_dict()
                     torch.save(save_files, "./weights/yolov3spp-{}.pt".format(epoch))
             else:
                 # only save best weights
@@ -251,6 +259,8 @@ def train(hyp):
                             'training_results': f.read(),
                             'epoch': epoch,
                             'best_map': best_map}
+                        if opt.amp:
+                            save_files["scaler"] = scaler.state_dict()
                         torch.save(save_files, best.format(epoch))
 
 
@@ -274,6 +284,8 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--freeze-layers', type=bool, default=False, help='Freeze non-output layers')
+    # 是否使用混合精度训练(需要GPU支持混合精度)
+    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
     opt = parser.parse_args()
 
     # 检查文件是否存在

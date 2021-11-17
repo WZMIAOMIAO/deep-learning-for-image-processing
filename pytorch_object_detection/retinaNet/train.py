@@ -107,6 +107,8 @@ def main(parser_data):
     optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
 
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
+
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                    step_size=3,
@@ -119,6 +121,8 @@ def main(parser_data):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         parser_data.start_epoch = checkpoint['epoch'] + 1
+        if args.amp and "scaler" in checkpoint:
+            scaler.load_state_dict(checkpoint["scaler"])
         print("the training process from epoch{}...".format(parser_data.start_epoch))
 
     train_loss = []
@@ -128,7 +132,8 @@ def main(parser_data):
     for epoch in range(parser_data.start_epoch, parser_data.epochs):
         # train for one epoch, printing every 10 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
-                                              device, epoch, print_freq=50, warmup=True)
+                                              device, epoch, print_freq=50,
+                                              warmup=True, scaler=scaler)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
@@ -153,6 +158,8 @@ def main(parser_data):
             'optimizer': optimizer.state_dict(),
             'lr_scheduler': lr_scheduler.state_dict(),
             'epoch': epoch}
+        if args.amp:
+            save_files["scaler"] = scaler.state_dict()
         torch.save(save_files, "./save_weights/resNetFpn-model-{}.pth".format(epoch))
 
     # plot loss and lr curve
@@ -191,6 +198,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    # 是否使用混合精度训练(需要GPU支持混合精度)
+    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
     print(args)

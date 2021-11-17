@@ -58,6 +58,7 @@ def main():
     VOC_root = "./"  # VOCdevkit
     aspect_ratio_group_factor = 3
     batch_size = 8
+    amp = False  # 是否使用混合精度训练，需要GPU支持
 
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
@@ -112,6 +113,8 @@ def main():
 
     model.to(device)
 
+    scaler = torch.cuda.amp.GradScaler() if amp else None
+
     train_loss = []
     learning_rate = []
     val_map = []
@@ -132,7 +135,8 @@ def main():
     for epoch in range(init_epochs):
         # train for one epoch, printing every 10 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
-                                              device, epoch, print_freq=50, warmup=True)
+                                              device, epoch, print_freq=50,
+                                              warmup=True, scaler=scaler)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
@@ -175,7 +179,8 @@ def main():
     for epoch in range(init_epochs, num_epochs+init_epochs, 1):
         # train for one epoch, printing every 50 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
-                                              device, epoch, print_freq=50, warmup=True)
+                                              device, epoch, print_freq=50,
+                                              warmup=True, scaler=scaler)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 

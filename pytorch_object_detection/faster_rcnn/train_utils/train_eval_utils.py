@@ -10,7 +10,7 @@ import train_utils.distributed_utils as utils
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch,
-                    print_freq=50, warmup=False):
+                    print_freq=50, warmup=False, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -24,33 +24,36 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
     mloss = torch.zeros(1).to(device)  # mean losses
-    enable_amp = True if "cuda" in device.type else False
     for i, [images, targets] in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         # 混合精度训练上下文管理器，如果在CPU环境中不起任何作用
-        with torch.cuda.amp.autocast(enabled=enable_amp):
+        with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
-
             losses = sum(loss for loss in loss_dict.values())
 
-            # reduce losses over all GPUs for logging purpose
-            loss_dict_reduced = utils.reduce_dict(loss_dict)
-            losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        # reduce losses over all GPUs for logging purpose
+        loss_dict_reduced = utils.reduce_dict(loss_dict)
+        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
 
-            loss_value = losses_reduced.item()
-            # 记录训练损失
-            mloss = (mloss * i + loss_value) / (i + 1)  # update mean losses
+        loss_value = losses_reduced.item()
+        # 记录训练损失
+        mloss = (mloss * i + loss_value) / (i + 1)  # update mean losses
 
-            if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
-                print("Loss is {}, stopping training".format(loss_value))
-                print(loss_dict_reduced)
-                sys.exit(1)
+        if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
+            print("Loss is {}, stopping training".format(loss_value))
+            print(loss_dict_reduced)
+            sys.exit(1)
 
         optimizer.zero_grad()
-        losses.backward()
-        optimizer.step()
+        if scaler is not None:
+            scaler.scale(losses).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            losses.backward()
+            optimizer.step()
 
         if lr_scheduler is not None:  # 第一轮使用warmup训练方式
             lr_scheduler.step()
