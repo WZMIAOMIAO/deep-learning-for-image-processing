@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from model import swin_small_patch4_window7_224 as create_model
+from model import swin_tiny_patch4_window7_224 as create_model
 
 
 def main():

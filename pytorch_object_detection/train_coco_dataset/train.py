@@ -91,6 +91,9 @@ def main(args):
     optimizer = torch.optim.SGD(params, lr=args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
+
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
+
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                         milestones=args.lr_steps,
@@ -105,11 +108,14 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
+        if args.amp and "scaler" in checkpoint:
+            scaler.load_state_dict(checkpoint["scaler"])
 
     for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch, printing every 50 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
-                                              device, epoch, print_freq=50, warmup=True)
+                                              device, epoch, print_freq=50,
+                                              warmup=True, scaler=scaler)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
@@ -134,6 +140,8 @@ def main(args):
             'optimizer': optimizer.state_dict(),
             'lr_scheduler': lr_scheduler.state_dict(),
             'epoch': epoch}
+        if args.amp:
+            save_files["scaler"] = scaler.state_dict()
         torch.save(save_files, "./save_weights/model_{}.pth".format(epoch))
 
     # plot loss and lr curve
@@ -187,6 +195,8 @@ if __name__ == "__main__":
     # 训练的batch size(如果内存/GPU显存充裕，建议设置更大)
     parser.add_argument('--batch_size', default=2, type=int, metavar='N',
                         help='batch size when training.')
+    # 是否使用混合精度训练(需要GPU支持混合精度)
+    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
     print(args)

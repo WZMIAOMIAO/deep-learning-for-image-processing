@@ -107,6 +107,8 @@ def main(args):
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
+
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
 
@@ -120,6 +122,8 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
+        if args.amp and "scaler" in checkpoint:
+            scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
         utils.evaluate(model, data_loader_test, device=device)
@@ -134,8 +138,9 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader, device,
-                                              epoch, args.print_freq, warmup=True)
+        mean_loss, lr = utils.train_one_epoch(model, optimizer, data_loader,
+                                              device, epoch, args.print_freq,
+                                              warmup=True, scaler=scaler)
         train_loss.append(mean_loss.item())
         learning_rate.append(lr)
 
@@ -157,13 +162,16 @@ def main(args):
 
         if args.output_dir:
             # 只在主节点上执行保存权重操作
-            save_on_master({
-                'model': model_without_ddp.state_dict(),
+            save_files = {
+                'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args,
-                'epoch': epoch},
-                os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+                'epoch': epoch}
+            if args.amp:
+                save_files["scaler"] = scaler.state_dict()
+            save_on_master(save_files,
+                           os.path.join(args.output_dir, f'model_{epoch}.pth'))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -240,6 +248,8 @@ if __name__ == "__main__":
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    # 是否使用混合精度训练(需要GPU支持混合精度)
+    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
 

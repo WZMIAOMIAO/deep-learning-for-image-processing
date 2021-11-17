@@ -108,6 +108,9 @@ def main(opt, hyp):
                   (opt.weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
+        if opt.amp and "scaler" in ckpt:
+            scaler.load_state_dict(ckpt["scaler"])
+
         del ckpt
 
     # 是否冻结权重，只训练predictor的权重
@@ -146,6 +149,8 @@ def main(opt, hyp):
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(pg, lr=hyp["lr0"], momentum=hyp["momentum"],
                           weight_decay=hyp["weight_decay"], nesterov=True)
+
+    scaler = torch.cuda.amp.GradScaler() if opt.amp else None
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp["lrf"]) + hyp["lrf"]  # cosine
@@ -222,7 +227,8 @@ def main(opt, hyp):
                                                grid_max=grid_max,  # grid的最大尺寸
                                                gs=gs,  # grid step: 32
                                                print_freq=50,  # 每训练多少个step打印一次信息
-                                               warmup=True)
+                                               warmup=True,
+                                               scaler=scaler)
         # update scheduler
         scheduler.step()
 
@@ -265,6 +271,8 @@ def main(opt, hyp):
                             'training_results': f.read(),
                             'epoch': epoch,
                             'best_map': best_map}
+                        if opt.amp:
+                            save_files["scaler"] = scaler.state_dict()
                         torch.save(save_files, "./weights/yolov3spp-{}.pt".format(epoch))
                 else:
                     # only save best weights
@@ -276,6 +284,8 @@ def main(opt, hyp):
                                 'training_results': f.read(),
                                 'epoch': epoch,
                                 'best_map': best_map}
+                            if opt.amp:
+                                save_files["scaler"] = scaler.state_dict()
                             torch.save(save_files, best.format(epoch))
 
     total_time = time.time() - start_time
@@ -308,6 +318,8 @@ if __name__ == '__main__':
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    # 是否使用混合精度训练(需要GPU支持混合精度)
+    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 
     opt = parser.parse_args()
 
