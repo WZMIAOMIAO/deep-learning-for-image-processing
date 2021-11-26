@@ -31,6 +31,8 @@
 - Vision Transformer [https://arxiv.org/abs/2010.11929](https://arxiv.org/abs/2010.11929)
 - DeiT(Training data-efficient image transformers ) [https://arxiv.org/abs/2012.12877](https://arxiv.org/abs/2012.12877)
 - Swin Transformer [https://arxiv.org/abs/2103.14030](https://arxiv.org/abs/2103.14030)
+- Swin Transformer V2: Scaling Up Capacity and Resolution [https://arxiv.org/abs/2111.09883](https://arxiv.org/abs/2111.09883)
+- MAE(Masked Autoencoders Are Scalable Vision Learners) [https://arxiv.org/abs/2111.06377](https://arxiv.org/abs/2111.06377)
 ------
 
 ## 目标检测(Object Detection)
