@@ -39,6 +39,7 @@
 - R-CNN [https://arxiv.org/abs/1311.2524](https://arxiv.org/abs/1311.2524)
 - Fast R-CNN [https://arxiv.org/abs/1504.08083](https://arxiv.org/abs/1504.08083)
 - Faster R-CNN [https://arxiv.org/abs/1506.01497](https://arxiv.org/abs/1506.01497)
+- Cascade R-CNN: Delving into High Quality Object Detection [https://arxiv.org/abs/1712.00726](https://arxiv.org/abs/1712.00726)
 - Mask R-CNN [https://arxiv.org/abs/1703.06870](https://arxiv.org/abs/1703.06870)
 - SSD [https://arxiv.org/abs/1512.02325](https://arxiv.org/abs/1512.02325)
 - FPN(Feature Pyramid Networks for Object Detection) [https://arxiv.org/abs/1612.03144](https://arxiv.org/abs/1612.03144)
