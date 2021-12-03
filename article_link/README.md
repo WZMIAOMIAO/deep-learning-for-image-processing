@@ -32,6 +32,7 @@
 - DeiT(Training data-efficient image transformers ) [https://arxiv.org/abs/2012.12877](https://arxiv.org/abs/2012.12877)
 - Swin Transformer [https://arxiv.org/abs/2103.14030](https://arxiv.org/abs/2103.14030)
 - Swin Transformer V2: Scaling Up Capacity and Resolution [https://arxiv.org/abs/2111.09883](https://arxiv.org/abs/2111.09883)
+- BEiT: BERT Pre-Training of Image Transformers [https://arxiv.org/abs/2106.08254](https://arxiv.org/abs/2106.08254)
 - MAE(Masked Autoencoders Are Scalable Vision Learners) [https://arxiv.org/abs/2111.06377](https://arxiv.org/abs/2111.06377)
 ------
 
@@ -39,6 +40,7 @@
 - R-CNN [https://arxiv.org/abs/1311.2524](https://arxiv.org/abs/1311.2524)
 - Fast R-CNN [https://arxiv.org/abs/1504.08083](https://arxiv.org/abs/1504.08083)
 - Faster R-CNN [https://arxiv.org/abs/1506.01497](https://arxiv.org/abs/1506.01497)
+- Cascade R-CNN: Delving into High Quality Object Detection [https://arxiv.org/abs/1712.00726](https://arxiv.org/abs/1712.00726)
 - Mask R-CNN [https://arxiv.org/abs/1703.06870](https://arxiv.org/abs/1703.06870)
 - SSD [https://arxiv.org/abs/1512.02325](https://arxiv.org/abs/1512.02325)
 - FPN(Feature Pyramid Networks for Object Detection) [https://arxiv.org/abs/1612.03144](https://arxiv.org/abs/1612.03144)
