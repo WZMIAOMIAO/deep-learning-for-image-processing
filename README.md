@@ -95,8 +95,8 @@
     * [FCN网络详解](https://www.bilibili.com/video/BV1J3411C7zd)
     * [FCN源码解析(Pytorch版)](https://www.bilibili.com/video/BV19q4y1971Q)
 
-  * DeepLabV3 (规划中)
-    * DeepLabV3网络详解
+  * DeepLabV3 (进行中)
+    * [DeepLabV3网络详解](https://www.bilibili.com/video/BV1Jb4y1q7j7)
     * DeepLabV3源码解析(Pytorch版)
 
 **[更多相关视频请进入我的bilibili频道查看](https://space.bilibili.com/18161609/channel/index)**
