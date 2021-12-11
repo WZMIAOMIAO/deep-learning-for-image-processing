@@ -228,10 +228,10 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     # per output
     for i, pi in enumerate(p):  # layer index, layer predictions
-        b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
+        b, a, gj, gi = indices[i]  # image_idx, anchor_idx, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
 
-        nb = b.shape[0]  # number of targets
+        nb = b.shape[0]  # number of positive samples
         if nb:
             # 对应匹配到正样本的预测信息
             ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
@@ -270,7 +270,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
 
 def build_targets(p, targets, model):
-    # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
+    # Build targets for compute_loss(), input targets(image_idx,class,x,y,w,h)
     nt = targets.shape[0]
     tcls, tbox, indices, anch = [], [], [], []
     gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
@@ -278,6 +278,7 @@ def build_targets(p, targets, model):
     multi_gpu = type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
     for i, j in enumerate(model.yolo_layers):  # [89, 101, 113]
         # 获取该yolo predictor对应的anchors
+        # 注意anchor_vec是anchors缩放到对应特征层上的尺度
         anchors = model.module.module_list[j].anchor_vec if multi_gpu else model.module_list[j].anchor_vec
         gain[2:] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
         na = anchors.shape[0]  # number of anchors
@@ -296,14 +297,14 @@ def build_targets(p, targets, model):
 
         # Define
         # long等于to(torch.int64), 数值向下取整
-        b, c = t[:, :2].long().T  # image, class
+        b, c = t[:, :2].long().T  # image_idx, class
         gxy = t[:, 2:4]  # grid xy
         gwh = t[:, 4:6]  # grid wh
         gij = (gxy - offsets).long()  # 匹配targets所在的grid cell左上角坐标
         gi, gj = gij.T  # grid xy indices
 
         # Append
-        indices.append((b, a, gj, gi))  # image, anchor, grid indices(x, y)
+        indices.append((b, a, gj, gi))  # image_idx, anchor_idx, grid indices(x, y)
         tbox.append(torch.cat((gxy - gij, gwh), 1))  # gt box相对anchor的x,y偏移量以及w,h
         anch.append(anchors[a])  # anchors
         tcls.append(c)  # class
