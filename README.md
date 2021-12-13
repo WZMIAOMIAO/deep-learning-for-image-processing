@@ -111,7 +111,7 @@
 * torchvision 0.8.1 (pip package)
 * tensorflow 2.4.1 (pip package)
 
-[你可能遇到的问题](./summary_problem.md)
+欢迎大家关注下我的微信公众号（**阿喆学习小记**），平时会总结些相关学习博文。    
 
 如果有什么问题，也可以到我的CSDN中一起讨论。
 [https://blog.csdn.net/qq_37541097/article/details/103482003](https://blog.csdn.net/qq_37541097/article/details/103482003)
