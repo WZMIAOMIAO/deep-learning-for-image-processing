@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import torch
 
 
 class ActivationsAndGradients:
@@ -141,6 +140,7 @@ class GradCAM:
 
         if target_category is None:
             target_category = np.argmax(output.cpu().data.numpy(), axis=-1)
+            print(f"category id: {target_category}")
         else:
             assert (len(target_category) == input_tensor.size(0))
 
@@ -188,6 +188,7 @@ def show_cam_on_image(img: np.ndarray,
     :param colormap: The OpenCV colormap to be used.
     :returns: The default image with the cam overlay.
     """
+
     heatmap = cv2.applyColorMap(np.uint8(255 * mask), colormap)
     if use_rgb:
         heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
@@ -202,26 +203,28 @@ def show_cam_on_image(img: np.ndarray,
     return np.uint8(255 * cam)
 
 
-def reshape_vit_tensor_transform(tensor, height=14, width=14):
-    # remove cls token and reshape
-    result = tensor[:, 1:, :].reshape(tensor.size(0),
-                                      height,
-                                      width,
-                                      tensor.size(2))
+def center_crop_img(img: np.ndarray, size: int):
+    h, w, c = img.shape
 
-    # Bring the channels to the first dimension,
-    # like in CNNs.
-    result = result.transpose(2, 3).transpose(1, 2)
-    return result
+    if w == h == size:
+        return img
 
+    if w < h:
+        ratio = size / w
+        new_w = size
+        new_h = int(h * ratio)
+    else:
+        ratio = size / h
+        new_h = size
+        new_w = int(w * ratio)
 
-def reshape_swin_tensor_transform(tensor, height=7, width=7):
-    result = tensor.reshape(tensor.size(0),
-                            height,
-                            width,
-                            tensor.size(2))
+    img = cv2.resize(img, dsize=(new_w, new_h))
 
-    # Bring the channels to the first dimension,
-    # like in CNNs.
-    result = result.transpose(2, 3).transpose(1, 2)
-    return result
+    if new_w == size:
+        h = (new_h - size) // 2
+        img = img[h: h+size]
+    else:
+        w = (new_w - size) // 2
+        img = img[:, w: w+size]
+
+    return img
