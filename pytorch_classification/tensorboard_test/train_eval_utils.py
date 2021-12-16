@@ -10,7 +10,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
     mean_loss = torch.zeros(1).to(device)
     optimizer.zero_grad()
 
-    data_loader = tqdm(data_loader)
+    data_loader = tqdm(data_loader, file=sys.stdout)
     for step, data in enumerate(data_loader):
         images, labels = data
         pred = model(images.to(device))
@@ -42,7 +42,7 @@ def evaluate(model, data_loader, device):
     num_samples = len(data_loader.dataset)
 
     # 打印验证进度
-    data_loader = tqdm(data_loader, desc="validation...")
+    data_loader = tqdm(data_loader, desc="validation...", file=sys.stdout)
 
     for step, data in enumerate(data_loader):
         images, labels = data

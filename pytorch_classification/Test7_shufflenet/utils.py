@@ -117,7 +117,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
     mean_loss = torch.zeros(1).to(device)
     optimizer.zero_grad()
 
-    data_loader = tqdm(data_loader)
+    data_loader = tqdm(data_loader, file=sys.stdout)
 
     for step, data in enumerate(data_loader):
         images, labels = data
@@ -150,7 +150,7 @@ def evaluate(model, data_loader, device):
     # 用于存储预测正确的样本个数
     sum_num = torch.zeros(1).to(device)
 
-    data_loader = tqdm(data_loader)
+    data_loader = tqdm(data_loader, file=sys.stdout)
 
     for step, data in enumerate(data_loader):
         images, labels = data

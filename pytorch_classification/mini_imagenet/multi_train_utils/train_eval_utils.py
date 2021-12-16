@@ -22,7 +22,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, use_amp=False,
 
     # 在进程0中打印训练进度
     if is_main_process():
-        data_loader = tqdm(data_loader)
+        data_loader = tqdm(data_loader, file=sys.stdout)
 
     enable_amp = use_amp and "cuda" in device.type
     scaler = torch.cuda.amp.GradScaler(enabled=enable_amp)
@@ -82,7 +82,7 @@ def evaluate(model, data_loader, device):
 
     # 在进程0中打印验证进度
     if is_main_process():
-        data_loader = tqdm(data_loader)
+        data_loader = tqdm(data_loader, file=sys.stdout)
 
     for step, data in enumerate(data_loader):
         images, labels = data
