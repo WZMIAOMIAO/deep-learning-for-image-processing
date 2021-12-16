@@ -13,9 +13,16 @@ def main():
     target_layers = [model.features[-1]]
 
     # model = models.vgg16(pretrained=True)
+    # target_layers = [model.features]
+
     # model = models.resnet34(pretrained=True)
+    # target_layers = [model.layer4]
+
     # model = models.regnet_y_800mf(pretrained=True)
+    # target_layers = [model.trunk_output]
+
     # model = models.efficientnet_b0(pretrained=True)
+    # target_layers = [model.features]
 
     data_transform = transforms.Compose([transforms.ToTensor(),
                                          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
