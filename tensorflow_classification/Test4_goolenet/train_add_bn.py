@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import glob
 
@@ -115,7 +116,7 @@ def main():
         val_accuracy.reset_states()  # clear history info
 
         # train
-        train_bar = tqdm(range(total_train // batch_size))
+        train_bar = tqdm(range(total_train // batch_size), file=sys.stdout)
         for step in train_bar:
             images, labels = next(train_data_gen)
             train_step(images, labels)
@@ -127,7 +128,7 @@ def main():
                                                                                  train_accuracy.result())
 
         # validate
-        val_bar = tqdm(range(total_val // batch_size))
+        val_bar = tqdm(range(total_val // batch_size), file=sys.stdout)
         for step in val_bar:
             val_images, val_labels = next(val_data_gen)
             val_step(val_images, val_labels)

@@ -1,4 +1,5 @@
 import os
+import sys
 
 import tensorflow as tf
 from tqdm import tqdm
@@ -82,7 +83,7 @@ def main():
         val_accuracy.reset_states()  # clear history info
 
         # train
-        train_bar = tqdm(train_ds)
+        train_bar = tqdm(train_ds, file=sys.stdout)
         for images, labels in train_bar:
             train_step(images, labels)
 
@@ -93,7 +94,7 @@ def main():
                                                                                  train_accuracy.result())
 
         # validate
-        val_bar = tqdm(val_ds)
+        val_bar = tqdm(val_ds, file=sys.stdout)
         for images, labels in val_bar:
             val_step(images, labels)
 
