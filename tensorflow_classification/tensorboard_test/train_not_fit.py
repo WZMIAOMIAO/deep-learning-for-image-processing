@@ -128,7 +128,7 @@ def main():
 
         print("Epoch [{}/{}]".format(epoch + 1, epochs))
         # train
-        train_bar = tqdm(train_data_gen)
+        train_bar = tqdm(train_data_gen, file=sys.stdout)
         for images, labels in train_bar:
             train_step(images, labels)
 
@@ -140,7 +140,7 @@ def main():
         optimizer.learning_rate = scheduler(epoch)
 
         # validation
-        val_bar = tqdm(val_data_gen)
+        val_bar = tqdm(val_data_gen, file=sys.stdout)
         for test_images, test_labels in val_bar:
             test_step(test_images, test_labels)
 
