@@ -228,7 +228,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     # per output
     for i, pi in enumerate(p):  # layer index, layer predictions
-        b, a, gj, gi = indices[i]  # image_idx, anchor_idx, gridy, gridx
+        b, a, gj, gi = indices[i]  # image_idx, anchor_idx, grid_y, grid_x
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
 
         nb = b.shape[0]  # number of positive samples
@@ -276,10 +276,11 @@ def build_targets(p, targets, model):
     gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
 
     multi_gpu = type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
-    for i, j in enumerate(model.yolo_layers):  # [89, 101, 113]
+    for i, j in enumerate(model.yolo_layers):  # j: [89, 101, 113]
         # 获取该yolo predictor对应的anchors
         # 注意anchor_vec是anchors缩放到对应特征层上的尺度
         anchors = model.module.module_list[j].anchor_vec if multi_gpu else model.module_list[j].anchor_vec
+        # p[i].shape: [batch_size, 3, grid_h, grid_w, num_params]
         gain[2:] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
         na = anchors.shape[0]  # number of anchors
         # [3] -> [3, 1] -> [3, nt]
@@ -304,7 +305,9 @@ def build_targets(p, targets, model):
         gi, gj = gij.T  # grid xy indices
 
         # Append
-        indices.append((b, a, gj, gi))  # image_idx, anchor_idx, grid indices(x, y)
+        # gain[3]: grid_h, gain[2]: grid_w
+        # image_idx, anchor_idx, grid indices(y, x)
+        indices.append((b, a, gj.clamp_(0, gain[3]-1), gi.clamp_(0, gain[2]-1)))
         tbox.append(torch.cat((gxy - gij, gwh), 1))  # gt box相对anchor的x,y偏移量以及w,h
         anch.append(anchors[a])  # anchors
         tcls.append(c)  # class
