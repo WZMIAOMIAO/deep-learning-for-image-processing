@@ -289,11 +289,11 @@ def build_targets(p, targets, model):
         # Match targets to anchors
         a, t, offsets = [], targets * gain, 0
         if nt:  # 如果存在target的话
-            # iou_t = 0.20
-            # j: [3, nt]
+            # 通过计算anchor模板与所有target的wh_iou来匹配正样本
+            # j: [3, nt] , iou_t = 0.20
             j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
             # t.repeat(na, 1, 1): [nt, 6] -> [3, nt, 6]
-            # 获取iou大于阈值的anchor与target对应信息
+            # 获取正样本对应的anchor模板与target信息
             a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
 
         # Define
