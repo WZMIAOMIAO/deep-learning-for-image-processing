@@ -75,7 +75,7 @@
     * [使用Pytorch搭建Swin Transformer](https://b23.tv/vZnpJf)
     * [使用Tensorflow2搭建Swin Transformer](https://b23.tv/UHLMSF)
 
-* 目标检测篇
+* 目标检测
   * Faster-RCNN/FPN（已完成）
     * [Faster-RCNN网络讲解](https://www.bilibili.com/video/BV1af4y1m7iL)
     * [FPN网络讲解](https://b23.tv/Qhn6xA)
@@ -86,7 +86,7 @@
     * [RetinaNet网络讲解](https://b23.tv/ZYCfd2)
     * [SSD源码解析(Pytorch)](https://www.bilibili.com/video/BV1vK411H771)
   
-  * YOLOv3 SPP (进行中)
+  * YOLOv3 SPP (已完成)
     * [YOLO系列网络讲解](https://www.bilibili.com/video/BV1yi4y1g7ro)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
