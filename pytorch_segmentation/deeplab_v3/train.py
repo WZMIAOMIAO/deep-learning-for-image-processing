@@ -124,6 +124,16 @@ def main(args):
     # 创建学习率更新策略，这里是每个step更新一次(不是每个epoch)
     lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.epochs, warmup=True)
 
+    # import matplotlib.pyplot as plt
+    # lr_list = []
+    # for _ in range(args.epochs):
+    #     for _ in range(len(train_loader)):
+    #         lr_scheduler.step()
+    #         lr = optimizer.param_groups[0]["lr"]
+    #         lr_list.append(lr)
+    # plt.plot(range(len(lr_list)), lr_list)
+    # plt.show()
+
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
