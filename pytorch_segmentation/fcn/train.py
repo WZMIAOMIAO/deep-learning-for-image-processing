@@ -121,6 +121,8 @@ def main(args):
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay
     )
 
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
+
     # 创建学习率更新策略，这里是每个step更新一次(不是每个epoch)
     lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.epochs, warmup=True)
 
@@ -130,11 +132,13 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
+        if args.amp:
+            scaler.load_state_dict(checkpoint["scaler"])
 
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         mean_loss, lr = train_one_epoch(model, optimizer, train_loader, device, epoch,
-                                        lr_scheduler=lr_scheduler, print_freq=args.print_freq)
+                                        lr_scheduler=lr_scheduler, print_freq=args.print_freq, scaler=scaler)
 
         confmat = evaluate(model, val_loader, device=device, num_classes=num_classes)
         val_info = str(confmat)
@@ -152,6 +156,8 @@ def main(args):
                      "lr_scheduler": lr_scheduler.state_dict(),
                      "epoch": epoch,
                      "args": args}
+        if args.amp:
+            save_file["scaler"] = scaler.state_dict()
         torch.save(save_file, "save_weights/model_{}.pth".format(epoch))
 
     total_time = time.time() - start_time
@@ -181,6 +187,9 @@ def parse_args():
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='start epoch')
+    # Mixed precision training parameters
+    parser.add_argument("--amp", default=False, type=bool,
+                        help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
 
