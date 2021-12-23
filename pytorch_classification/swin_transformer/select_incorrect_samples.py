@@ -55,6 +55,7 @@ def main(args):
     json_file = open(json_path, "r")
     class_indict = json.load(json_file)
 
+    model.eval()
     with torch.no_grad():
         with open("record.txt", "w") as f:
             # validate
