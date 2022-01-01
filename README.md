@@ -92,16 +92,16 @@
 
 * 语义分割 
   * FCN (已完成)
-    * [FCN网络详解](https://www.bilibili.com/video/BV1J3411C7zd)
+    * [FCN网络讲解](https://www.bilibili.com/video/BV1J3411C7zd)
     * [FCN源码解析(Pytorch版)](https://www.bilibili.com/video/BV19q4y1971Q)
 
   * DeepLabV3 (已完成)
-    * [DeepLabV3网络详解](https://www.bilibili.com/video/BV1Jb4y1q7j7)
+    * [DeepLabV3网络讲解](https://www.bilibili.com/video/BV1Jb4y1q7j7)
     * [DeepLabV3源码解析(Pytorch版)](https://www.bilibili.com/video/BV1TD4y1c7Wx)
 
-  * Lraspp (准备中)
-    * Lraspp网络讲解
-    * Lraspp源码解析(Pytorch版)
+  * LR-ASPP (已完成)
+    * [LR-ASPP网络讲解](https://www.bilibili.com/video/BV1LS4y1M76E)
+    * [LR-ASPP源码解析(Pytorch版)](https://www.bilibili.com/video/bv13D4y1F7ML)
 
 **[更多相关视频请进入我的bilibili频道查看](https://space.bilibili.com/18161609/channel/index)**
 
