@@ -6,6 +6,7 @@
 1）介绍网络的结构与创新点  
 2）使用Pytorch进行网络的搭建与训练  
 3）使用Tensorflow（内部的keras模块）进行网络的搭建与训练 
+* 课程中所有PPT都放在`course_ppt`文件夹下，需要的自行下载。
 
 
 ## 教程目录，点击跳转相应视频（后期会根据学习内容增加）
@@ -102,6 +103,9 @@
   * LR-ASPP (已完成)
     * [LR-ASPP网络讲解](https://www.bilibili.com/video/BV1LS4y1M76E)
     * [LR-ASPP源码解析(Pytorch版)](https://www.bilibili.com/video/bv13D4y1F7ML)
+  
+  * UNet (准备中)
+    * UNet网络讲解
 
 **[更多相关视频请进入我的bilibili频道查看](https://space.bilibili.com/18161609/channel/index)**
 

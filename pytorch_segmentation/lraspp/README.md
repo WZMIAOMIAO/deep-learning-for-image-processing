@@ -47,10 +47,10 @@
 * 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时只需要修改'--num-classes'、'--data-path'和'--weights'即可，其他代码尽量不要改动
 
 ## 如果对LRASPP原理不是很理解可参考我的bilibili
-
+LR-ASPP网络讲解: [https://www.bilibili.com/video/BV1LS4y1M76E](https://www.bilibili.com/video/BV1LS4y1M76E)
 
 ## 进一步了解该项目，以及对LRASPP代码的分析可参考我的bilibili
-
+LR-ASPP源码解析(Pytorch版): [https://www.bilibili.com/video/bv13D4y1F7ML](https://www.bilibili.com/video/bv13D4y1F7ML)
 
 ## Pytorch官方实现的LRASPP网络框架图
 ![lraspp](lraspp.png)
