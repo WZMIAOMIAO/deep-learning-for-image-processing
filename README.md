@@ -97,6 +97,8 @@
     * [FCN源码解析(Pytorch版)](https://www.bilibili.com/video/BV19q4y1971Q)
 
   * DeepLabV3 (已完成)
+    * [DeepLabV1网络讲解](https://www.bilibili.com/video/BV1SU4y1N7Ao)
+	* [DeepLabV2网络讲解](https://www.bilibili.com/video/BV1gP4y1G7TC)
     * [DeepLabV3网络讲解](https://www.bilibili.com/video/BV1Jb4y1q7j7)
     * [DeepLabV3源码解析(Pytorch版)](https://www.bilibili.com/video/BV1TD4y1c7Wx)
 
@@ -105,7 +107,7 @@
     * [LR-ASPP源码解析(Pytorch版)](https://www.bilibili.com/video/bv13D4y1F7ML)
   
   * UNet (准备中)
-    * UNet网络讲解
+    * [UNet网络讲解](https://www.bilibili.com/video/BV1Vq4y127fB/)
 
 **[更多相关视频请进入我的bilibili频道查看](https://space.bilibili.com/18161609/channel/index)**
 
