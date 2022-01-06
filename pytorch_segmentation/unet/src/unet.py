@@ -8,7 +8,7 @@ class DoubleConv(nn.Sequential):
         if mid_channels is None:
             mid_channels = out_channels
         super(DoubleConv, self).__init__(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
@@ -61,23 +61,24 @@ class UNet(nn.Module):
     def __init__(self,
                  in_channels: int = 1,
                  num_classes: int = 2,
-                 bilinear: bool = True):
+                 bilinear: bool = True,
+                 base_c: int = 64):
         super(UNet, self).__init__()
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.bilinear = bilinear
 
-        self.in_conv = DoubleConv(in_channels, 64)
-        self.down1 = Down(64, 128)
-        self.down2 = Down(128, 256)
-        self.down3 = Down(256, 512)
+        self.in_conv = DoubleConv(in_channels, base_c)
+        self.down1 = Down(base_c, base_c * 2)
+        self.down2 = Down(base_c * 2, base_c * 4)
+        self.down3 = Down(base_c * 4, base_c * 8)
         factor = 2 if bilinear else 1
-        self.down4 = Down(512, 1024 // factor)
-        self.up1 = Up(1024, 512 // factor, bilinear)
-        self.up2 = Up(512, 256 // factor, bilinear)
-        self.up3 = Up(256, 128 // factor, bilinear)
-        self.up4 = Up(128, 64, bilinear)
-        self.out_conv = OutConv(64, num_classes)
+        self.down4 = Down(base_c * 8, base_c * 16 // factor)
+        self.up1 = Up(base_c * 16, base_c * 8 // factor, bilinear)
+        self.up2 = Up(base_c * 8, base_c * 4 // factor, bilinear)
+        self.up3 = Up(base_c * 4, base_c * 2 // factor, bilinear)
+        self.up4 = Up(base_c * 2, base_c, bilinear)
+        self.out_conv = OutConv(base_c, num_classes)
 
     def forward(self, x):
         x1 = self.in_conv(x)
@@ -90,4 +91,5 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.out_conv(x)
-        return logits
+
+        return {"out": logits}
