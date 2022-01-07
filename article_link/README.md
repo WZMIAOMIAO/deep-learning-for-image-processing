@@ -50,6 +50,7 @@
 - YOLOv2 [https://arxiv.org/abs/1612.08242](https://arxiv.org/abs/1612.08242)
 - YOLOv3 [https://arxiv.org/abs/1804.02767](https://arxiv.org/abs/1804.02767)
 - YOLOv4 [https://arxiv.org/abs/2004.10934](https://arxiv.org/abs/2004.10934)
+- YOLOX(Exceeding YOLO Series in 2021) [https://arxiv.org/abs/2107.08430](https://arxiv.org/abs/2107.08430)
 - PP-YOLO [https://arxiv.org/abs/2007.12099](https://arxiv.org/abs/2007.12099)
 - PP-YOLOv2 [https://arxiv.org/abs/2104.10419](https://arxiv.org/abs/2104.10419)
 - CornerNet [https://arxiv.org/abs/1808.01244](https://arxiv.org/abs/1808.01244)
