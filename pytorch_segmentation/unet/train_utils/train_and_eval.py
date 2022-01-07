@@ -1,58 +1,18 @@
 import torch
 from torch import nn
 import train_utils.distributed_utils as utils
+from .dice_coefficient_loss import dice_loss, build_target
 
 
-def dice_coeff(x: torch.Tensor, target: torch.Tensor, ignore_index: int = None, epsilon=1e-6):
-    # Average of Dice coefficient for all batches, or for a single mask
-    # 计算一个batch中所有图片某个类别的dice_coefficient
-    d = 0.
-    batch_size = x.shape[0]
-    for i in range(batch_size):
-        x_i = x[i].reshape(-1)
-        t_i = target[i].reshape(-1)
-        if ignore_index is not None:
-            # 找出mask中部位ignore_index的区域
-            roi_mask = torch.ne(t_i, ignore_index)
-            x_i = x_i[roi_mask]
-            t_i = t_i[roi_mask]
-        inter = torch.dot(x_i, t_i)
-        sets_sum = torch.sum(x_i) + torch.sum(t_i)
-        if sets_sum.item() == 0:
-            sets_sum = 2 * inter
-
-        d += (2 * inter + epsilon) / (sets_sum + epsilon)
-
-    return d / batch_size
-
-
-def multiclass_dice_coeff(x: torch.Tensor, target: torch.Tensor, ignore_index: int = None, epsilon=1e-6):
-    # Average of Dice coefficient for all classes
-    dice = 0
-    for channel in range(x.shape[1]):
-        new_target = torch.zeros_like(target, dtype=x.dtype, device=x.device)
-        new_target[torch.eq(target, channel)] = 1.
-        if ignore_index is not None:
-            new_target[torch.eq(target, ignore_index)] = float(ignore_index)
-        dice += dice_coeff(x[:, channel, ...], new_target, ignore_index, epsilon)
-
-    return dice / x.shape[1]
-
-
-def dice_loss(x: torch.Tensor, target: torch.Tensor, multiclass: bool = False, ignore_index: int = None):
-    # Dice loss (objective to minimize) between 0 and 1
-    x = nn.functional.softmax(x, dim=1)
-    fn = multiclass_dice_coeff if multiclass else dice_coeff
-    return 1 - fn(x, target, ignore_index=ignore_index)
-
-
-def criterion(inputs, target, loss_weight=None):
+def criterion(inputs, target, loss_weight=None, num_classes: int = 2, dice: bool = True, ignore_index: int = -100):
     losses = {}
     for name, x in inputs.items():
         # 忽略target中值为255的像素，255的像素是目标边缘或者padding填充
-        ce_loss = nn.functional.cross_entropy(x, target, ignore_index=255, weight=loss_weight)
-        d_loss = dice_loss(x, target, multiclass=True, ignore_index=255)
-        losses[name] = ce_loss + d_loss
+        loss = nn.functional.cross_entropy(x, target, ignore_index=ignore_index, weight=loss_weight)
+        if dice is True:
+            dice_target = build_target(target, num_classes, ignore_index)
+            loss += dice_loss(x, dice_target, multiclass=True, ignore_index=ignore_index)
+        losses[name] = loss
 
     if len(losses) == 1:
         return losses['out']
@@ -63,6 +23,7 @@ def criterion(inputs, target, loss_weight=None):
 def evaluate(model, data_loader, device, num_classes):
     model.eval()
     confmat = utils.ConfusionMatrix(num_classes)
+    dice = utils.DiceCoefficient(num_classes=num_classes, ignore_index=255)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
@@ -72,10 +33,12 @@ def evaluate(model, data_loader, device, num_classes):
             output = output['out']
 
             confmat.update(target.flatten(), output.argmax(1).flatten())
+            dice.update(output, target)
 
         confmat.reduce_from_all_processes()
+        dice.reduce_from_all_processes()
 
-    return confmat
+    return confmat, dice.value.item()
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler, print_freq=10, scaler=None):
@@ -83,13 +46,20 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler, 
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    loss_weight = torch.FloatTensor([1.0, 2.0], device=device)
+
+    num_classes = model.module.num_classes if isinstance(model, nn.parallel.DistributedDataParallel) \
+        else model.num_classes
+    if num_classes == 2:
+        # 设置cross_entropy中背景和前景的loss权重(根据自己的数据集进行设置)
+        loss_weight = torch.as_tensor([1.0, 2.0], device=device)
+    else:
+        loss_weight = None
 
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             output = model(image)
-            loss = criterion(output, target, loss_weight)
+            loss = criterion(output, target, loss_weight, num_classes=num_classes, ignore_index=255)
 
         optimizer.zero_grad()
         if scaler is not None:

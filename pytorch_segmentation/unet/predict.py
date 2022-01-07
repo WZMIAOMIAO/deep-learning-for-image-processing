@@ -23,12 +23,15 @@ def main():
     assert os.path.exists(img_path), f"image {img_path} not found."
     assert os.path.exists(roi_mask_path), f"image {roi_mask_path} not found."
 
+    mean = (0.709, 0.381, 0.224)
+    std = (0.127, 0.079, 0.043)
+
     # get devices
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
 
     # create model
-    model = UNet(in_channels=3, num_classes=classes+1)
+    model = UNet(in_channels=3, num_classes=classes+1, base_c=32)
 
     # load weights
     model.load_state_dict(torch.load(weights_path, map_location='cpu')['model'])
@@ -43,8 +46,7 @@ def main():
 
     # from pil image to tensor and normalize
     data_transform = transforms.Compose([transforms.ToTensor(),
-                                         transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                              std=(0.229, 0.224, 0.225))])
+                                         transforms.Normalize(mean=mean, std=std)])
     img = data_transform(original_img)
     # expand batch dimension
     img = torch.unsqueeze(img, dim=0)

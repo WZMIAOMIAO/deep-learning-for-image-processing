@@ -55,6 +55,17 @@ class RandomHorizontalFlip(object):
         return image, target
 
 
+class RandomVerticalFlip(object):
+    def __init__(self, flip_prob):
+        self.flip_prob = flip_prob
+
+    def __call__(self, image, target):
+        if random.random() < self.flip_prob:
+            image = F.vflip(image)
+            target = F.vflip(target)
+        return image, target
+
+
 class RandomCrop(object):
     def __init__(self, size):
         self.size = size

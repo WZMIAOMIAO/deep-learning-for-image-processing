@@ -21,7 +21,7 @@ def main():
 
         img = img[roi_img == 255]
         cumulative_mean += img.mean(axis=0)
-        cumulative_std += img.std(axis=0, ddof=1)
+        cumulative_std += img.std(axis=0)
 
     mean = cumulative_mean / len(img_name_list)
     std = cumulative_std / len(img_name_list)
