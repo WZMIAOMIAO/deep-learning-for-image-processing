@@ -1,4 +1,4 @@
-numpy==1.17.0
+numpy==1.21.0
 matplotlib
 tqdm==4.42.1
 pycocotools
