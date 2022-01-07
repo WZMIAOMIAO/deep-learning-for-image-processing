@@ -161,7 +161,7 @@ def main(args):
         if args.output_dir:
             # 只在主节点上执行保存权重操作
             save_files = {
-                'model': model.state_dict(),
+                'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args,
