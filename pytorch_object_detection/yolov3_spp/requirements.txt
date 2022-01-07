@@ -1,4 +1,4 @@
-numpy==1.17.0
+numpy==1.21.0
 torchvision==0.7.0
 opencv_python==4.3.0.36
 lxml
