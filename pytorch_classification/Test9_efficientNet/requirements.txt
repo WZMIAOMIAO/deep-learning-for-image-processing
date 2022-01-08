@@ -1,5 +1,5 @@
-numpy==1.19.5
-matplotlib==3.2.1
+numpy
+matplotlib
 tqdm==4.56.0
 torch>=1.7.1
 torchvision>=0.8.2

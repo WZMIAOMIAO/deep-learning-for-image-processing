@@ -41,14 +41,13 @@ def evaluate(model, data_loader, device, num_classes):
     return confmat, dice.value.item()
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler, print_freq=10, scaler=None):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, num_classes,
+                    lr_scheduler, print_freq=10, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
 
-    num_classes = model.module.num_classes if isinstance(model, nn.parallel.DistributedDataParallel) \
-        else model.num_classes
     if num_classes == 2:
         # 设置cross_entropy中背景和前景的loss权重(根据自己的数据集进行设置)
         loss_weight = torch.as_tensor([1.0, 2.0], device=device)

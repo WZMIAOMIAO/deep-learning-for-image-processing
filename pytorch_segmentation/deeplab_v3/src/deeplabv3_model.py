@@ -248,7 +248,7 @@ def deeplabv3_resnet101(aux, num_classes=21, pretrain_backbone=False):
 def deeplabv3_mobilenetv3_large(aux, num_classes=21, pretrain_backbone=False):
     # 'mobilenetv3_large_imagenet': 'https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth'
     # 'depv3_mobilenetv3_large_coco': "https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth"
-    backbone = mobilenet_v3_large(num_classes=num_classes, dilated=True)
+    backbone = mobilenet_v3_large(dilated=True)
 
     if pretrain_backbone:
         # 载入mobilenetv3 large backbone预训练权重

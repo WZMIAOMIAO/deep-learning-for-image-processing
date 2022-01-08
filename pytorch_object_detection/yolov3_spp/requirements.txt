@@ -1,11 +1,11 @@
-numpy==1.17.0
-torchvision==0.7.0
+numpy
 opencv_python==4.3.0.36
 lxml
-torch==1.6.0
+torch==1.7.1
+torchvision==0.8.2
 scipy
 pycocotools
 matplotlib
-tqdm==4.42.1
+tqdm
 tensorboard==2.1.0
 PyYAML
