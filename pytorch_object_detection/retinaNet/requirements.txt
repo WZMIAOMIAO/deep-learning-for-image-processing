@@ -1,7 +1,7 @@
 lxml
 matplotlib
-numpy==1.17.0
-tqdm==4.42.1
+nump
+tqdm
 torch==1.7.1
 torchvision==0.8.2
 pycocotools

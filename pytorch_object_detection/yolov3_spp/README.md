@@ -2,7 +2,7 @@
 ## 该项目源自[ultralytics/yolov3](https://github.com/ultralytics/yolov3)
 ## 1 环境配置：
 * Python3.6或者3.7
-* Pytorch1.6(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
+* Pytorch1.7.1(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
 * pycocotools(Linux: ```pip install pycocotools```;   
   Windows: ```pip install pycocotools-windows```(不需要额外安装vs))
 * 更多环境配置信息，请查看```requirements.txt```文件
