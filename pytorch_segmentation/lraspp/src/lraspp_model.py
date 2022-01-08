@@ -135,7 +135,7 @@ class LRASPPHead(nn.Module):
 def lraspp_mobilenetv3_large(num_classes=21, pretrain_backbone=False):
     # 'mobilenetv3_large_imagenet': 'https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth'
     # 'lraspp_mobilenet_v3_large_coco': 'https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth'
-    backbone = mobilenet_v3_large(num_classes=num_classes, dilated=True)
+    backbone = mobilenet_v3_large(dilated=True)
 
     if pretrain_backbone:
         # 载入mobilenetv3 large backbone预训练权重
