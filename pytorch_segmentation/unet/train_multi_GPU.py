@@ -66,7 +66,6 @@ def main(args):
     # segmentation nun_classes + background
     num_classes = args.num_classes + 1
 
-    # using compute_mean_std.py
     mean = (0.709, 0.381, 0.224)
     std = (0.127, 0.079, 0.043)
 
@@ -147,6 +146,7 @@ def main(args):
         print(val_info)
         return
 
+    best_dice = 0.
     print("Start training")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
@@ -158,7 +158,7 @@ def main(args):
         confmat, dice = evaluate(model, val_data_loader, device=device, num_classes=num_classes)
         val_info = str(confmat)
         print(val_info)
-        print(f"dice: {dice:.3f}")
+        print(f"dice coefficient: {dice:.3f}")
 
         # 只在主进程上进行写操作
         if args.rank in [-1, 0]:
@@ -168,8 +168,14 @@ def main(args):
                 train_info = f"[epoch: {epoch}]\n" \
                              f"train_loss: {mean_loss:.4f}\n" \
                              f"lr: {lr:.6f}\n" \
-                             f"dice: {dice:.3f}\n"
+                             f"dice coefficient: {dice:.3f}\n"
                 f.write(train_info + val_info + "\n\n")
+
+        if args.save_best is True:
+            if best_dice < dice:
+                best_dice = dice
+            else:
+                continue
 
         if args.output_dir:
             # 只在主节点上执行保存权重操作
@@ -180,8 +186,13 @@ def main(args):
                          'epoch': epoch}
             if args.amp:
                 save_file["scaler"] = scaler.state_dict()
-            save_on_master(save_file,
-                           os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+
+            if args.save_best is True:
+                save_on_master(save_file,
+                               os.path.join(args.output_dir, 'best_model.pth'))
+            else:
+                save_on_master(save_file,
+                               os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -223,6 +234,8 @@ if __name__ == "__main__":
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
+    # 只保存dice coefficient值最高的权重
+    parser.add_argument('--save-best', default=True, type=bool, help='only save best weights')
     # 训练过程打印信息的频率
     parser.add_argument('--print-freq', default=1, type=int, help='print frequency')
     # 文件保存地址

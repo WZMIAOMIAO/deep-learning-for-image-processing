@@ -117,6 +117,7 @@ def main(args):
         if args.amp:
             scaler.load_state_dict(checkpoint["scaler"])
 
+    best_dice = 0.
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         mean_loss, lr = train_one_epoch(model, optimizer, train_loader, device, epoch, num_classes,
@@ -125,15 +126,21 @@ def main(args):
         confmat, dice = evaluate(model, val_loader, device=device, num_classes=num_classes)
         val_info = str(confmat)
         print(val_info)
-        print(f"dice: {dice:.3f}")
+        print(f"dice coefficient: {dice:.3f}")
         # write into txt
         with open(results_file, "a") as f:
             # 记录每个epoch对应的train_loss、lr以及验证集各指标
             train_info = f"[epoch: {epoch}]\n" \
                          f"train_loss: {mean_loss:.4f}\n" \
                          f"lr: {lr:.6f}\n" \
-                         f"dice: {dice:.3f}\n"
+                         f"dice coefficient: {dice:.3f}\n"
             f.write(train_info + val_info + "\n\n")
+
+        if args.save_best is True:
+            if best_dice < dice:
+                best_dice = dice
+            else:
+                continue
 
         save_file = {"model": model.state_dict(),
                      "optimizer": optimizer.state_dict(),
@@ -142,7 +149,11 @@ def main(args):
                      "args": args}
         if args.amp:
             save_file["scaler"] = scaler.state_dict()
-        torch.save(save_file, "save_weights/model_{}.pth".format(epoch))
+
+        if args.save_best is True:
+            torch.save(save_file, "save_weights/best_model.pth")
+        else:
+            torch.save(save_file, "save_weights/model_{}.pth".format(epoch))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -171,6 +182,7 @@ def parse_args():
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='start epoch')
+    parser.add_argument('--save-best', default=True, type=bool, help='only save best dice weights')
     # Mixed precision training parameters
     parser.add_argument("--amp", default=False, type=bool,
                         help="Use torch.cuda.amp for mixed precision training")
