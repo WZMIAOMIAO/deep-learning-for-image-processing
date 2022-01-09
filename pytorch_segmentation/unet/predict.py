@@ -16,7 +16,7 @@ def time_synchronized():
 
 def main():
     classes = 1  # exclude background
-    weights_path = "./save_weights/model_99.pth"
+    weights_path = "./save_weights/best_model.pth"
     img_path = "./DRIVE/test/images/01_test.tif"
     roi_mask_path = "./DRIVE/test/mask/01_test_mask.gif"
     assert os.path.exists(weights_path), f"weights {weights_path} not found."
