@@ -47,7 +47,7 @@
 
 
 ## 进一步了解该项目，以及对U-Net代码的分析可参考我的bilibili
-
+* [https://b23.tv/PCJJmqN](https://b23.tv/PCJJmqN)
 
 ## 本项目U-Net默认使用双线性插值做为上采样，结构图如下
 ![u-net](unet.png)
