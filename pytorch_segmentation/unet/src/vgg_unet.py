@@ -88,7 +88,7 @@ class VGG16UNet(nn.Module):
         self.up4 = Up(c, self.stage_out_channels[0])
         self.conv = OutConv(self.stage_out_channels[0], num_classes=num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
         backbone_out = self.backbone(x)
         x = self.up1(backbone_out['stage4'], backbone_out['stage3'])
         x = self.up2(x, backbone_out['stage2'])
