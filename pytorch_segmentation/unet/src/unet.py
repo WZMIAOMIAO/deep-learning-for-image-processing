@@ -1,3 +1,4 @@
+from typing import Dict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,10 +19,10 @@ class DoubleConv(nn.Sequential):
 
 
 class Down(nn.Sequential):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, **kwargs):
         super(Down, self).__init__(
             nn.MaxPool2d(2, stride=2),
-            DoubleConv(in_channels, out_channels)
+            DoubleConv(in_channels, out_channels, **kwargs)
         )
 
 
@@ -35,7 +36,7 @@ class Up(nn.Module):
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
             self.conv = DoubleConv(in_channels, out_channels)
 
-    def forward(self, x1, x2):
+    def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
         x1 = self.up(x1)
         # [N, C, H, W]
         diff_y = x2.size()[2] - x1.size()[2]
@@ -80,7 +81,7 @@ class UNet(nn.Module):
         self.up4 = Up(base_c * 2, base_c, bilinear)
         self.out_conv = OutConv(base_c, num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
         x1 = self.in_conv(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
