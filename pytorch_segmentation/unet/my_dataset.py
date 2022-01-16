@@ -7,9 +7,9 @@ from torch.utils.data import Dataset
 class DriveDataset(Dataset):
     def __init__(self, root: str, train: bool, transforms=None):
         super(DriveDataset, self).__init__()
-        data_root = os.path.join(root, "DRIVE", "training" if train else "test")
-        assert os.path.exists(data_root), f"path '{data_root}' does not exists."
         self.flag = "training" if train else "test"
+        data_root = os.path.join(root, "DRIVE", self.flag)
+        assert os.path.exists(data_root), f"path '{data_root}' does not exists."
         self.transforms = transforms
         img_names = [i for i in os.listdir(os.path.join(data_root, "images")) if i.endswith(".tif")]
         self.img_list = [os.path.join(data_root, "images", i) for i in img_names]
@@ -18,14 +18,14 @@ class DriveDataset(Dataset):
         # check files
         for i in self.manual:
             if os.path.exists(i) is False:
-                print(f"file {i} does not exists.")
+                raise FileNotFoundError(f"file {i} does not exists.")
 
         self.roi_mask = [os.path.join(data_root, "mask", i.split("_")[0] + f"_{self.flag}_mask.gif")
                          for i in img_names]
         # check files
         for i in self.roi_mask:
             if os.path.exists(i) is False:
-                print(f"file {i} does not exists.")
+                raise FileNotFoundError(f"file {i} does not exists.")
 
     def __getitem__(self, idx):
         img = Image.open(self.img_list[idx]).convert('RGB')
