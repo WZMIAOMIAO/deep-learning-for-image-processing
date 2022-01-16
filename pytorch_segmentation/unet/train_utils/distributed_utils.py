@@ -130,11 +130,13 @@ class DiceCoefficient(object):
         self.cumulative_dice = None
         self.num_classes = num_classes
         self.ignore_index = ignore_index
-        self.count = 0
+        self.count = None
 
     def update(self, pred, target):
         if self.cumulative_dice is None:
             self.cumulative_dice = torch.zeros(1, dtype=pred.dtype, device=pred.device)
+        if self.count is None:
+            self.count = torch.zeros(1, dtype=pred.dtype, device=pred.device)
         # compute the Dice score, ignoring background
         pred = F.one_hot(pred.argmax(dim=1), self.num_classes).permute(0, 3, 1, 2).float()
         dice_target = build_target(target, self.num_classes, self.ignore_index)
@@ -149,9 +151,11 @@ class DiceCoefficient(object):
             return self.cumulative_dice / self.count
 
     def reset(self):
-        self.count = 0
         if self.cumulative_dice is not None:
             self.cumulative_dice.zero_()
+
+        if self.count is not None:
+            self.count.zeros_()
 
     def reduce_from_all_processes(self):
         if not torch.distributed.is_available():
@@ -160,6 +164,7 @@ class DiceCoefficient(object):
             return
         torch.distributed.barrier()
         torch.distributed.all_reduce(self.cumulative_dice)
+        torch.distributed.all_reduce(self.count)
 
 
 class MetricLogger(object):
