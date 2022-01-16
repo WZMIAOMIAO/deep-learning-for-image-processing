@@ -19,10 +19,10 @@ class DoubleConv(nn.Sequential):
 
 
 class Down(nn.Sequential):
-    def __init__(self, in_channels, out_channels, **kwargs):
+    def __init__(self, in_channels, out_channels):
         super(Down, self).__init__(
             nn.MaxPool2d(2, stride=2),
-            DoubleConv(in_channels, out_channels, **kwargs)
+            DoubleConv(in_channels, out_channels)
         )
 
 
