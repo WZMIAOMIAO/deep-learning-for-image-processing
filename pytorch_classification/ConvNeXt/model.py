@@ -88,7 +88,7 @@ class Block(nn.Module):
         self.pwconv2 = nn.Linear(4 * dim, dim)
         self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((dim,)),
                                   requires_grad=True) if layer_scale_init_value > 0 else None
-        self.drop_path = DropPath(drop_path) if drop_rate > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_rate) if drop_rate > 0. else nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         shortcut = x
@@ -174,7 +174,8 @@ def convnext_tiny(num_classes: int):
     # https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
     model = ConvNeXt(depths=[3, 3, 9, 3],
                      dims=[96, 192, 384, 768],
-                     num_classes=num_classes)
+                     num_classes=num_classes,
+                     drop_path_rate=0.2)
     return model
 
 
