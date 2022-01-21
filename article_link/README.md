@@ -34,6 +34,7 @@
 - Swin Transformer V2: Scaling Up Capacity and Resolution [https://arxiv.org/abs/2111.09883](https://arxiv.org/abs/2111.09883)
 - BEiT: BERT Pre-Training of Image Transformers [https://arxiv.org/abs/2106.08254](https://arxiv.org/abs/2106.08254)
 - MAE(Masked Autoencoders Are Scalable Vision Learners) [https://arxiv.org/abs/2111.06377](https://arxiv.org/abs/2111.06377)
+- ConvNeXt(A ConvNet for the 2020s) [https://github.com/facebookresearch/ConvNeXt](https://github.com/facebookresearch/ConvNeXt)
 ------
 
 ## 目标检测(Object Detection)

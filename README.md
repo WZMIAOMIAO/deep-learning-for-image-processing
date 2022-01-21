@@ -76,6 +76,10 @@
     * [使用Pytorch搭建Swin Transformer](https://b23.tv/vZnpJf)
     * [使用Tensorflow2搭建Swin Transformer](https://b23.tv/UHLMSF)
 
+  * ConvNeXt(准备中)
+    * [ConvNeXt网络讲解](https://www.bilibili.com/video/BV1SS4y157fu)
+    * 使用Pytorch搭建ConvNeXt
+
 * 目标检测
   * Faster-RCNN/FPN（已完成）
     * [Faster-RCNN网络讲解](https://www.bilibili.com/video/BV1af4y1m7iL)
