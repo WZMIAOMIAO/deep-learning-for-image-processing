@@ -174,8 +174,7 @@ def convnext_tiny(num_classes: int):
     # https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
     model = ConvNeXt(depths=[3, 3, 9, 3],
                      dims=[96, 192, 384, 768],
-                     num_classes=num_classes,
-                     drop_path_rate=0.2)
+                     num_classes=num_classes)
     return model
 
 
