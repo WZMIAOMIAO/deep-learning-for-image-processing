@@ -212,3 +212,28 @@ def create_lr_scheduler(optimizer,
             return ((1 + math.cos(current_step * math.pi / cosine_steps)) / 2) * (1 - end_factor) + end_factor
 
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=f)
+
+
+def get_params_groups(model: torch.nn.Module, weight_decay: float = 1e-5):
+    # 记录optimize要训练的权重参数
+    parameter_group_vars = {"decay": {"params": [], "weight_decay": weight_decay},
+                            "no_decay": {"params": [], "weight_decay": 0.}}
+
+    # 记录对应的权重名称
+    parameter_group_names = {"decay": {"params": [], "weight_decay": weight_decay},
+                             "no_decay": {"params": [], "weight_decay": 0.}}
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue  # frozen weights
+
+        if len(param.shape) == 1 or name.endswith(".bias"):
+            group_name = "no_decay"
+        else:
+            group_name = "decay"
+
+        parameter_group_vars[group_name]["params"].append(param)
+        parameter_group_names[group_name]["params"].append(name)
+
+    print("Param groups = %s" % json.dumps(parameter_group_names, indent=2))
+    return list(parameter_group_vars.values())

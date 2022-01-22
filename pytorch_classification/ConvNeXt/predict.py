@@ -13,6 +13,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"using {device} device.")
 
+    num_classes = 5
     img_size = 224
     data_transform = transforms.Compose(
         [transforms.Resize(int(img_size * 1.14)),
@@ -38,7 +39,7 @@ def main():
     class_indict = json.load(json_file)
 
     # create model
-    model = create_model(num_classes=5).to(device)
+    model = create_model(num_classes=num_classes).to(device)
     # load model weights
     model_weight_path = "./weights/best_model.pth"
     model.load_state_dict(torch.load(model_weight_path, map_location=device))

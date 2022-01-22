@@ -8,7 +8,7 @@ from torchvision import transforms
 
 from my_dataset import MyDataSet
 from model import convnext_tiny as create_model
-from utils import read_split_data, create_lr_scheduler, train_one_epoch, evaluate
+from utils import read_split_data, create_lr_scheduler, get_params_groups, train_one_epoch, evaluate
 
 
 def main(args):
@@ -79,7 +79,8 @@ def main(args):
             else:
                 print("training {}".format(name))
 
-    pg = [p for p in model.parameters() if p.requires_grad]
+    # pg = [p for p in model.parameters() if p.requires_grad]
+    pg = get_params_groups(model, weight_decay=args.wd)
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=args.wd)
     lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.epochs,
                                        warmup=True, warmup_epochs=1)
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     # 链接: https://pan.baidu.com/s/1aNqQW4n_RrUlWUBNlaJRHA  密码: i83t
     parser.add_argument('--weights', type=str, default='./convnext_tiny_1k_224_ema.pth',
                         help='initial weights path')
-    # 是否冻结权重
+    # 是否冻结head以外所有权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
 
