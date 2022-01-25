@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers, initializers, Model
+from tensorflow.keras import layers, initializers, regularizers, Model
 
 KERNEL_INITIALIZER = {
     "class_name": "TruncatedNormal",
@@ -18,23 +18,27 @@ class Block(layers.Layer):
         dim (int): Number of input channels.
         drop_rate (float): Stochastic depth rate. Default: 0.0
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
+        wd (float): l2 wights decay
     """
-    def __init__(self, dim, drop_rate=0., layer_scale_init_value=1e-6, name: str = None):
+    def __init__(self, dim, drop_rate=0., layer_scale_init_value=1e-6, wd=5e-2, name: str = None):
         super().__init__(name=name)
         self.layer_scale_init_value = layer_scale_init_value
         self.dwconv = layers.DepthwiseConv2D(7,
                                              padding="same",
-                                             kernel_initializer=KERNEL_INITIALIZER,
+                                             depthwise_initializer=KERNEL_INITIALIZER,
+                                             depthwise_regularizer=regularizers.l2(wd),
                                              bias_initializer=BIAS_INITIALIZER,
                                              name="dwconv")
         self.norm = layers.LayerNormalization(epsilon=1e-6, name="norm")
         self.pwconv1 = layers.Dense(4 * dim,
                                     kernel_initializer=KERNEL_INITIALIZER,
+                                    kernel_regularizer=regularizers.l2(wd),
                                     bias_initializer=BIAS_INITIALIZER,
                                     name="pwconv1")
         self.act = layers.Activation("gelu")
         self.pwconv2 = layers.Dense(dim,
                                     kernel_initializer=KERNEL_INITIALIZER,
+                                    kernel_regularizer=regularizers.l2(wd),
                                     bias_initializer=BIAS_INITIALIZER,
                                     name="pwconv2")
         self.drop_path = layers.Dropout(drop_rate, noise_shape=(None, 1, 1, 1)) if drop_rate > 0 else None
@@ -67,13 +71,14 @@ class Block(layers.Layer):
 
 
 class Stem(layers.Layer):
-    def __init__(self, dim, name: str = None):
+    def __init__(self, dim, wd=5e-2, name: str = None):
         super().__init__(name=name)
         self.conv = layers.Conv2D(dim,
                                   kernel_size=4,
                                   strides=4,
                                   padding="same",
                                   kernel_initializer=KERNEL_INITIALIZER,
+                                  kernel_regularizer=regularizers.l2(wd),
                                   bias_initializer=BIAS_INITIALIZER,
                                   name="conv2d")
         self.norm = layers.LayerNormalization(epsilon=1e-6, name="norm")
@@ -85,7 +90,7 @@ class Stem(layers.Layer):
 
 
 class DownSample(layers.Layer):
-    def __init__(self, dim, name: str = None):
+    def __init__(self, dim, wd=5e-2, name: str = None):
         super().__init__(name=name)
         self.norm = layers.LayerNormalization(epsilon=1e-6, name="norm")
         self.conv = layers.Conv2D(dim,
@@ -93,6 +98,7 @@ class DownSample(layers.Layer):
                                   strides=2,
                                   padding="same",
                                   kernel_initializer=KERNEL_INITIALIZER,
+                                  kernel_regularizer=regularizers.l2(wd),
                                   bias_initializer=BIAS_INITIALIZER,
                                   name="conv2d")
 
@@ -112,47 +118,53 @@ class ConvNeXt(Model):
         dims (int): Feature dimension at each stage. Default: [96, 192, 384, 768]
         drop_path_rate (float): Stochastic depth rate. Default: 0.
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
+        wd (float): l2 wights decay
     """
     def __init__(self, num_classes: int, depths: list, dims: list, drop_path_rate: float = 0.,
-                 layer_scale_init_value: float = 1e-6):
+                 layer_scale_init_value: float = 1e-6, wd: float = 5e-2):
         super().__init__()
-        self.stem = Stem(dims[0], name="stem")
+        self.stem = Stem(dims[0], wd=wd, name="stem")
 
         cur = 0
         dp_rates = np.linspace(start=0, stop=drop_path_rate, num=sum(depths))
         self.stage1 = [Block(dim=dims[0],
                              drop_rate=dp_rates[cur + i],
                              layer_scale_init_value=layer_scale_init_value,
+                             wd=wd,
                              name=f"stage1_block{i}")
                        for i in range(depths[0])]
         cur += depths[0]
 
-        self.downsample2 = DownSample(dims[1], name="downsample2")
+        self.downsample2 = DownSample(dims[1], wd=wd, name="downsample2")
         self.stage2 = [Block(dim=dims[1],
                              drop_rate=dp_rates[cur + i],
                              layer_scale_init_value=layer_scale_init_value,
+                             wd=wd,
                              name=f"stage2_block{i}")
                        for i in range(depths[1])]
         cur += depths[1]
 
-        self.downsample3 = DownSample(dims[2], name="downsample3")
+        self.downsample3 = DownSample(dims[2], wd=wd, name="downsample3")
         self.stage3 = [Block(dim=dims[2],
                              drop_rate=dp_rates[cur + i],
                              layer_scale_init_value=layer_scale_init_value,
+                             wd=wd,
                              name=f"stage3_block{i}")
                        for i in range(depths[2])]
         cur += depths[2]
 
-        self.downsample4 = DownSample(dims[3], name="downsample4")
+        self.downsample4 = DownSample(dims[3], wd=wd, name="downsample4")
         self.stage4 = [Block(dim=dims[3],
                              drop_rate=dp_rates[cur + i],
                              layer_scale_init_value=layer_scale_init_value,
+                             wd=wd,
                              name=f"stage4_block{i}")
                        for i in range(depths[3])]
 
         self.norm = layers.LayerNormalization(epsilon=1e-6, name="norm")
         self.head = layers.Dense(units=num_classes,
                                  kernel_initializer=KERNEL_INITIALIZER,
+                                 kernel_regularizer=regularizers.l2(wd),
                                  bias_initializer=BIAS_INITIALIZER,
                                  name="head")
 
