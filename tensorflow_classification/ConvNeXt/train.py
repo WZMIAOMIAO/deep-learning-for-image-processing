@@ -73,7 +73,6 @@ def main():
     def train_step(train_images, train_labels):
         with tf.GradientTape() as tape:
             output = model(train_images, training=True)
-            # cross entropy loss + l2 loss
             loss = loss_object(train_labels, output)
 
         gradients = tape.gradient(loss, model.trainable_variables)
