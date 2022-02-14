@@ -105,18 +105,45 @@ def main(weights_path: str,
 
 
 if __name__ == '__main__':
-    # model = convnext_tiny(num_classes=1000)
+    model = convnext_tiny(num_classes=1000)
+    model.build((1, 224, 224, 3))
+    # https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
+    main(weights_path="./convnext_tiny_1k_224_ema.pth",
+         model_name="convnext_tiny_1k_224",
+         model=model)
+
+    # model = convnext_small(num_classes=1000)
     # model.build((1, 224, 224, 3))
-    # # https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
-    # main(weights_path="./convnext_tiny_1k_224_ema.pth",
-    #      model_name="convnext_tiny_1k_224",
+    # # https://dl.fbaipublicfiles.com/convnext/convnext_small_1k_224_ema.pth
+    # main(weights_path="./convnext_small_1k_224_ema.pth",
+    #      model_name="convnext_small_1k_224",
     #      model=model)
 
-    model = convnext_base(num_classes=1000)
-    model.build((1, 224, 224, 3))
-    # https://dl.fbaipublicfiles.com/convnext/convnext_base_1k_224_ema.pth
-    # https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_224.pth
-    main(weights_path="./convnext_base_1k_224_ema.pth",
-         model_name="convnext_base_1k_224",
-         model=model)
+    # model = convnext_base(num_classes=1000)
+    # model.build((1, 224, 224, 3))
+    # # https://dl.fbaipublicfiles.com/convnext/convnext_base_1k_224_ema.pth
+    # main(weights_path="./convnext_base_1k_224_ema.pth",
+    #      model_name="convnext_base_1k_224",
+    #      model=model)
+
+    # model = convnext_base(num_classes=21841)
+    # model.build((1, 224, 224, 3))
+    # # https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_224.pth
+    # main(weights_path="./convnext_base_22k_224.pth",
+    #      model_name="convnext_base_22k_224",
+    #      model=model)
+
+    # model = convnext_large(num_classes=1000)
+    # model.build((1, 224, 224, 3))
+    # # https://dl.fbaipublicfiles.com/convnext/convnext_large_1k_224_ema.pth
+    # main(weights_path="./convnext_large_1k_224_ema.pth",
+    #      model_name="convnext_large_1k_224",
+    #      model=model)
+
+    # model = convnext_large(num_classes=21841)
+    # model.build((1, 224, 224, 3))
+    # # https://dl.fbaipublicfiles.com/convnext/convnext_large_22k_224.pth
+    # main(weights_path="./convnext_large_22k_224.pth",
+    #      model_name="convnext_large_22k_224",
+    #      model=model)
 

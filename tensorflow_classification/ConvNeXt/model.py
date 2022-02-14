@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers, initializers, regularizers, Model
+from tensorflow.keras import layers, initializers, Model
 
 KERNEL_INITIALIZER = {
     "class_name": "TruncatedNormal",

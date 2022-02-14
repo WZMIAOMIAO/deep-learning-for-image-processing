@@ -4,7 +4,6 @@ import sys
 import datetime
 
 import tensorflow as tf
-import tensorflow_addons as tfa
 from tqdm import tqdm
 
 from model import convnext_tiny as create_model
@@ -22,9 +21,9 @@ def main():
     batch_size = 8
     epochs = 10
     num_classes = 5
-    freeze_layers = True
+    freeze_layers = False
     initial_lr = 0.005
-    weight_decay = 5e-2
+    weight_decay = 5e-4
 
     log_dir = "./logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     train_writer = tf.summary.create_file_writer(os.path.join(log_dir, "train"))
@@ -38,7 +37,7 @@ def main():
     model.build((1, 224, 224, 3))
 
     # 下载我提前转好的预训练权重
-    # 链接: https://pan.baidu.com/s/1ro-6bebc8zroYfupn-7jVQ  密码: s9d9
+    # 链接: https://pan.baidu.com/s/1MtYJ3FCAkiPwaMRKuyZN1Q  密码: 1cgp
     # load weights
     pre_weights_path = './convnext_tiny_1k_224.h5'
     assert os.path.exists(pre_weights_path), "cannot find {}".format(pre_weights_path)
@@ -59,9 +58,7 @@ def main():
 
     # using keras low level api for training
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    optimizer = tfa.optimizers.AdamW(weight_decay=weight_decay,
-                                     learning_rate=initial_lr,
-                                     epsilon=1e-8)
+    optimizer = tf.keras.optimizers.SGD(learning_rate=initial_lr, momentum=0.9)
 
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -73,11 +70,21 @@ def main():
     def train_step(train_images, train_labels):
         with tf.GradientTape() as tape:
             output = model(train_images, training=True)
-            loss = loss_object(train_labels, output)
+            ce_loss = loss_object(train_labels, output)
+
+            # l2 loss
+            matcher = re.compile(".*(bias|gamma|beta).*")
+            l2loss = weight_decay * tf.add_n([
+                tf.nn.l2_loss(v)
+                for v in model.trainable_variables
+                if not matcher.match(v.name)
+            ])
+
+            loss = ce_loss + l2loss
 
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        train_loss(loss)
+        train_loss(ce_loss)
         train_accuracy(train_labels, output)
 
     @tf.function
