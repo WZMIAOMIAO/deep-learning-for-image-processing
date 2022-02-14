@@ -78,7 +78,7 @@
 
   * ConvNeXt(准备中)
     * [ConvNeXt网络讲解](https://www.bilibili.com/video/BV1SS4y157fu)
-    * 使用Pytorch搭建ConvNeXt
+    * [使用Pytorch搭建ConvNeXt](https://b23.tv/gzpCv5z)
 
 * 目标检测
   * Faster-RCNN/FPN（已完成）
