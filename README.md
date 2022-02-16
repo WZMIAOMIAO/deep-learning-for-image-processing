@@ -76,9 +76,10 @@
     * [使用Pytorch搭建Swin Transformer](https://b23.tv/vZnpJf)
     * [使用Tensorflow2搭建Swin Transformer](https://b23.tv/UHLMSF)
 
-  * ConvNeXt(准备中)
+  * ConvNeXt(已完成)
     * [ConvNeXt网络讲解](https://www.bilibili.com/video/BV1SS4y157fu)
     * [使用Pytorch搭建ConvNeXt](https://b23.tv/gzpCv5z)
+    * [使用Tensorflow2搭建ConvNeXt](https://b23.tv/zikVoch)
 
 * 目标检测
   * Faster-RCNN/FPN（已完成）
@@ -122,8 +123,8 @@
 * Anaconda3（建议使用）
 * python3.6/3.7/3.8
 * pycharm (IDE)
-* pytorch 1.7.1 (pip package)
-* torchvision 0.8.1 (pip package)
+* pytorch 1.10 (pip package)
+* torchvision 0.11.1 (pip package)
 * tensorflow 2.4.1 (pip package)
 
 欢迎大家关注下我的微信公众号（**阿喆学习小记**），平时会总结些相关学习博文。    
