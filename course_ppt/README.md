@@ -14,6 +14,7 @@
 - **Transformer** 链接：https://pan.baidu.com/s/1DE6RDySr7NS0HQ35gBqP_g 密码：y9e7
 - **Vision Transformer** 链接：https://pan.baidu.com/s/1wzpHG8EK5gxg6UCMscYqMw 密码：cm1m
 - **Swin Transformer** 链接：https://pan.baidu.com/s/1O6XEEZUb6B6AGYON7-EOgA 密码：qkrn
+- **ConvNeXt** 链接：https://pan.baidu.com/s/1mgZjkirJPZ8huVls-O0xXA  密码：kvqx
 - **ConfusionMatrix** 链接: https://pan.baidu.com/s/1EtKzHkZyv2XssYtqmGYCLg  密码: uoo5
 
 
