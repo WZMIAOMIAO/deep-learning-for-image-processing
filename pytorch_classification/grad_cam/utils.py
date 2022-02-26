@@ -70,7 +70,7 @@ class GradCAM:
 
     @staticmethod
     def get_cam_weights(grads):
-        return np.mean(grads, axis=(2, 3))
+        return np.mean(grads, axis=(2, 3), keepdims=True)
 
     @staticmethod
     def get_loss(output, target_category):
@@ -81,7 +81,7 @@ class GradCAM:
 
     def get_cam_image(self, activations, grads):
         weights = self.get_cam_weights(grads)
-        weighted_activations = weights[:, :, None, None] * activations
+        weighted_activations = weights * activations
         cam = weighted_activations.sum(axis=1)
 
         return cam
