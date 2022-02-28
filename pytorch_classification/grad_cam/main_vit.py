@@ -17,6 +17,7 @@ class ReshapeTransform:
 
     def __call__(self, x):
         # remove cls token and reshape
+        # [batch_size, num_tokens, token_dim]
         result = x[:, 1:, :].reshape(x.size(0),
                                      self.h,
                                      self.w,
@@ -24,7 +25,8 @@ class ReshapeTransform:
 
         # Bring the channels to the first dimension,
         # like in CNNs.
-        result = result.transpose(2, 3).transpose(1, 2)
+        # [batch_size, H, W, C] -> [batch, C, H, W]
+        result = result.permute(0, 3, 1, 2)
         return result
 
 
