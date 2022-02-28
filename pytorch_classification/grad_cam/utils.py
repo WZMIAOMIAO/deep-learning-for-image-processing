@@ -16,7 +16,7 @@ class ActivationsAndGradients:
             self.handles.append(
                 target_layer.register_forward_hook(
                     self.save_activation))
-            # Backward compatability with older pytorch versions:
+            # Backward compatibility with older pytorch versions:
             if hasattr(target_layer, 'register_full_backward_hook'):
                 self.handles.append(
                     target_layer.register_full_backward_hook(
