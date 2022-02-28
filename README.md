@@ -93,7 +93,7 @@
     * [SSD源码解析(Pytorch)](https://www.bilibili.com/video/BV1vK411H771)
 
   * YOLOv3 SPP (已完成)
-    * [YOLO系列网络讲解](https://www.bilibili.com/video/BV1yi4y1g7ro)
+    * [YOLO系列网络讲解(v1~v3)](https://www.bilibili.com/video/BV1yi4y1g7ro)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 * 语义分割 
@@ -103,7 +103,7 @@
 
   * DeepLabV3 (已完成)
     * [DeepLabV1网络讲解](https://www.bilibili.com/video/BV1SU4y1N7Ao)
-	* [DeepLabV2网络讲解](https://www.bilibili.com/video/BV1gP4y1G7TC)
+    * [DeepLabV2网络讲解](https://www.bilibili.com/video/BV1gP4y1G7TC)
     * [DeepLabV3网络讲解](https://www.bilibili.com/video/BV1Jb4y1q7j7)
     * [DeepLabV3源码解析(Pytorch版)](https://www.bilibili.com/video/BV1TD4y1c7Wx)
 
