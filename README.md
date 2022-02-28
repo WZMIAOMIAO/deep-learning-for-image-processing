@@ -40,27 +40,27 @@
     * [ResNeXt网络讲解](https://www.bilibili.com/video/BV1Ap4y1p71v/)
     * [Pytorch搭建ResNeXt网络](https://www.bilibili.com/video/BV1rX4y1N7tE)
 
-  * MobileNet_v1_v2（已完成）
-    * [MobileNet_v1_v2网络讲解](https://www.bilibili.com/video/BV1yE411p7L7)
+  * MobileNet_V1_V2（已完成）
+    * [MobileNet_V1_V2网络讲解](https://www.bilibili.com/video/BV1yE411p7L7)
     * [Pytorch搭建MobileNetV2网络](https://www.bilibili.com/video/BV1qE411T7qZ)
     * [Tensorflow2搭建MobileNetV2网络](https://www.bilibili.com/video/BV1NE411K7tX)
 
-  * MobileNet_v3（已完成）
-    * [MobileNet_v3网络讲解](https://www.bilibili.com/video/BV1GK4y1p7uE)
+  * MobileNet_V3（已完成）
+    * [MobileNet_V3网络讲解](https://www.bilibili.com/video/BV1GK4y1p7uE)
     * [Pytorch搭建MobileNetV3网络](https://www.bilibili.com/video/BV1zT4y1P7pd)
     * [Tensorflow2搭建MobileNetV3网络](https://www.bilibili.com/video/BV1KA411g7wX)
 
-  * ShuffleNet_v1_v2 (已完成)
-    * [ShuffleNet_v1_v2网络讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
-    * [使用Pytorch搭建ShuffleNetv2](https://www.bilibili.com/video/BV1dh411r76X)
-    * [使用Tensorflow2搭建ShuffleNetv2](https://www.bilibili.com/video/BV1kr4y1N7bh)
+  * ShuffleNet_V1_V2 (已完成)
+    * [ShuffleNet_V1_V2网络讲解](https://www.bilibili.com/video/BV15y4y1Y7SY)
+    * [使用Pytorch搭建ShuffleNetV2](https://www.bilibili.com/video/BV1dh411r76X)
+    * [使用Tensorflow2搭建ShuffleNetV2](https://www.bilibili.com/video/BV1kr4y1N7bh)
 
-  * EfficientNet_v1（已完成）
+  * EfficientNet_V1（已完成）
     * [EfficientNet网络讲解](https://www.bilibili.com/video/BV1XK4y1U7PX)
     * [使用Pytorch搭建EfficientNet](https://www.bilibili.com/video/BV19z4y1179h/)
     * [使用Tensorflow2搭建EfficientNet](https://www.bilibili.com/video/BV1PK4y1S7Jf)
 
-  * EfficientNet_v2 (已完成)
+  * EfficientNet_V2 (已完成)
     * [EfficientNetV2网络讲解](https://b23.tv/NDR7Ug)
     * [使用Pytorch搭建EfficientNetV2](https://b23.tv/M4hagB)
     * [使用Tensorflow搭建EfficientNetV2](https://b23.tv/KUPbdr)
@@ -93,7 +93,7 @@
     * [SSD源码解析(Pytorch)](https://www.bilibili.com/video/BV1vK411H771)
 
   * YOLOv3 SPP (已完成)
-    * [YOLO系列网络讲解(v1~v3)](https://www.bilibili.com/video/BV1yi4y1g7ro)
+    * [YOLO系列网络讲解(V1~V3)](https://www.bilibili.com/video/BV1yi4y1g7ro)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 * 语义分割 
