@@ -32,9 +32,10 @@ def main():
     img = Image.open(img_path).convert('RGB')
     img = np.array(img, dtype=np.uint8)
 
-    # [N, C, H, W]
+    # [C, H, W]
     img_tensor = data_transform(img)
     # expand batch dimension
+    # [C, H, W] -> [N, C, H, W]
     input_tensor = torch.unsqueeze(img_tensor, dim=0)
 
     cam = GradCAM(model=model, target_layers=target_layers, use_cuda=False)

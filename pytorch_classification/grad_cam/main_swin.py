@@ -58,9 +58,10 @@ def main():
     img = np.array(img, dtype=np.uint8)
     img = center_crop_img(img, img_size)
 
-    # [N, C, H, W]
+    # [C, H, W]
     img_tensor = data_transform(img)
     # expand batch dimension
+    # [C, H, W] -> [N, C, H, W]
     input_tensor = torch.unsqueeze(img_tensor, dim=0)
 
     cam = GradCAM(model=model, target_layers=target_layers, use_cuda=False,
