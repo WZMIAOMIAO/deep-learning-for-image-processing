@@ -92,8 +92,9 @@
     * [RetinaNet网络讲解](https://b23.tv/ZYCfd2)
     * [SSD源码解析(Pytorch)](https://www.bilibili.com/video/BV1vK411H771)
 
-  * YOLOv3 SPP (已完成)
+  * YOLO Series (已完成)
     * [YOLO系列网络讲解(V1~V3)](https://www.bilibili.com/video/BV1yi4y1g7ro)
+    * [YOLOV4网络讲解](https://b23.tv/WLptQ7Q)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 * 语义分割 
