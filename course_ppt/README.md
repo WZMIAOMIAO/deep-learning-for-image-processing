@@ -30,6 +30,7 @@
 - **YOLOv2** 链接: https://pan.baidu.com/s/132aW1e_NYbaxxGi3cDVLYg  密码: tak7
 - **YOLOv3** 链接：https://pan.baidu.com/s/1hZqdgh7wA7QeGAYTttlVOQ  密码：5ulo
 - **YOLOv3SPP** 链接: https://pan.baidu.com/s/15LRssnPez9pn6jRpW89Wlw  密码: nv9f
+- **YOLOv4** 链接：https://pan.baidu.com/s/1Ltw4v1pg0eZNFYR2ZBbZmQ  密码：qjx4
 - **Calculate mAP** 链接: https://pan.baidu.com/s/1jdA_n78J7nSUoOg6TTO5Bg  密码: eh62
 - **coco数据集简介** 链接：https://pan.baidu.com/s/1HfCvjt-8o9j5a916IYNVjw  密码：6rec 
 
