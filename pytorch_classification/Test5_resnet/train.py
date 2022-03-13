@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 
 import torch
@@ -62,7 +63,7 @@ def main():
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = "./resnet34-pre.pth"
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
-    net.load_state_dict(torch.load(model_weight_path, map_location=device))
+    net.load_state_dict(torch.load(model_weight_path, map_location='cpu'))
     # for param in net.parameters():
     #     param.requires_grad = False
 
