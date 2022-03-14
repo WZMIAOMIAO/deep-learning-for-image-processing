@@ -1,3 +1,3 @@
-Flask==1.1.1
+Flask==2.0.2
 Flask_Cors==3.0.9
 Pillow
