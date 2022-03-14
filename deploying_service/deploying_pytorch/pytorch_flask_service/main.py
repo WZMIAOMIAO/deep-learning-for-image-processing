@@ -20,10 +20,10 @@ assert os.path.exists(class_json_path), "class json path does not exist..."
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 # create model
-model = MobileNetV2(num_classes=5)
+model = MobileNetV2(num_classes=5).to(device)
 # load model weights
 model.load_state_dict(torch.load(weights_path, map_location=device))
-model.to(device)
+
 model.eval()
 
 # load class info
