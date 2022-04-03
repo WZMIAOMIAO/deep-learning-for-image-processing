@@ -4,5 +4,5 @@ numpy
 tqdm
 pycocotools
 Pillow
-torch==1.7.1
-torchvision==0.8.2
+torch==1.10
+torchvision==0.11.1

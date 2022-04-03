@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
+from train_utils import convert_to_coco_api
 
 
 class VOCInstances(Dataset):
@@ -36,7 +37,7 @@ class VOCInstances(Dataset):
 
         self.images_path = []     # 存储图片路径
         self.xmls_path = []       # 存储xml文件路径
-        self.xmls = []            # 存储解析的xml字典文件
+        self.xmls_info = []       # 存储解析的xml字典文件
         self.masks_path = []      # 存储SegmentationObject图片路径
         self.objects_bboxes = []  # 存储解析的目标boxes等信息
         self.masks = []           # 存储读取的SegmentationObject图片信息
@@ -64,24 +65,24 @@ class VOCInstances(Dataset):
             instances_mask = np.array(instances_mask)
             instances_mask[instances_mask == 255] = 0  # 255为背景或者忽略掉的地方，这里为了方便直接设置为背景(0)
 
-            if "train" in txt_name:
-                # 训练集需要检查一下标注的bbox个数是否和instances个数一致，验证和测试不需要
-                num_instances = instances_mask.max()
-                if num_objs != num_instances:
-                    print(f"warning: num_boxes:{num_objs} and num_instances:{num_instances} do not correspond. "
-                          f"skip image:{img_path}")
-                    continue
+            # 需要检查一下标注的bbox个数是否和instances个数一致
+            num_instances = instances_mask.max()
+            if num_objs != num_instances:
+                print(f"warning: num_boxes:{num_objs} and num_instances:{num_instances} do not correspond. "
+                      f"skip image:{img_path}")
+                continue
 
             self.images_path.append(img_path)
             self.xmls_path.append(xml_path)
-            self.xmls.append(obs_dict)
+            self.xmls_info.append(obs_dict)
             self.masks_path.append(mask_path)
             self.objects_bboxes.append(obs_bboxes)
             self.masks.append(instances_mask)
 
         self.transforms = transforms
+        self.coco = convert_to_coco_api(self)
 
-    def parse_mask(self, idx: int, w: int, h: int):
+    def parse_mask(self, idx: int):
         mask = self.masks[idx]
         c = mask.max()  # 有几个目标最大索引就等于几
         masks = []
@@ -100,9 +101,8 @@ class VOCInstances(Dataset):
             tuple: (image, target) where target is the image segmentation.
         """
         img = Image.open(self.images_path[idx]).convert('RGB')
-        w, h = img.size
         target = self.objects_bboxes[idx]
-        masks = self.parse_mask(idx, w, h)
+        masks = self.parse_mask(idx)
         target["masks"] = masks
 
         if self.transforms is not None:
@@ -114,11 +114,22 @@ class VOCInstances(Dataset):
         return len(self.images_path)
 
     def get_height_and_width(self, idx):
+        """方便统计所有图片的高宽比例信息"""
         # read xml
-        data = self.xmls[idx]
+        data = self.xmls_info[idx]
         data_height = int(data["size"]["height"])
         data_width = int(data["size"]["width"])
         return data_height, data_width
+
+    def get_annotations(self, idx):
+        """方便构建COCO()"""
+        data = self.xmls_info[idx]
+        h = int(data["size"]["height"])
+        w = int(data["size"]["width"])
+        target = self.objects_bboxes[idx]
+        masks = self.parse_mask(idx)
+        target["masks"] = masks
+        return target, h, w
 
     @staticmethod
     def collate_fn(batch):

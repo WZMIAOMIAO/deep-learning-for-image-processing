@@ -31,8 +31,9 @@ def time_synchronized():
 def main():
     num_classes = 91
     box_thresh = 0.5
-    weight_path = "./maskrcnn_resnet50_fpn_coco.pth"
+    weight_path = "./save_weights/model_25.pth"
     img_path = "./test.jpg"
+    label_json_path = './coco80_indices.json'
 
     # get devices
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -43,11 +44,10 @@ def main():
 
     # load train weights
     assert os.path.exists(weight_path), "{} file dose not exist.".format(weight_path)
-    model.load_state_dict(torch.load(weight_path, map_location='cpu'))
+    model.load_state_dict(torch.load(weight_path, map_location='cpu')["model"])
     model.to(device)
 
     # read class_indict
-    label_json_path = './coco80_indices.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
     with open(label_json_path, 'r') as json_file:
         category_index = json.load(json_file)

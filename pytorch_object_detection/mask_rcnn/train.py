@@ -55,9 +55,9 @@ def main(args):
 
     # load train data set
     # coco2017 -> annotations -> instances_train2017.json
-    train_dataset = CocoDetection(data_root, "train", data_transform["train"])
+    # train_dataset = CocoDetection(data_root, "train", data_transform["train"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    # train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt")
+    train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt")
     train_sampler = None
 
     # 是否按图片相似高宽比采样图片组成batch
@@ -91,9 +91,9 @@ def main(args):
 
     # load validation data set
     # coco2017 -> annotations -> instances_val2017.json
-    val_dataset = CocoDetection(data_root, "val", data_transform["val"])
+    # val_dataset = CocoDetection(data_root, "val", data_transform["val"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    # val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt")
+    val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt")
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=1,
                                                   shuffle=False,
