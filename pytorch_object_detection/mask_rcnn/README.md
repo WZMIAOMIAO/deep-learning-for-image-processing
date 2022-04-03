@@ -1,11 +1,11 @@
-# 训练COCO2017数据集
+# Mask R-CNN
 
 ## 该项目参考自pytorch官方torchvision模块中的源码(使用pycocotools处略有不同)
 * https://github.com/pytorch/vision/tree/master/references/detection
 
 ## 环境配置：
 * Python3.6/3.7/3.8
-* Pytorch1.7.1
+* Pytorch1.10或以上
 * pycocotools(Linux:```pip install pycocotools```; Windows:```pip install pycocotools-windows```(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
@@ -13,16 +13,16 @@
 
 ## 文件结构：
 ```
-  ├── backbone: 特征提取网络，可以根据自己的要求选择，这里是以VGG16为例
-  ├── network_files: Faster R-CNN网络（包括Fast R-CNN以及RPN等模块）
-  ├── train_utils: 训练验证相关模块（包括pycocotools）
-  ├── my_dataset.py: 自定义dataset用于读取COCO2017数据集
-  ├── train.py: 以VGG16做为backbone进行训练
+  ├── backbone: 特征提取网络
+  ├── network_files: Mask R-CNN网络
+  ├── train_utils: 训练验证相关模块（包括coco验证相关）
+  ├── my_dataset_coco.py: 自定义dataset用于读取COCO2017数据集
+  ├── my_dataset_voc.py: 自定义dataset用于读取Pascal VOC数据集
+  ├── train.py: 单GPU/CPU训练脚本
   ├── train_multi_GPU.py: 针对使用多GPU的用户使用
-  ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测测试
+  ├── predict.py: 简易的预测脚本，使用训练好的权重进行预测
   ├── validation.py: 利用训练好的权重验证/测试数据的COCO指标，并生成record_mAP.txt文件
-  ├── transforms.py: 数据预处理（随机水平翻转图像以及bboxes、将PIL图像转为Tensor）
-  └── compute_receptive_field.py: 计算VGG16用于特征提取部分的感受野(不包括最后一个maxpool层，228)
+  └── transforms.py: 数据预处理（随机水平翻转图像以及bboxes、将PIL图像转为Tensor）
 ```
 
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
