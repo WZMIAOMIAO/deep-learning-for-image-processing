@@ -56,7 +56,7 @@ class CocoDetection(data.Dataset):
             with open(coco91to80_path, "r") as f:
                 coco91to80 = json.load(f)
 
-        self.coco91to80 = coco91to80
+        self.classes_mapping = coco91to80
 
         ids = list(sorted(self.coco.imgs.keys()))
         if dataset == "train":
@@ -86,7 +86,7 @@ class CocoDetection(data.Dataset):
         boxes[:, 0::2].clamp_(min=0, max=w)
         boxes[:, 1::2].clamp_(min=0, max=h)
 
-        classes = [self.coco91to80[str(obj["category_id"])] for obj in anno]
+        classes = [self.classes_mapping[str(obj["category_id"])] for obj in anno]
         classes = torch.tensor(classes, dtype=torch.int64)
 
         segmentations = [obj["segmentation"] for obj in anno]

@@ -93,6 +93,7 @@ def convert_to_coco_api(self):
                    "area": areas[i],
                    "iscrowd": iscrowd[i],
                    "id": ann_id}
+            categories.add(labels[i])
             if "masks" in targets:
                 ann["segmentation"] = coco_mask.encode(masks[i].numpy())
             dataset["annotations"].append(ann)

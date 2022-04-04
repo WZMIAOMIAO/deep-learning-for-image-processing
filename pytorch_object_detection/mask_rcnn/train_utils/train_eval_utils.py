@@ -72,11 +72,13 @@ def evaluate(model, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test: "
 
-    coco91to80 = data_loader.dataset.coco91to80
-    coco80to91 = dict([(str(v), k) for k, v in coco91to80.items()])
+    classes_mapping = None
+    if hasattr(data_loader.dataset, "classes_mapping"):
+        coco91to80 = data_loader.dataset.classes_mapping
+        classes_mapping = dict([(str(v), k) for k, v in coco91to80.items()])
 
-    det_metric = DetectionMetric(coco80to91, data_loader.dataset.coco)
-    seg_metric = SegmentationMetric(coco80to91, data_loader.dataset.coco)
+    det_metric = DetectionMetric(classes_mapping, data_loader.dataset.coco)
+    seg_metric = SegmentationMetric(classes_mapping, data_loader.dataset.coco)
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         image = list(img.to(device) for img in image)
 

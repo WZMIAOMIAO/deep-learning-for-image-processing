@@ -10,7 +10,7 @@ from train_utils import convert_to_coco_api
 
 
 class VOCInstances(Dataset):
-    def __init__(self, voc_root, year="2012", transforms=None, txt_name: str = "train.txt"):
+    def __init__(self, voc_root, year="2012", txt_name: str = "train.txt", transforms=None):
         super().__init__()
         if isinstance(year, int):
             year = str(year)
@@ -30,10 +30,11 @@ class VOCInstances(Dataset):
             file_names = [x.strip() for x in f.readlines() if len(x.strip()) > 0]
 
         # read class_indict
-        json_file = './pascal_voc_classes.json'
+        json_file = 'pascal_voc_indices.json'
         assert os.path.exists(json_file), "{} file not exist.".format(json_file)
         with open(json_file, 'r') as f:
-            self.class_dict = json.load(f)
+            idx2classes = json.load(f)
+            self.class_dict = dict([(v, k) for k, v in idx2classes.items()])
 
         self.images_path = []     # 存储图片路径
         self.xmls_path = []       # 存储xml文件路径
@@ -189,7 +190,7 @@ def parse_objects(data: dict, xml_path: str, class_dict: dict, idx: int):
             continue
 
         boxes.append([xmin, ymin, xmax, ymax])
-        labels.append(class_dict[obj["name"]])
+        labels.append(int(class_dict[obj["name"]]))
         if "difficult" in obj:
             iscrowd.append(int(obj["difficult"]))
         else:

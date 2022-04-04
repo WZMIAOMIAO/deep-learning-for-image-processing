@@ -14,6 +14,7 @@ import transforms
 from backbone import resnet50_fpn_backbone
 from network_files import MaskRCNN
 from my_dataset_coco import CocoDetection
+from my_dataset_voc import VOCInstances
 from train_utils import DetectionMetric, SegmentationMetric
 
 
@@ -125,7 +126,7 @@ def main(parser_data):
     }
 
     # read class_indict
-    label_json_path = './coco80_indices.json'
+    label_json_path = parser_data.label_json_path
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
     with open(label_json_path, 'r') as f:
         category_index = json.load(f)
@@ -139,6 +140,8 @@ def main(parser_data):
 
     # load validation data set
     val_dataset = CocoDetection(data_root, "val", data_transform["val"])
+    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
+    # val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt", transforms=data_transform["val"])
     val_dataset_loader = torch.utils.data.DataLoader(val_dataset,
                                                      batch_size=batch_size,
                                                      shuffle=False,
@@ -160,11 +163,13 @@ def main(parser_data):
 
     # evaluate on the val dataset
     cpu_device = torch.device("cpu")
-    coco91to80 = val_dataset.coco91to80
-    coco80to91 = dict([(str(v), k) for k, v in coco91to80.items()])
+    classes_mapping = None
+    if hasattr(val_dataset, "classes_mapping"):
+        coco91to80 = val_dataset.classes_mapping
+        classes_mapping = dict([(str(v), k) for k, v in coco91to80.items()])
 
-    det_metric = DetectionMetric(coco80to91, val_dataset.coco)
-    seg_metric = SegmentationMetric(coco80to91, val_dataset.coco)
+    det_metric = DetectionMetric(classes_mapping, val_dataset.coco)
+    seg_metric = SegmentationMetric(classes_mapping, val_dataset.coco)
     model.eval()
     with torch.no_grad():
         for image, targets in tqdm(val_dataset_loader, desc="validation..."):
@@ -195,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', default='cuda', help='device')
 
     # 检测目标类别数
-    parser.add_argument('--num-classes', type=int, default='80', help='number of classes')
+    parser.add_argument('--num-classes', type=int, default=80, help='number of classes')
 
     # 数据集的根目录
     parser.add_argument('--data-path', default='/data/coco2017', help='dataset root')
@@ -204,8 +209,10 @@ if __name__ == "__main__":
     parser.add_argument('--weights', default='./save_weights/model_25.pth', type=str, help='training weights')
 
     # batch size
-    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+    parser.add_argument('--batch-size', default=1, type=int, metavar='N',
                         help='batch size when validation.')
+    # 类别索引和类别名称对应关系
+    parser.add_argument('--label-json-path', type=str, default="coco80_indices.json")
 
     args = parser.parse_args()
 

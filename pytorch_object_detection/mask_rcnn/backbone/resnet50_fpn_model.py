@@ -239,7 +239,7 @@ def resnet50_fpn_backbone(pretrain_path="",
     搭建resnet50_fpn——backbone
     Args:
         pretrain_path: resnet50的预训练权重，如果不使用就默认为空
-        norm_layer: 默认是nn.BatchNorm2dz，如果GPU显存很小，batch_size不能设置很大，
+        norm_layer: 默认是nn.BatchNorm2d，如果GPU显存很小，batch_size不能设置很大，
                     建议将norm_layer设置成FrozenBatchNorm2d(默认是nn.BatchNorm2d)
                     (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
         trainable_layers: 指定训练哪些层结构

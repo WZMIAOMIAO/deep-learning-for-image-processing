@@ -57,7 +57,7 @@ def main(args):
     # coco2017 -> annotations -> instances_train2017.json
     # train_dataset = CocoDetection(data_root, "train", data_transform["train"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt")
+    train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt", transforms=data_transform["train"])
     train_sampler = None
 
     # 是否按图片相似高宽比采样图片组成batch
@@ -93,7 +93,7 @@ def main(args):
     # coco2017 -> annotations -> instances_val2017.json
     # val_dataset = CocoDetection(data_root, "val", data_transform["val"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt")
+    val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt", transforms=data_transform["val"])
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=1,
                                                   shuffle=False,
@@ -104,9 +104,6 @@ def main(args):
     # create model num_classes equal background + 80 classes
     model = create_model(num_classes=args.num_classes + 1)
     model.to(device)
-
-    if args.distributed and args.sync_bn:
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     train_loss = []
     learning_rate = []
@@ -210,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=26, type=int, metavar='N',
                         help='number of total epochs to run')
     # 学习率
-    parser.add_argument('--lr', default=0.002, type=float,
+    parser.add_argument('--lr', default=0.004, type=float,
                         help='initial learning rate, 0.02 is the default value for training '
                              'on 8 gpus and 2 images_per_gpu')
     # SGD的momentum参数
@@ -226,10 +223,9 @@ if __name__ == "__main__":
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     # 训练的batch size(如果内存/GPU显存充裕，建议设置更大)
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
-    parser.add_argument("--sync-bn", dest="sync_bn", help="Use sync batch norm", type=bool, default=False)
     # 是否使用混合精度训练(需要GPU支持混合精度)
     parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 
