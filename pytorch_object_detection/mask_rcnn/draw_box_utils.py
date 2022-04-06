@@ -128,7 +128,8 @@ def draw_objs(image: Image,
     boxes = boxes[idxs]
     classes = classes[idxs]
     scores = scores[idxs]
-    masks = masks[idxs]
+    if masks is not None:
+        masks = masks[idxs]
     if len(boxes) == 0:
         return
 
@@ -145,7 +146,7 @@ def draw_objs(image: Image,
             # 绘制类别和概率信息
             draw_text(draw, box.tolist(), int(cls), float(score), category_index, color, font, font_size)
 
-    if draw_masks_on_image:
+    if draw_masks_on_image and (masks is not None):
         # Draw all mask onto image.
         image = draw_masks(image, masks, colors, mask_thresh)
 

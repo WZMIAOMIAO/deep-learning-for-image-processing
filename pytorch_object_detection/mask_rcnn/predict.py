@@ -84,19 +84,19 @@ def main():
             print("没有检测到任何目标!")
             return
 
-        img = draw_objs(original_img,
-                        boxes=predict_boxes,
-                        classes=predict_classes,
-                        scores=predict_scores,
-                        masks=predict_mask,
-                        category_index=category_index,
-                        line_thickness=3,
-                        font='arial.ttf',
-                        font_size=20)
-        plt.imshow(img)
+        plot_img = draw_objs(original_img,
+                             boxes=predict_boxes,
+                             classes=predict_classes,
+                             scores=predict_scores,
+                             masks=predict_mask,
+                             category_index=category_index,
+                             line_thickness=3,
+                             font='arial.ttf',
+                             font_size=20)
+        plt.imshow(plot_img)
         plt.show()
         # 保存预测的图片结果
-        img.save("test_result.jpg")
+        plot_img.save("test_result.jpg")
 
 
 if __name__ == '__main__':
