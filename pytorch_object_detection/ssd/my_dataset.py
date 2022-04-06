@@ -24,9 +24,8 @@ class VOCDataSet(Dataset):
         # read class_indict
         json_file = "./pascal_voc_classes.json"
         assert os.path.exists(json_file), "{} file not exist.".format(json_file)
-        json_file = open(json_file, 'r')
-        self.class_dict = json.load(json_file)
-        json_file.close()
+        with open(json_file, 'r') as f:
+            self.class_dict = json.load(f)
 
         self.transforms = transforms
 
