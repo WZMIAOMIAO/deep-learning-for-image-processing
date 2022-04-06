@@ -55,9 +55,9 @@ def main(args):
 
     # load train data set
     # coco2017 -> annotations -> instances_train2017.json
-    # train_dataset = CocoDetection(data_root, "train", data_transform["train"])
+    train_dataset = CocoDetection(data_root, "train", data_transform["train"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt", transforms=data_transform["train"])
+    # train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt", transforms=data_transform["train"])
     train_sampler = None
 
     # 是否按图片相似高宽比采样图片组成batch
@@ -91,9 +91,9 @@ def main(args):
 
     # load validation data set
     # coco2017 -> annotations -> instances_val2017.json
-    # val_dataset = CocoDetection(data_root, "val", data_transform["val"])
+    val_dataset = CocoDetection(data_root, "val", data_transform["val"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt", transforms=data_transform["val"])
+    # val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt", transforms=data_transform["val"])
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=1,
                                                   shuffle=False,
@@ -194,9 +194,9 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录
-    parser.add_argument('--data-path', default='/data/', help='dataset')
+    parser.add_argument('--data-path', default='/data/coco2017', help='dataset')
     # 检测目标类别数(不包含背景)
-    parser.add_argument('--num-classes', default=80, type=int, help='num_classes')
+    parser.add_argument('--num-classes', default=90, type=int, help='num_classes')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址

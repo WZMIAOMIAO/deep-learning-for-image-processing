@@ -9,7 +9,7 @@ from .distributed_utils import all_gather, is_main_process
 
 
 class DetectionMetric:
-    def __init__(self, classes_mapping: dict = None, coco: COCO = None):
+    def __init__(self, coco: COCO = None, classes_mapping: dict = None):
         self.coco = copy.deepcopy(coco)
         self.results = []
         self.aggregation_results = None

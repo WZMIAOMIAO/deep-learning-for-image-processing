@@ -36,27 +36,13 @@ class CocoDetection(data.Dataset):
             # 获取coco数据索引与类别名称的关系
             # 注意在object80中的索引并不是连续的，虽然只有80个类别，但索引还是按照stuff91来排序的
             coco_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
-
-            # 将stuff91的类别索引重新编排，从1到80
-            coco91to80 = dict([(str(k), idx+1) for idx, (k, _) in enumerate(coco_classes.items())])
-            json_str = json.dumps(coco91to80, indent=4)
-            with open('coco91_to_80.json', 'w') as json_file:
-                json_file.write(json_str)
-
-            # 记录重新编排后的索引以及类别名称关系
-            coco80_info = dict([(str(idx+1), v) for idx, (_, v) in enumerate(coco_classes.items())])
-            json_str = json.dumps(coco80_info, indent=4)
-            with open('coco80_indices.json', 'w') as json_file:
-                json_file.write(json_str)
+            json_str = json.dumps(coco_classes, indent=4)
+            with open("coco91_indices.jon", "w") as f:
+                f.write(json_str)
         else:
-            # 如果是验证集就直接读取生成好的数据
-            coco91to80_path = 'coco91_to_80.json'
-            assert os.path.exists(coco91to80_path), "file '{}' does not exist.".format(coco91to80_path)
+            coco_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
 
-            with open(coco91to80_path, "r") as f:
-                coco91to80 = json.load(f)
-
-        self.classes_mapping = coco91to80
+        self.coco_classes = coco_classes
 
         ids = list(sorted(self.coco.imgs.keys()))
         if dataset == "train":
@@ -86,7 +72,7 @@ class CocoDetection(data.Dataset):
         boxes[:, 0::2].clamp_(min=0, max=w)
         boxes[:, 1::2].clamp_(min=0, max=h)
 
-        classes = [self.classes_mapping[str(obj["category_id"])] for obj in anno]
+        classes = [obj["category_id"] for obj in anno]
         classes = torch.tensor(classes, dtype=torch.int64)
 
         segmentations = [obj["segmentation"] for obj in anno]
