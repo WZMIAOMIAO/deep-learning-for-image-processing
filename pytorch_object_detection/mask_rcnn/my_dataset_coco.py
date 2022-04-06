@@ -37,7 +37,7 @@ class CocoDetection(data.Dataset):
             # 注意在object80中的索引并不是连续的，虽然只有80个类别，但索引还是按照stuff91来排序的
             coco_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
             json_str = json.dumps(coco_classes, indent=4)
-            with open("coco91_indices.jon", "w") as f:
+            with open("coco91_indices.json", "w") as f:
                 f.write(json_str)
         else:
             coco_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
