@@ -151,7 +151,7 @@ def main(parser_data):
 
     # create model
     backbone = resnet50_fpn_backbone()
-    model = MaskRCNN(backbone, num_classes=args.num_classes+1)
+    model = MaskRCNN(backbone, num_classes=args.num_classes + 1)
 
     # 载入你自己训练好的模型权重
     weights_path = parser_data.weights
@@ -199,8 +199,8 @@ if __name__ == "__main__":
     # 使用设备类型
     parser.add_argument('--device', default='cuda', help='device')
 
-    # 检测目标类别数
-    parser.add_argument('--num-classes', type=int, default=80, help='number of classes')
+    # 检测目标类别数(不包含背景)
+    parser.add_argument('--num-classes', type=int, default=90, help='number of classes')
 
     # 数据集的根目录
     parser.add_argument('--data-path', default='/data/coco2017', help='dataset root')
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', default=1, type=int, metavar='N',
                         help='batch size when validation.')
     # 类别索引和类别名称对应关系
-    parser.add_argument('--label-json-path', type=str, default="coco80_indices.json")
+    parser.add_argument('--label-json-path', type=str, default="coco91_indices.json")
 
     args = parser.parse_args()
 

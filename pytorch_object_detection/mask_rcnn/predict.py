@@ -29,18 +29,18 @@ def time_synchronized():
 
 
 def main():
-    num_classes = 91
+    num_classes = 90  # 不包含背景
     box_thresh = 0.5
     weight_path = "./save_weights/model_25.pth"
     img_path = "./test.jpg"
-    label_json_path = './coco80_indices.json'
+    label_json_path = './coco91_indices.json'
 
     # get devices
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
 
     # create model
-    model = create_model(num_classes=num_classes, box_thresh=box_thresh)
+    model = create_model(num_classes=num_classes + 1, box_thresh=box_thresh)
 
     # load train weights
     assert os.path.exists(weight_path), "{} file dose not exist.".format(weight_path)
