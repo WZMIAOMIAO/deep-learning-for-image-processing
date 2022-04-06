@@ -97,7 +97,7 @@ def main(args):
 
     print("Creating model")
     # create model num_classes equal background + 80 classes
-    model = create_model(num_classes=args.num_classes + 1)
+    model = create_model(num_classes=args.num_classes + 1, load_pretrain_weights=args.pretrain)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -250,6 +250,7 @@ if __name__ == "__main__":
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
     parser.add_argument("--sync-bn", dest="sync_bn", help="Use sync batch norm", type=bool, default=False)
+    parser.add_argument("--pretrain", type=bool, default=True, help="load COCO pretrain weights.")
     # 是否使用混合精度训练(需要GPU支持混合精度)
     parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 

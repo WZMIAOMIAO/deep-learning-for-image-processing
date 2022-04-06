@@ -102,7 +102,7 @@ def main(args):
                                                   collate_fn=train_dataset.collate_fn)
 
     # create model num_classes equal background + 80 classes
-    model = create_model(num_classes=args.num_classes + 1)
+    model = create_model(num_classes=args.num_classes + 1, load_pretrain_weights=args.pretrain)
     model.to(device)
 
     train_loss = []
@@ -226,6 +226,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    parser.add_argument("--pretrain", type=bool, default=True, help="load COCO pretrain weights.")
     # 是否使用混合精度训练(需要GPU支持混合精度)
     parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 

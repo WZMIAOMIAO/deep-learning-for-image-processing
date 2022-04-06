@@ -35,7 +35,6 @@ class DetectionMetric:
             for object_score, object_class, object_box in zip(
                     per_image_scores, per_image_classes, per_image_boxes):
                 object_score = float(object_score)
-                # 要将类别信息还原回coco91中，因为原始的GT类别信息都是coco91的
                 class_idx = int(object_class)
                 if self.classes_mapping is not None:
                     class_idx = int(self.classes_mapping[str(class_idx)])
@@ -87,7 +86,7 @@ class DetectionMetric:
 
 
 class SegmentationMetric:
-    def __init__(self, classes_mapping: dict = None, coco: COCO = None):
+    def __init__(self, coco: COCO = None, classes_mapping: dict = None):
         self.coco = copy.deepcopy(coco)
         self.results = []
         self.aggregation_results = None
@@ -113,7 +112,6 @@ class SegmentationMetric:
                 rle = mask_util.encode(np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F"))[0]
                 rle["counts"] = rle["counts"].decode("utf-8")
 
-                # 要将类别信息还原回coco91中，因为原始的GT类别信息都是coco91的
                 class_idx = int(label)
                 if self.classes_mapping is not None:
                     class_idx = int(self.classes_mapping[str(class_idx)])
