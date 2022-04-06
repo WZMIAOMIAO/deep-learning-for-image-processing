@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from network_files import FasterRCNN, FastRCNNPredictor, AnchorsGenerator
 from backbone import resnet50_fpn_backbone, MobileNetV2
-from draw_box_utils import draw_box
+from draw_box_utils import draw_objs
 
 
 def create_model(num_classes):
@@ -60,9 +60,9 @@ def main():
     # read class_indict
     label_json_path = './pascal_voc_classes.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
-    json_file = open(label_json_path, 'r')
-    class_dict = json.load(json_file)
-    json_file.close()
+    with open(label_json_path, 'r') as f:
+        class_dict = json.load(f)
+
     category_index = {v: k for k, v in class_dict.items()}
 
     # load image
@@ -93,17 +93,19 @@ def main():
         if len(predict_boxes) == 0:
             print("没有检测到任何目标!")
 
-        draw_box(original_img,
-                 predict_boxes,
-                 predict_classes,
-                 predict_scores,
-                 category_index,
-                 thresh=0.5,
-                 line_thickness=3)
-        plt.imshow(original_img)
+        plot_img = draw_objs(original_img,
+                             predict_boxes,
+                             predict_classes,
+                             predict_scores,
+                             category_index=category_index,
+                             box_thresh=0.5,
+                             line_thickness=3,
+                             font='arial.ttf',
+                             font_size=20)
+        plt.imshow(plot_img)
         plt.show()
         # 保存预测的图片结果
-        original_img.save("test_result.jpg")
+        plot_img.save("test_result.jpg")
 
 
 if __name__ == '__main__':
