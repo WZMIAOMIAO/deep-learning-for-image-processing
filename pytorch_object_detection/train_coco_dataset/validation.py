@@ -101,9 +101,8 @@ def main(parser_data):
     # read class_indict
     label_json_path = './coco80_indices.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
-    json_file = open(label_json_path, 'r')
-    category_index = json.load(json_file)
-    json_file.close()
+    with open(label_json_path, 'r') as f:
+        category_index = json.load(f)
 
     coco_root = parser_data.data_path
 

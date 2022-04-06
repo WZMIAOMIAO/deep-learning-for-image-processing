@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from network_files import FasterRCNN, AnchorsGenerator
 from backbone import vgg, MobileNetV2
-from draw_box_utils import draw_box
+from draw_box_utils import draw_objs
 
 
 def create_model(num_classes):
@@ -91,17 +91,19 @@ def main():
         if len(predict_boxes) == 0:
             print("没有检测到任何目标!")
 
-        draw_box(original_img,
-                 predict_boxes,
-                 predict_classes,
-                 predict_scores,
-                 category_index,
-                 thresh=0.5,
-                 line_thickness=3)
-        plt.imshow(original_img)
+        plot_img = draw_objs(original_img,
+                             predict_boxes,
+                             predict_classes,
+                             predict_scores,
+                             category_index=category_index,
+                             box_thresh=0.5,
+                             line_thickness=3,
+                             font='arial.ttf',
+                             font_size=20)
+        plt.imshow(plot_img)
         plt.show()
         # 保存预测的图片结果
-        original_img.save("test_result.jpg")
+        plot_img.save("test_result.jpg")
 
 
 if __name__ == '__main__':
