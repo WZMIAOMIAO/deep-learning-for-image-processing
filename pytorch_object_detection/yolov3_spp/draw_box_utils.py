@@ -1,7 +1,7 @@
-import collections
-from PIL import Image
+from PIL.Image import Image, fromarray
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
+from PIL import ImageColor
 import numpy as np
 
 STANDARD_COLORS = [
@@ -31,69 +31,123 @@ STANDARD_COLORS = [
 ]
 
 
-def filter_low_thresh(boxes, scores, classes, category_index, thresh, box_to_display_str_map, box_to_color_map):
-    for i in range(boxes.shape[0]):
-        if scores[i] > thresh:
-            box = tuple(boxes[i].tolist())  # numpy -> list -> tuple
-            if classes[i] in category_index.keys():
-                class_name = category_index[classes[i]]
-            else:
-                class_name = 'N/A'
-            display_str = str(class_name)
-            display_str = '{}: {}%'.format(display_str, int(100 * scores[i]))
-            box_to_display_str_map[box].append(display_str)
-            box_to_color_map[box] = STANDARD_COLORS[
-                classes[i] % len(STANDARD_COLORS)]
-        else:
-            break  # 网络输出概率已经排序过，当遇到一个不满足后面的肯定不满足
-
-
-def draw_text(draw, box_to_display_str_map, box, left, right, top, bottom, color):
+def draw_text(draw,
+              box: list,
+              cls: int,
+              score: float,
+              category_index: dict,
+              color: str,
+              font: str = 'arial.ttf',
+              font_size: int = 24):
+    """
+    将目标边界框和类别信息绘制到图片上
+    """
     try:
-        font = ImageFont.truetype('arial.ttf', 20)
+        font = ImageFont.truetype(font, font_size)
     except IOError:
         font = ImageFont.load_default()
 
+    left, top, right, bottom = box
     # If the total height of the display strings added to the top of the bounding
     # box exceeds the top of the image, stack the strings below the bounding box
     # instead of above.
-    display_str_heights = [font.getsize(ds)[1] for ds in box_to_display_str_map[box]]
+    display_str = f"{category_index[str(cls)]}: {int(100 * score)}%"
+    display_str_heights = [font.getsize(ds)[1] for ds in display_str]
     # Each display_str has a top and bottom margin of 0.05x.
-    total_display_str_height = (1 + 2 * 0.05) * sum(display_str_heights)
+    display_str_height = (1 + 2 * 0.05) * max(display_str_heights)
 
-    if top > total_display_str_height:
+    if top > display_str_height:
+        text_top = top - display_str_height
         text_bottom = top
     else:
-        text_bottom = bottom + total_display_str_height
-    # Reverse list and print from bottom to top.
-    for display_str in box_to_display_str_map[box][::-1]:
-        text_width, text_height = font.getsize(display_str)
-        margin = np.ceil(0.05 * text_height)
-        draw.rectangle([(left, text_bottom - text_height - 2 * margin),
-                        (left + text_width, text_bottom)], fill=color)
-        draw.text((left + margin, text_bottom - text_height - margin),
-                  display_str,
+        text_top = bottom
+        text_bottom = bottom + display_str_height
+
+    for ds in display_str:
+        text_width, text_height = font.getsize(ds)
+        margin = np.ceil(0.05 * text_width)
+        draw.rectangle([(left, text_top),
+                        (left + text_width + 2 * margin, text_bottom)], fill=color)
+        draw.text((left + margin, text_top),
+                  ds,
                   fill='black',
                   font=font)
-        text_bottom -= text_height - 2 * margin
+        left += text_width
 
 
-def draw_box(image, boxes, classes, scores, category_index, thresh=0.1, line_thickness=3):
-    box_to_display_str_map = collections.defaultdict(list)
-    box_to_color_map = collections.defaultdict(str)
+def draw_masks(image, masks, colors, thresh: float = 0.7, alpha: float = 0.5):
+    np_image = np.array(image)
+    masks = np.where(masks > thresh, True, False)
 
-    filter_low_thresh(boxes, scores, classes, category_index, thresh, box_to_display_str_map, box_to_color_map)
+    # colors = np.array(colors)
+    img_to_draw = np.copy(np_image)
+    # TODO: There might be a way to vectorize this
+    for mask, color in zip(masks, colors):
+        img_to_draw[mask] = color
 
-    # Draw all boxes onto image.
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
-    draw = ImageDraw.Draw(image)
-    im_width, im_height = image.size
-    for box, color in box_to_color_map.items():
-        xmin, ymin, xmax, ymax = box
-        (left, right, top, bottom) = (xmin * 1, xmax * 1,
-                                      ymin * 1, ymax * 1)
-        draw.line([(left, top), (left, bottom), (right, bottom),
-                   (right, top), (left, top)], width=line_thickness, fill=color)
-        draw_text(draw, box_to_display_str_map, box, left, right, top, bottom, color)
+    out = np_image * (1 - alpha) + img_to_draw * alpha
+    return fromarray(out.astype(np.uint8))
+
+
+def draw_objs(image: Image,
+              boxes: np.ndarray = None,
+              classes: np.ndarray = None,
+              scores: np.ndarray = None,
+              masks: np.ndarray = None,
+              category_index: dict = None,
+              box_thresh: float = 0.1,
+              mask_thresh: float = 0.5,
+              line_thickness: int = 8,
+              font: str = 'arial.ttf',
+              font_size: int = 24,
+              draw_boxes_on_image: bool = True,
+              draw_masks_on_image: bool = False):
+    """
+    将目标边界框信息，类别信息，mask信息绘制在图片上
+    Args:
+        image: 需要绘制的图片
+        boxes: 目标边界框信息
+        classes: 目标类别信息
+        scores: 目标概率信息
+        masks: 目标mask信息
+        category_index: 类别与名称字典
+        box_thresh: 过滤的概率阈值
+        mask_thresh:
+        line_thickness: 边界框宽度
+        font: 字体类型
+        font_size: 字体大小
+        draw_boxes_on_image:
+        draw_masks_on_image:
+
+    Returns:
+
+    """
+
+    # 过滤掉低概率的目标
+    idxs = np.greater(scores, box_thresh)
+    boxes = boxes[idxs]
+    classes = classes[idxs]
+    scores = scores[idxs]
+    if masks is not None:
+        masks = masks[idxs]
+    if len(boxes) == 0:
+        return
+
+    colors = [ImageColor.getrgb(STANDARD_COLORS[cls % len(STANDARD_COLORS)]) for cls in classes]
+
+    if draw_boxes_on_image:
+        # Draw all boxes onto image.
+        draw = ImageDraw.Draw(image)
+        for box, cls, score, mask, color in zip(boxes, classes, scores, masks, colors):
+            left, top, right, bottom = box
+            # 绘制目标边界框
+            draw.line([(left, top), (left, bottom), (right, bottom),
+                       (right, top), (left, top)], width=line_thickness, fill=color)
+            # 绘制类别和概率信息
+            draw_text(draw, box.tolist(), int(cls), float(score), category_index, color, font, font_size)
+
+    if draw_masks_on_image and (masks is not None):
+        # Draw all mask onto image.
+        image = draw_masks(image, masks, colors, mask_thresh)
+
     return image

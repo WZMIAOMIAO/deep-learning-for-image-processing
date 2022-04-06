@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 
 from build_utils import img_utils, torch_utils, utils
 from models import Darknet
-from draw_box_utils import draw_box
+from draw_box_utils import draw_objs
 
 
 def main():
@@ -75,11 +75,19 @@ def main():
         scores = pred[:, 4].detach().cpu().numpy()
         classes = pred[:, 5].detach().cpu().numpy().astype(np.int) + 1
 
-        img_o = draw_box(img_o[:, :, ::-1], bboxes, classes, scores, category_index)
-        plt.imshow(img_o)
+        plot_img = draw_objs(img_o[:, :, ::-1],
+                             bboxes,
+                             classes,
+                             scores,
+                             category_index=category_index,
+                             box_thresh=0.5,
+                             line_thickness=3,
+                             font='arial.ttf',
+                             font_size=20)
+        plt.imshow(plot_img)
         plt.show()
-
-        img_o.save("test_result.jpg")
+        # 保存预测的图片结果
+        plot_img.save("test_result.jpg")
 
 
 if __name__ == "__main__":
