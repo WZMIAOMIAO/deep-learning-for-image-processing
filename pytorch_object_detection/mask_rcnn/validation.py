@@ -15,7 +15,7 @@ from backbone import resnet50_fpn_backbone
 from network_files import MaskRCNN
 from my_dataset_coco import CocoDetection
 from my_dataset_voc import VOCInstances
-from train_utils import DetectionMetric, SegmentationMetric
+from train_utils import EvalCOCOMetric
 
 
 def summarize(self, catId=None):
@@ -99,10 +99,11 @@ def save_info(coco_evaluator,
     coco_stats, print_coco = summarize(coco_evaluator)
 
     # calculate voc info for every classes(IoU=0.5)
+    classes = [v for v in category_index.values() if v != "N/A"]
     voc_map_info_list = []
-    for i in range(len(category_index)):
+    for i in range(len(classes)):
         stats, _ = summarize(coco_evaluator, catId=i)
-        voc_map_info_list.append(" {:15}: {}".format(category_index[str(i + 1)], stats[1]))
+        voc_map_info_list.append(" {:15}: {}".format(classes[i], stats[1]))
 
     print_voc = "\n".join(voc_map_info_list)
     print(print_voc)
@@ -163,13 +164,9 @@ def main(parser_data):
 
     # evaluate on the val dataset
     cpu_device = torch.device("cpu")
-    classes_mapping = None
-    if hasattr(val_dataset, "classes_mapping"):
-        coco91to80 = val_dataset.classes_mapping
-        classes_mapping = dict([(str(v), k) for k, v in coco91to80.items()])
 
-    det_metric = DetectionMetric(classes_mapping, val_dataset.coco)
-    seg_metric = SegmentationMetric(classes_mapping, val_dataset.coco)
+    det_metric = EvalCOCOMetric(val_dataset.coco, "bbox", "det_results.json")
+    seg_metric = EvalCOCOMetric(val_dataset.coco, "segm", "seg_results.json")
     model.eval()
     with torch.no_grad():
         for image, targets in tqdm(val_dataset_loader, desc="validation..."):
@@ -183,6 +180,8 @@ def main(parser_data):
             det_metric.update(targets, outputs)
             seg_metric.update(targets, outputs)
 
+    det_metric.synchronize_results()
+    seg_metric.synchronize_results()
     det_metric.evaluate()
     seg_metric.evaluate()
 
@@ -208,7 +207,7 @@ if __name__ == "__main__":
     # 训练好的权重文件
     parser.add_argument('--weights', default='./save_weights/model_25.pth', type=str, help='training weights')
 
-    # batch size
+    # batch size(set to 1, don't change)
     parser.add_argument('--batch-size', default=1, type=int, metavar='N',
                         help='batch size when validation.')
     # 类别索引和类别名称对应关系

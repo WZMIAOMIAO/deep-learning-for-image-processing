@@ -32,15 +32,22 @@ class CocoDetection(data.Dataset):
         self.transforms = transforms
         self.coco = COCO(self.anno_path)
 
+        # 获取coco数据索引与类别名称的关系
+        # 注意在object80中的索引并不是连续的，虽然只有80个类别，但索引还是按照stuff91来排序的
+        data_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
+        max_index = max(data_classes.keys())  # 90
+        # 将缺失的类别名称设置成N/A
+        coco_classes = {}
+        for k in range(1, max_index + 1):
+            if k in data_classes:
+                coco_classes[k] = data_classes[k]
+            else:
+                coco_classes[k] = "N/A"
+
         if dataset == "train":
-            # 获取coco数据索引与类别名称的关系
-            # 注意在object80中的索引并不是连续的，虽然只有80个类别，但索引还是按照stuff91来排序的
-            coco_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
             json_str = json.dumps(coco_classes, indent=4)
             with open("coco91_indices.json", "w") as f:
                 f.write(json_str)
-        else:
-            coco_classes = dict([(v["id"], v["name"]) for k, v in self.coco.cats.items()])
 
         self.coco_classes = coco_classes
 

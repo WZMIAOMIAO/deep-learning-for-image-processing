@@ -130,6 +130,10 @@ def main(args):
         if args.amp and "scaler" in checkpoint:
             scaler.load_state_dict(checkpoint["scaler"])
 
+    if args.test_only:
+        utils.evaluate(model, data_loader_test, device=device)
+        return
+
     train_loss = []
     learning_rate = []
     val_map = []
@@ -158,13 +162,13 @@ def main(args):
             # write into txt
             with open(det_results_file, "a") as f:
                 # 写入的数据包括coco指标还有loss和learning rate
-                result_info = [str(round(i, 4)) for i in det_info + [mean_loss.item()]] + [str(round(lr, 6))]
+                result_info = [f"{i:.4f}" for i in det_info + [mean_loss.item()]] + [f"{lr:.6f}"]
                 txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
                 f.write(txt + "\n")
 
             with open(seg_results_file, "a") as f:
                 # 写入的数据包括coco指标还有loss和learning rate
-                result_info = [str(round(i, 4)) for i in seg_info + [mean_loss.item()]] + [str(round(lr, 6))]
+                result_info = [f"{i:.4f}" for i in seg_info + [mean_loss.item()]] + [f"{lr:.6f}"]
                 txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
                 f.write(txt + "\n")
 
@@ -244,6 +248,7 @@ if __name__ == "__main__":
     # 基于上次的训练结果接着训练
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    parser.add_argument('--test-only', action="store_tyre", help="test only")
 
     # 开启的进程数(注意不是线程)
     parser.add_argument('--world-size', default=4, type=int,
