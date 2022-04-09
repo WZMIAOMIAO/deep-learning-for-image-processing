@@ -138,7 +138,7 @@ def draw_objs(image: Image,
     if draw_boxes_on_image:
         # Draw all boxes onto image.
         draw = ImageDraw.Draw(image)
-        for box, cls, score, mask, color in zip(boxes, classes, scores, masks, colors):
+        for box, cls, score, color in zip(boxes, classes, scores, colors):
             left, top, right, bottom = box
             # 绘制目标边界框
             draw.line([(left, top), (left, bottom), (right, bottom),
