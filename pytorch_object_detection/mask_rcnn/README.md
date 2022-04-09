@@ -93,10 +93,10 @@ VOCdevkit
 ## 注意事项
 1. 在使用训练脚本时，注意要将`--data-path`设置为自己存放数据集的**根目录**：
 ```
-# 假设要使用COCO数据集，并已经解压到成/data/coco2017目录下
+# 假设要使用COCO数据集，启用自定义数据集读取`CocoDetection`并将数据集解压到成/data/coco2017目录下
 python train.py --data-path /data/coco2017
 
-# 假设要使用Pascal VOC数据集，并已经解压到成/data/VOCdevkit目录下
+# 假设要使用Pascal VOC数据集，启用自定义数据集读取`VOCInstances`并数据集解压到成/data/VOCdevkit目录下
 python train.py --data-path /data/VOCdevkit
 ```
 
