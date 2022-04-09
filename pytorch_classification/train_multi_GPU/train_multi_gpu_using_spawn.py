@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--syncBN', type=bool, default=True)
 
     # 数据集所在根目录
-    # http://download.tensorflow.org/example_images/flower_photos.tgz
+    # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str, default="/home/wz/data_set/flower_data/flower_photos")
 
     # resnet34 官方权重下载地址

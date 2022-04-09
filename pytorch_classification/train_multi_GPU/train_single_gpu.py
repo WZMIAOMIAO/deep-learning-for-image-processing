@@ -125,7 +125,7 @@ if __name__ == '__main__':
     parser.add_argument('--lrf', type=float, default=0.1)
 
     # 数据集所在根目录
-    # http://download.tensorflow.org/example_images/flower_photos.tgz
+    # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
                         default="/home/w180662/my_project/my_github/data_set/flower_data/flower_photos")
 
