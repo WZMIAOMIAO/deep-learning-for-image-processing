@@ -33,7 +33,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = Darknet(cfg, img_size)
-    model.load_state_dict(torch.load(weights, map_location=device)["model"])
+    model.load_state_dict(torch.load(weights, map_location='cpu')["model"])
     model.to(device)
 
     model.eval()

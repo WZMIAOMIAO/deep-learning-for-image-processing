@@ -116,7 +116,7 @@ def main(parser_data):
 
     # create model
     model = Darknet(parser_data.cfg, parser_data.img_size)
-    model.load_state_dict(torch.load(parser_data.weights, map_location=device)["model"])
+    model.load_state_dict(torch.load(parser_data.weights, map_location='cpu')["model"])
     model.to(device)
 
     # evaluate on the test dataset
