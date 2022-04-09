@@ -89,9 +89,9 @@ def main(parser_data):
     # read class_indict
     label_json_path = './data/pascal_voc_classes.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
-    json_file = open(label_json_path, 'r')
-    class_dict = json.load(json_file)
-    json_file.close()
+    with open(label_json_path, 'r') as f:
+        class_dict = json.load(f)
+
     category_index = {v: k for k, v in class_dict.items()}
 
     data_dict = parse_data_cfg(parser_data.data)
@@ -116,7 +116,7 @@ def main(parser_data):
 
     # create model
     model = Darknet(parser_data.cfg, parser_data.img_size)
-    model.load_state_dict(torch.load(parser_data.weights, map_location=device)["model"])
+    model.load_state_dict(torch.load(parser_data.weights, map_location='cpu')["model"])
     model.to(device)
 
     # evaluate on the test dataset

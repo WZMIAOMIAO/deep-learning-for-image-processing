@@ -1,12 +1,11 @@
 import math
 import sys
 import time
-import json
 
 import torch
-from pycocotools.cocoeval import COCOeval
 
 import train_utils.distributed_utils as utils
+from .coco_eval import EvalCOCOMetric
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch,
@@ -73,9 +72,7 @@ def evaluate(model, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test: "
 
-    coco91to80 = data_loader.dataset.coco91to80
-    coco80to91 = dict([(str(v), k) for k, v in coco91to80.items()])
-    results = []
+    det_metric = EvalCOCOMetric(data_loader.dataset.coco, iou_type="bbox", results_file_name="det_results.json")
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         image = list(img.to(device) for img in image)
 
@@ -89,36 +86,7 @@ def evaluate(model, data_loader, device):
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
-        # 遍历每张图像的预测结果
-        for target, output in zip(targets, outputs):
-            if len(output) == 0:
-                continue
-
-            img_id = int(target["image_id"])
-            per_image_boxes = output["boxes"]
-            # 对于coco_eval, 需要的每个box的数据格式为[x_min, y_min, w, h]
-            # 而我们预测的box格式是[x_min, y_min, x_max, y_max]，所以需要转下格式
-            per_image_boxes[:, 2:] -= per_image_boxes[:, :2]
-            per_image_classes = output["labels"]
-            per_image_scores = output["scores"]
-
-            # 遍历每个目标的信息
-            for object_score, object_class, object_box in zip(
-                    per_image_scores, per_image_classes, per_image_boxes):
-                object_score = float(object_score)
-                # 要将类别信息还原回coco91中
-                coco80_class = int(object_class)
-                coco91_class = int(coco80to91[str(coco80_class)])
-                # We recommend rounding coordinates to the nearest tenth of a pixel
-                # to reduce resulting JSON file size.
-                object_box = [round(b, 2) for b in object_box.tolist()]
-
-                res = {"image_id": img_id,
-                       "category_id": coco91_class,
-                       "bbox": object_box,
-                       "score": round(object_score, 3)}
-                results.append(res)
-
+        det_metric.update(targets, outputs)
         metric_logger.update(model_time=model_time)
 
     # gather the stats from all processes
@@ -126,29 +94,10 @@ def evaluate(model, data_loader, device):
     print("Averaged stats:", metric_logger)
 
     # 同步所有进程中的数据
-    all_results = utils.all_gather(results)
+    det_metric.synchronize_results()
 
     if utils.is_main_process():
-        # 将所有进程上的数据合并到一个list当中
-        results = []
-        for res in all_results:
-            results.extend(res)
-
-        # write predict results into json file
-        json_str = json.dumps(results, indent=4)
-        with open('predict_tmp.json', 'w') as json_file:
-            json_file.write(json_str)
-
-        # accumulate predictions from all images
-        coco_true = data_loader.dataset.coco
-        coco_pre = coco_true.loadRes('predict_tmp.json')
-
-        coco_evaluator = COCOeval(cocoGt=coco_true, cocoDt=coco_pre, iouType="bbox")
-        coco_evaluator.evaluate()
-        coco_evaluator.accumulate()
-        coco_evaluator.summarize()
-
-        coco_info = coco_evaluator.stats.tolist()  # numpy to list
+        coco_info = det_metric.evaluate()
     else:
         coco_info = None
 

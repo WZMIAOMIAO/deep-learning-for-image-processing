@@ -32,8 +32,8 @@ def main():
     json_path = './class_indices.json'
     assert os.path.exists(json_path), "file: '{}' dose not exist.".format(json_path)
 
-    json_file = open(json_path, "r")
-    class_indict = json.load(json_file)
+    with open(json_path, "r") as f:
+        class_indict = json.load(f)
 
     # create model
     model = resnet34(num_classes=5).to(device)

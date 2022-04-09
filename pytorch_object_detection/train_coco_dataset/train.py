@@ -6,20 +6,30 @@ import torchvision
 
 import transforms
 from network_files import FasterRCNN, AnchorsGenerator
-from backbone import MobileNetV2, vgg
+from backbone import MobileNetV2, vgg, resnet50
 from my_dataset import CocoDetection
 from train_utils import train_eval_utils as utils
+from train_utils import GroupedBatchSampler, create_aspect_ratio_groups
+from torchvision.models.feature_extraction import create_feature_extractor
 
 
 def create_model(num_classes):
-    # https://download.pytorch.org/models/vgg16-397923af.pth
-    # 如果使用mobilenetv2的话就下载对应预训练权重并注释下面三行，接着把mobilenetv2模型对应的两行代码注释取消掉
-    vgg_feature = vgg(model_name="vgg16", weights_path="./backbone/vgg16.pth").features
-    backbone = torch.nn.Sequential(*list(vgg_feature._modules.values())[:-1])  # 删除feature中最后的maxpool层
-    backbone.out_channels = 512
+    # 以vgg16为backbone
+    # 预训练权重地址： https://download.pytorch.org/models/vgg16-397923af.pth
+    # vgg16 = vgg(model_name="vgg16", weights_path="./vgg16.pth")
+    # backbone = create_feature_extractor(vgg16, return_nodes={"features.29": "0"})  # 删除feature中最后的maxpool层
+    # backbone.out_channels = 512
 
-    # https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
-    # backbone = MobileNetV2(weights_path="./backbone/mobilenet_v2.pth").features
+    # 以resnet50为backbone
+    # 预训练权重地址：https://download.pytorch.org/models/resnet50-19c8e357.pth
+    res50 = resnet50()
+    res50.load_state_dict(torch.load("./resnet50.pth", map_location="cpu"))
+    backbone = create_feature_extractor(res50, return_nodes={"layer3": "0"})
+    backbone.out_channels = 1024
+
+    # 以mobilenetv2为backbone
+    # 预训练权重地址：https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
+    # backbone = MobileNetV2(weights_path="./mobilenet_v2.pth").features
     # backbone.out_channels = 1280  # 设置对应backbone输出特征矩阵的channels
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
@@ -54,29 +64,49 @@ def main(args):
 
     # load train data set
     # coco2017 -> annotations -> instances_train2017.json
-    train_data_set = CocoDetection(COCO_root, "train", data_transform["train"])
+    train_dataset = CocoDetection(COCO_root, "train", data_transform["train"])
+    train_sampler = None
+
+    # 是否按图片相似高宽比采样图片组成batch
+    # 使用的话能够减小训练时所需GPU显存，默认使用
+    if args.aspect_ratio_group_factor >= 0:
+        train_sampler = torch.utils.data.RandomSampler(train_dataset)
+        # 统计所有图像高宽比例在bins区间中的位置索引
+        group_ids = create_aspect_ratio_groups(train_dataset, k=args.aspect_ratio_group_factor)
+        # 每个batch图片从同一高宽比例区间中取
+        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     batch_size = args.batch_size
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using %g dataloader workers' % nw)
-    train_data_loader = torch.utils.data.DataLoader(train_data_set,
-                                                    batch_size=batch_size,
-                                                    shuffle=True,
-                                                    pin_memory=True,
-                                                    num_workers=nw,
-                                                    collate_fn=train_data_set.collate_fn)
+
+    if train_sampler:
+        # 如果按照图片高宽比采样图片，dataloader中需要使用batch_sampler
+        train_data_loader = torch.utils.data.DataLoader(train_dataset,
+                                                        batch_sampler=train_batch_sampler,
+                                                        pin_memory=True,
+                                                        num_workers=nw,
+                                                        collate_fn=train_dataset.collate_fn)
+    else:
+        train_data_loader = torch.utils.data.DataLoader(train_dataset,
+                                                        batch_size=batch_size,
+                                                        shuffle=True,
+                                                        pin_memory=True,
+                                                        num_workers=nw,
+                                                        collate_fn=train_dataset.collate_fn)
 
     # load validation data set
     # coco2017 -> annotations -> instances_val2017.json
-    val_data_set = CocoDetection(COCO_root, "val", data_transform["val"])
-    val_data_set_loader = torch.utils.data.DataLoader(val_data_set,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      pin_memory=True,
-                                                      num_workers=nw,
-                                                      collate_fn=train_data_set.collate_fn)
+    val_dataset = CocoDetection(COCO_root, "val", data_transform["val"])
+    val_data_loader = torch.utils.data.DataLoader(val_dataset,
+                                                  batch_size=1,
+                                                  shuffle=False,
+                                                  pin_memory=True,
+                                                  num_workers=nw,
+                                                  collate_fn=train_dataset.collate_fn)
 
-    # create model num_classes equal background + 80 classes
+    # create model num_classes equal background + classes
     model = create_model(num_classes=args.num_classes + 1)
     # print(model)
 
@@ -123,12 +153,12 @@ def main(args):
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        coco_info = utils.evaluate(model, val_data_set_loader, device=device)
+        coco_info = utils.evaluate(model, val_data_loader, device=device)
 
         # write into txt
         with open(results_file, "a") as f:
             # 写入的数据包括coco指标还有loss和learning rate
-            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item()]] + [str(round(lr, 6))]
+            result_info = [f"{i:.4f}" for i in coco_info + [mean_loss.item()]] + [f"{lr:.6f}"]
             txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
             f.write(txt + "\n")
 
@@ -166,7 +196,7 @@ if __name__ == "__main__":
     # 训练数据集的根目录
     parser.add_argument('--data-path', default='/data/coco2017', help='dataset')
     # 检测目标类别数(不包含背景)
-    parser.add_argument('--num-classes', default=80, type=int, help='num_classes')
+    parser.add_argument('--num-classes', default=90, type=int, help='num_classes')
     # 文件保存地址
     parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
@@ -177,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=26, type=int, metavar='N',
                         help='number of total epochs to run')
     # 学习率
-    parser.add_argument('--lr', default=0.002, type=float,
+    parser.add_argument('--lr', default=0.005, type=float,
                         help='initial learning rate, 0.02 is the default value for training '
                              'on 8 gpus and 2 images_per_gpu')
     # SGD的momentum参数
@@ -193,8 +223,9 @@ if __name__ == "__main__":
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     # 训练的batch size(如果内存/GPU显存充裕，建议设置更大)
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
+    parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
     # 是否使用混合精度训练(需要GPU支持混合精度)
     parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 
