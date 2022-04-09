@@ -1,10 +1,5 @@
-import copy
-import os
-
 import torch
 import torch.utils.data
-import torchvision
-import transforms as T
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
 
@@ -71,8 +66,7 @@ def convert_to_coco_api(self):
         img_id = targets["image_id"].item()
         img_dict = {"id": img_id,
                     "height": h,
-                    "width": w
-                    }
+                    "width": w}
         dataset["images"].append(img_dict)
         bboxes = targets["boxes"].clone()
         # convert (x_min, ymin, xmax, ymax) to (xmin, ymin, w, h)

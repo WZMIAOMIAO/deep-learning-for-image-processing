@@ -82,6 +82,9 @@ class CocoDetection(data.Dataset):
         classes = [obj["category_id"] for obj in anno]
         classes = torch.tensor(classes, dtype=torch.int64)
 
+        area = torch.tensor([obj["area"] for obj in anno])
+        iscrowd = torch.tensor([obj["iscrowd"] for obj in anno])
+
         segmentations = [obj["segmentation"] for obj in anno]
         masks = convert_coco_poly_mask(segmentations, h, w)
 
@@ -90,6 +93,8 @@ class CocoDetection(data.Dataset):
         boxes = boxes[keep]
         classes = classes[keep]
         masks = masks[keep]
+        area = area[keep]
+        iscrowd = iscrowd[keep]
 
         target = {}
         target["boxes"] = boxes
@@ -98,8 +103,6 @@ class CocoDetection(data.Dataset):
         target["image_id"] = torch.tensor([img_id])
 
         # for conversion to coco api
-        area = torch.tensor([obj["area"] for obj in anno])
-        iscrowd = torch.tensor([obj["iscrowd"] for obj in anno])
         target["area"] = area
         target["iscrowd"] = iscrowd
 
