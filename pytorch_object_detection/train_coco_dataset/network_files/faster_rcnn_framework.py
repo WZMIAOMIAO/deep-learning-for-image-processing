@@ -245,7 +245,7 @@ class FasterRCNN(FasterRCNNBase):
 
     def __init__(self, backbone, num_classes=None,
                  # transform parameter
-                 min_size=800, max_size=1000,      # 预处理resize时限制的最小尺寸与最大尺寸
+                 min_size=800, max_size=1333,      # 预处理resize时限制的最小尺寸与最大尺寸
                  image_mean=None, image_std=None,  # 预处理normalize时使用的均值和方差
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,

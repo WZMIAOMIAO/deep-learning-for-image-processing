@@ -6,20 +6,18 @@ import torch
 import torchvision
 from PIL import Image
 import matplotlib.pyplot as plt
-
 from torchvision import transforms
+from torchvision.models.feature_extraction import create_feature_extractor
+
 from network_files import FasterRCNN, AnchorsGenerator
-from backbone import vgg, MobileNetV2
+from backbone import vgg, MobileNetV2, resnet50
 from draw_box_utils import draw_objs
 
 
 def create_model(num_classes):
-    vgg_feature = vgg(model_name="vgg16").features
-    backbone = torch.nn.Sequential(*list(vgg_feature._modules.values())[:-1])  # 删除feature中最后的maxpool层
-    backbone.out_channels = 512
-
-    # backbone = MobileNetV2().features
-    # backbone.out_channels = 1280  # 设置对应backbone输出特征矩阵的channels
+    res50 = resnet50()
+    backbone = create_feature_extractor(res50, return_nodes={"layer3": "0"})
+    backbone.out_channels = 1024
 
     anchor_generator = AnchorsGenerator(sizes=((32, 64, 128, 256, 512),),
                                         aspect_ratios=((0.5, 1.0, 2.0),))
@@ -47,21 +45,20 @@ def main():
     print("using {} device.".format(device))
 
     # create model
-    num_classes = 80
-    model = create_model(num_classes=num_classes+1)
+    num_classes = 90  # 不包含背景
+    model = create_model(num_classes=num_classes + 1)
 
     # load train weights
     train_weights = "./save_weights/model_25.pth"
     assert os.path.exists(train_weights), "{} file dose not exist.".format(train_weights)
-    model.load_state_dict(torch.load(train_weights, map_location=device)["model"])
+    model.load_state_dict(torch.load(train_weights, map_location='cpu')["model"])
     model.to(device)
 
     # read class_indict
-    label_json_path = './coco80_indices.json'
+    label_json_path = './coco91_indices.json'
     assert os.path.exists(label_json_path), "json file {} dose not exist.".format(label_json_path)
-    json_file = open(label_json_path, 'r')
-    category_index = json.load(json_file)
-    json_file.close()
+    with open(label_json_path, 'r') as f:
+        category_index = json.load(f)
 
     # load image
     original_img = Image.open("./test.jpg")
