@@ -6,10 +6,10 @@
 ## 环境配置：
 * Python3.6/3.7/3.8
 * Pytorch1.10或以上
-* pycocotools(Linux:```pip install pycocotools```; Windows:```pip install pycocotools-windows```(不需要额外安装vs))
+* pycocotools(Linux:`pip install pycocotools`; Windows:`pip install pycocotools-windows`(不需要额外安装vs))
 * Ubuntu或Centos(不建议Windows)
 * 最好使用GPU训练
-* 详细环境配置见```requirements.txt```
+* 详细环境配置见`requirements.txt`
 
 ## 文件结构：
 ```
@@ -37,10 +37,10 @@
 * COCO官网地址：https://cocodataset.org/
 * 对数据集不了解的可以看下我写的博文：https://blog.csdn.net/qq_37541097/article/details/113247318
 * 这里以下载coco2017数据集为例，主要下载三个文件：
-    * ```2017 Train images [118K/18GB]```：训练过程中使用到的所有图像文件
-    * ```2017 Val images [5K/1GB]```：验证过程中使用到的所有图像文件
-    * ```2017 Train/Val annotations [241MB]```：对应训练集和验证集的标注json文件
-* 都解压到```coco2017```文件夹下，可得到如下文件夹结构：
+    * `2017 Train images [118K/18GB]`：训练过程中使用到的所有图像文件
+    * `2017 Val images [5K/1GB]`：验证过程中使用到的所有图像文件
+    * `2017 Train/Val annotations [241MB]`：对应训练集和验证集的标注json文件
+* 都解压到`coco2017`文件夹下，可得到如下文件夹结构：
 ```
 ├── coco2017: 数据集根目录
      ├── train2017: 所有训练图像文件夹(118287张)
@@ -103,15 +103,51 @@ python train.py --data-path /data/VOCdevkit
 2. 如果倍增`batch_size`，建议学习率也跟着倍增。假设将`batch_size`从4设置成8，那么学习率`lr`从0.004设置成0.008
 3. 如果使用Batch Normalization模块时，`batch_size`不能小于4，否则效果会变差。**如果显存不够，batch_ze必须小于4时**，建议在创建`resnet50_fpn_backbone`时，
 将`norm_layer`设置成`FrozenBatchNorm2d`或将`trainable_layers`设置成0(即冻结整个`backbone`)
-4. 在使用预测脚本时，要将'train_weights'设置为你自己生成的权重路径。
-5. 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时需要修改`--num-classes`、`--data-path`、`--weights`以及
-'--label-json-path'（该参数是根据训练的数据集设置的）。其他代码尽量不要改动
+4. 训练过程中保存的`det_results.txt`(目标检测任务)以及`seg_results.txt`(实例分割任务)是每个epoch在验证集上的COCO指标，前12个值是COCO指标，后面两个值是训练平均损失以及学习率
+5. 在使用预测脚本时，要将'train_weights'设置为你自己生成的权重路径。
+6. 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时需要修改`--num-classes`、`--data-path`、`--weights`以及
+`--label-json-path`（该参数是根据训练的数据集设置的）。其他代码尽量不要改动
 
-## 本项目从头训练得到的权重
-* 链接:
-* COCO2017验证集mAP：
+
+## 复现结果
+在COCO2017数据集上进行复现，训练过程中仅载入Resnet50的预训练权重，训练26个epochs。训练采用指令如下：
+```
+torchrun --nproc_per_node=8 train_multi_GPU.py --batch-size 8 --lr 0.08 --pretrain False --amp True
 ```
 
+训练得到权重下载地址： https://pan.baidu.com/s/1qpXUIsvnj8RHY-V05J-mnA  密码: 63d5
+
+在COCO2017验证集上的mAP(目标检测任务)：
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.381
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.588
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.411
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.215
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.420
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.492
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.315
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.499
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.523
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.319
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.565
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.666
+```
+
+在COCO2017验证集上的mAP(实例分割任务)：
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.340
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.552
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.361
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.151
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.369
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.500
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.290
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.449
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.468
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.266
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.509
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.619
 ```
 
 ## 如果对Mask RCNN原理不是很理解可参考我的bilibili
+https://www.bilibili.com/video/BV1ZY411774T
