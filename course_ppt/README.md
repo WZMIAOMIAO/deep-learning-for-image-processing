@@ -44,3 +44,7 @@
 - **DeepLab V1** 链接：https://pan.baidu.com/s/1NFxb7ADQOMVYLxmIKqTONQ  密码：500s
 - **DeepLab V2** 链接：https://pan.baidu.com/s/1woe3lJYBVkOdnn6XXlKf8g 密码：76ec
 - **DeepLab V3** 链接：https://pan.baidu.com/s/1WVBgc2Ld13D0_dkHGwhTpA 密码：m54m
+
+
+## 实例分割
+- **Mask R-CNN** 链接：https://pan.baidu.com/s/1JpQ7ENEv_x9A1-O_NpjwYA 密码：1t4i
