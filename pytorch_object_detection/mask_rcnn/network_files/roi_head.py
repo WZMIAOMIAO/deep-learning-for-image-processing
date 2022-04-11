@@ -117,12 +117,16 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
         mask_loss (Tensor): scalar tensor containing the loss
     """
 
+    # 28(FCN分支输出mask的大小)
     discretization_size = mask_logits.shape[-1]
+    # 获取每个Proposal(全部为正样本)对应的gt类别
     labels = [gt_label[idxs] for gt_label, idxs in zip(gt_labels, mask_matched_idxs)]
+    # 根据Proposal信息在gt_masks上裁剪对应区域做为计算loss时的真正gt_mask
     mask_targets = [
         project_masks_on_boxes(m, p, i, discretization_size) for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
     ]
 
+    # 将一个batch中所有的Proposal对应信息拼接在一起
     labels = torch.cat(labels, dim=0)
     mask_targets = torch.cat(mask_targets, dim=0)
 
@@ -130,7 +134,8 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     # accept empty tensors, so handle it separately
     if mask_targets.numel() == 0:
         return mask_logits.sum() * 0
-
+    
+    # 计算预测mask与真实gt_mask之间的BCELoss
     mask_loss = F.binary_cross_entropy_with_logits(
         mask_logits[torch.arange(labels.shape[0], device=labels.device), labels], mask_targets
     )
@@ -225,7 +230,7 @@ class RoIHeads(torch.nn.Module):
                     (proposals_in_image.shape[0],), dtype=torch.int64, device=device
                 )
             else:
-                #  set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
+                # set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
                 # 计算proposal与每个gt_box的iou重合度
                 match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
 
@@ -511,6 +516,7 @@ class RoIHeads(torch.nn.Module):
         if self.has_mask():
             mask_proposals = [p["boxes"] for p in result]  # 将最终预测的Boxes信息取出
             if self.training:
+                # matched_idxs为每个proposal在正负样本匹配过程中得到的gt索引(背景的gt索引也默认设置成了0)
                 if matched_idxs is None:
                     raise ValueError("if in training, matched_idxs should not be None")
 
@@ -519,7 +525,7 @@ class RoIHeads(torch.nn.Module):
                 mask_proposals = []
                 pos_matched_idxs = []
                 for img_id in range(num_images):
-                    pos = torch.where(labels[img_id] > 0)[0]
+                    pos = torch.where(labels[img_id] > 0)[0]  # 寻找对应gt类别大于0，即正样本
                     mask_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
