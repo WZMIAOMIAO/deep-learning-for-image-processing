@@ -104,8 +104,8 @@ python train.py --data-path /data/VOCdevkit
 3. 如果使用Batch Normalization模块时，`batch_size`不能小于4，否则效果会变差。**如果显存不够，batch_ze必须小于4时**，建议在创建`resnet50_fpn_backbone`时，
 将`norm_layer`设置成`FrozenBatchNorm2d`或将`trainable_layers`设置成0(即冻结整个`backbone`)
 4. 训练过程中保存的`det_results.txt`(目标检测任务)以及`seg_results.txt`(实例分割任务)是每个epoch在验证集上的COCO指标，前12个值是COCO指标，后面两个值是训练平均损失以及学习率
-5. 在使用预测脚本时，要将'train_weights'设置为你自己生成的权重路径。
-6. 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时需要修改`--num-classes`、`--data-path`、`--weights`以及
+5. 在使用预测脚本时，要将`weights_path`设置为你自己生成的权重路径。
+6. 使用validation文件时，注意确保你的验证集或者测试集中必须包含每个类别的目标，并且使用时需要修改`--num-classes`、`--data-path`、`--weights-path`以及
 `--label-json-path`（该参数是根据训练的数据集设置的）。其他代码尽量不要改动
 
 
