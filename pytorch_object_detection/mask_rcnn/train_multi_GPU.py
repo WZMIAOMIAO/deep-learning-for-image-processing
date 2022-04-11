@@ -96,7 +96,7 @@ def main(args):
         collate_fn=train_dataset.collate_fn)
 
     print("Creating model")
-    # create model num_classes equal background + 80 classes
+    # create model num_classes equal background + classes
     model = create_model(num_classes=args.num_classes + 1, load_pretrain_weights=args.pretrain)
     model.to(device)
 

@@ -31,7 +31,7 @@ def time_synchronized():
 def main():
     num_classes = 90  # 不包含背景
     box_thresh = 0.5
-    weight_path = "./save_weights/model_25.pth"
+    weights_path = "./save_weights/model_25.pth"
     img_path = "./test.jpg"
     label_json_path = './coco91_indices.json'
 
