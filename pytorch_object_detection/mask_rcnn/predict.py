@@ -43,8 +43,8 @@ def main():
     model = create_model(num_classes=num_classes + 1, box_thresh=box_thresh)
 
     # load train weights
-    assert os.path.exists(weight_path), "{} file dose not exist.".format(weight_path)
-    model.load_state_dict(torch.load(weight_path, map_location='cpu')["model"])
+    assert os.path.exists(weights_path), "{} file dose not exist.".format(weights_path)
+    model.load_state_dict(torch.load(weights_path, map_location='cpu')["model"])
     model.to(device)
 
     # read class_indict
