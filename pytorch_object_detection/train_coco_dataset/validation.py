@@ -140,7 +140,7 @@ def main(parser_data):
                        box_roi_pool=roi_pooler)
 
     # 载入你自己训练好的模型权重
-    weights_path = parser_data.weights
+    weights_path = parser_data.weights_path
     assert os.path.exists(weights_path), "not found {} file.".format(weights_path)
     model.load_state_dict(torch.load(weights_path, map_location='cpu')['model'])
     # print(model)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     parser.add_argument('--data-path', default='/data/coco2017', help='dataset root')
 
     # 训练好的权重文件
-    parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
+    parser.add_argument('--weights_path', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
     parser.add_argument('--batch_size', default=1, type=int, metavar='N',
