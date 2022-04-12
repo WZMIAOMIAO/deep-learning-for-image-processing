@@ -101,7 +101,7 @@ python train.py --data-path /data/VOCdevkit
 ```
 
 2. 如果倍增`batch_size`，建议学习率也跟着倍增。假设将`batch_size`从4设置成8，那么学习率`lr`从0.004设置成0.008
-3. 如果使用Batch Normalization模块时，`batch_size`不能小于4，否则效果会变差。**如果显存不够，batch_ze必须小于4时**，建议在创建`resnet50_fpn_backbone`时，
+3. 如果使用Batch Normalization模块时，`batch_size`不能小于4，否则效果会变差。**如果显存不够，batch_size必须小于4时**，建议在创建`resnet50_fpn_backbone`时，
 将`norm_layer`设置成`FrozenBatchNorm2d`或将`trainable_layers`设置成0(即冻结整个`backbone`)
 4. 训练过程中保存的`det_results.txt`(目标检测任务)以及`seg_results.txt`(实例分割任务)是每个epoch在验证集上的COCO指标，前12个值是COCO指标，后面两个值是训练平均损失以及学习率
 5. 在使用预测脚本时，要将`weights_path`设置为你自己生成的权重路径。

@@ -204,7 +204,7 @@ if __name__ == "__main__":
     parser.add_argument('--data-path', default='/data/coco2017', help='dataset root')
 
     # 训练好的权重文件
-    parser.add_argument('--weights_path', default='./save_weights/model.pth', type=str, help='training weights')
+    parser.add_argument('--weights-path', default='./save_weights/model.pth', type=str, help='training weights')
 
     # batch size
     parser.add_argument('--batch_size', default=1, type=int, metavar='N',
