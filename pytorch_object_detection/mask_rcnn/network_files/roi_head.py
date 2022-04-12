@@ -134,7 +134,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     # accept empty tensors, so handle it separately
     if mask_targets.numel() == 0:
         return mask_logits.sum() * 0
-    
+
     # 计算预测mask与真实gt_mask之间的BCELoss
     mask_loss = F.binary_cross_entropy_with_logits(
         mask_logits[torch.arange(labels.shape[0], device=labels.device), labels], mask_targets
