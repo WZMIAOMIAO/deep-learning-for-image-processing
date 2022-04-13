@@ -44,7 +44,7 @@ def main():
     json_file = open(json_path, 'r')
     class_dict = json.load(json_file)
     json_file.close()
-    category_index = {v: k for k, v in class_dict.items()}
+    category_index = {str(v): str(k) for k, v in class_dict.items()}
 
     # load image
     original_img = Image.open("./test.jpg")

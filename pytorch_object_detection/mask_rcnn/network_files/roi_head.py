@@ -74,14 +74,19 @@ def maskrcnn_inference(x, labels):
         results (list[BoxList]): one BoxList for each image, containing
             the extra field mask
     """
+    # 将预测值通过sigmoid激活全部缩放到0~1之间
     mask_prob = x.sigmoid()
 
     # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
+    # 先记录每张图片中boxes/masks的个数
     boxes_per_image = [label.shape[0] for label in labels]
+    # 在将所有图片中的masks信息拼接在一起(拼接后统一处理能够提升并行度)
     labels = torch.cat(labels)
     index = torch.arange(num_masks, device=labels.device)
+    # 提取每个masks中对应预测最终类别的mask
     mask_prob = mask_prob[index, labels][:, None]
+    # 最后再按照每张图片中的masks个数分离开
     mask_prob = mask_prob.split(boxes_per_image, dim=0)
 
     return mask_prob
@@ -126,7 +131,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
         project_masks_on_boxes(m, p, i, discretization_size) for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
     ]
 
-    # 将一个batch中所有的Proposal对应信息拼接在一起
+    # 将一个batch中所有的Proposal对应信息拼接在一起(统一处理提高并行度)
     labels = torch.cat(labels, dim=0)
     mask_targets = torch.cat(mask_targets, dim=0)
 

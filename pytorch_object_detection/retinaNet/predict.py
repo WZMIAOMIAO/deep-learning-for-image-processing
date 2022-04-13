@@ -49,7 +49,7 @@ def main():
     with open(label_json_path, 'r') as f:
         class_dict = json.load(f)
 
-    category_index = {v: k for k, v in class_dict.items()}
+    category_index = {str(v): str(k) for k, v in class_dict.items()}
 
     # load image
     original_img = Image.open("./test.jpg")
