@@ -23,10 +23,10 @@ def main():
     assert os.path.exists(json_path), "json file {} dose not exist.".format(json_path)
     assert os.path.exists(img_path), "image file {} dose not exist.".format(img_path)
 
-    json_file = open(json_path, 'r')
-    class_dict = json.load(json_file)
-    json_file.close()
-    category_index = {v: k for k, v in class_dict.items()}
+    with open(json_path, 'r') as f:
+        class_dict = json.load(f)
+
+    category_index = {str(v): str(k) for k, v in class_dict.items()}
 
     input_size = (img_size, img_size)
 
