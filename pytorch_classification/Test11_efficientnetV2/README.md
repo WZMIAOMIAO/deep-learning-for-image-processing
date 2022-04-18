@@ -1,6 +1,6 @@
 ## 代码使用简介
 
-1. 下载好数据集，代码中默认使用的是花分类数据集，下载地址: [http://download.tensorflow.org/example_images/flower_photos.tgz](http://download.tensorflow.org/example_images/flower_photos.tgz),
+1. 下载好数据集，代码中默认使用的是花分类数据集，下载地址: [https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz](https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz),
 如果下载不了的话可以通过百度云链接下载: https://pan.baidu.com/s/1QLCTA4sXnQAw_yvxPj9szg 提取码:58p0
 2. 在`train.py`脚本中将`--data-path`设置成解压后的`flower_photos`文件夹绝对路径
 3. 下载预训练权重，根据自己使用的模型下载对应预训练权重: https://pan.baidu.com/s/1uZX36rvrfEss-JGj4yfzbQ  密码: 5gu1
