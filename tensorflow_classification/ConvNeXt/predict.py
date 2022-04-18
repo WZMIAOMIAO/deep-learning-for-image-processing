@@ -55,7 +55,7 @@ def main():
     plt.title(print_res)
     for i in range(len(result)):
         print("class: {:10}   prob: {:.3}".format(class_indict[str(i)],
-                                                  result[i].numpy()))
+                                                  result[i]))
     plt.show()
 
 
