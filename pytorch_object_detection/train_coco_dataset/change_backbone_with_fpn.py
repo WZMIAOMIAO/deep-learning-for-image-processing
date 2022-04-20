@@ -28,7 +28,7 @@ def create_model(num_classes):
     # outputs = new_backbone(img)
     # [print(f"{k} shape: {v.shape}") for k, v in outputs.items()]
 
-    # --- efficientnet b0 fpn backbone --- #
+    # --- efficientnet_b0 fpn backbone --- #
     # backbone = torchvision.models.efficientnet_b0(pretrained=True)
     # # print(backbone)
     # return_layers = {"features.3": "0",  # stride 8
