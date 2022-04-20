@@ -131,7 +131,7 @@ def draw_objs(image: Image,
     if masks is not None:
         masks = masks[idxs]
     if len(boxes) == 0:
-        return
+        return image
 
     colors = [ImageColor.getrgb(STANDARD_COLORS[cls % len(STANDARD_COLORS)]) for cls in classes]
 
