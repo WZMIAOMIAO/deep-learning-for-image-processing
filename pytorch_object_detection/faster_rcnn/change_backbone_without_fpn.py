@@ -15,7 +15,7 @@ def create_model(num_classes):
     from torchvision.models.feature_extraction import create_feature_extractor
 
     # vgg16
-    backbone = torchvision.models.vgg16_bn(pretrained=False)
+    backbone = torchvision.models.vgg16_bn(pretrained=True)
     # print(backbone)
     backbone = create_feature_extractor(backbone, return_nodes={"features.42": "0"})
     # out = backbone(torch.rand(1, 3, 224, 224))
@@ -23,7 +23,7 @@ def create_model(num_classes):
     backbone.out_channels = 512
 
     # resnet50 backbone
-    # backbone = torchvision.models.resnet50(pretrained=False)
+    # backbone = torchvision.models.resnet50(pretrained=True)
     # # print(backbone)
     # backbone = create_feature_extractor(backbone, return_nodes={"layer3": "0"})
     # # out = backbone(torch.rand(1, 3, 224, 224))
@@ -31,7 +31,7 @@ def create_model(num_classes):
     # backbone.out_channels = 1024
 
     # EfficientNetB0
-    # backbone = torchvision.models.efficientnet_b0(pretrained=False)
+    # backbone = torchvision.models.efficientnet_b0(pretrained=True)
     # # print(backbone)
     # backbone = create_feature_extractor(backbone, return_nodes={"features.5": "0"})
     # # out = backbone(torch.rand(1, 3, 224, 224))
