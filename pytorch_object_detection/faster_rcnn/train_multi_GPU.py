@@ -95,7 +95,7 @@ def main(args):
     # create model num_classes equal background + 20 classes
     model = create_model(num_classes=args.num_classes + 1)
     model.to(device)
-    
+
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 

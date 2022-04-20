@@ -134,10 +134,12 @@ def main(parser_data):
 
     # define optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.005,
-                                momentum=0.9, weight_decay=0.0005)
+    optimizer = torch.optim.SGD(params,
+                                lr=parser_data.lr,
+                                momentum=parser_data.momentum,
+                                weight_decay=parser_data.weight_decay)
 
-    scaler = torch.cuda.amp.GradScaler() if args.amp else None
+    scaler = torch.cuda.amp.GradScaler() if parser_data.amp else None
 
     # learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
@@ -151,7 +153,7 @@ def main(parser_data):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         parser_data.start_epoch = checkpoint['epoch'] + 1
-        if args.amp and "scaler" in checkpoint:
+        if parser_data.amp and "scaler" in checkpoint:
             scaler.load_state_dict(checkpoint["scaler"])
         print("the training process from epoch{}...".format(parser_data.start_epoch))
 
@@ -225,8 +227,19 @@ if __name__ == "__main__":
     # 训练的总epoch数
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
+    # 学习率
+    parser.add_argument('--lr', default=0.005, type=float,
+                        help='initial learning rate, 0.02 is the default value for training '
+                             'on 8 gpus and 2 images_per_gpu')
+    # SGD的momentum参数
+    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                        help='momentum')
+    # SGD的weight_decay参数
+    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
+                        metavar='W', help='weight decay (default: 1e-4)',
+                        dest='weight_decay')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
     # 是否使用混合精度训练(需要GPU支持混合精度)
