@@ -15,7 +15,7 @@ def create_model(num_classes):
     from torchvision.models.feature_extraction import create_feature_extractor
 
     # vgg16
-    backbone = torchvision.models.vgg16_bn(pretrained=False)
+    backbone = torchvision.models.vgg16_bn(pretrained=True)
     # print(backbone)
     backbone = create_feature_extractor(backbone, return_nodes={"features.42": "0"})
     # out = backbone(torch.rand(1, 3, 224, 224))
@@ -23,7 +23,7 @@ def create_model(num_classes):
     backbone.out_channels = 512
 
     # resnet50 backbone
-    # backbone = torchvision.models.resnet50(pretrained=False)
+    # backbone = torchvision.models.resnet50(pretrained=True)
     # # print(backbone)
     # backbone = create_feature_extractor(backbone, return_nodes={"layer3": "0"})
     # # out = backbone(torch.rand(1, 3, 224, 224))
@@ -31,7 +31,7 @@ def create_model(num_classes):
     # backbone.out_channels = 1024
 
     # EfficientNetB0
-    # backbone = torchvision.models.efficientnet_b0(pretrained=False)
+    # backbone = torchvision.models.efficientnet_b0(pretrained=True)
     # # print(backbone)
     # backbone = create_feature_extractor(backbone, return_nodes={"features.5": "0"})
     # # out = backbone(torch.rand(1, 3, 224, 224))
@@ -165,7 +165,7 @@ def main(parser_data):
         # write into txt
         with open(results_file, "a") as f:
             # 写入的数据包括coco指标还有loss和learning rate
-            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item()]] + [str(round(lr, 6))]
+            result_info = [f"{i:.4f}" for i in coco_info + [mean_loss.item()]] + [f"{lr:.6f}"]
             txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
             f.write(txt + "\n")
 

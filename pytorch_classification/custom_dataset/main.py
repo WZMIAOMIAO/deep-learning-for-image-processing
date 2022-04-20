@@ -6,7 +6,7 @@ from torchvision import transforms
 from my_dataset import MyDataSet
 from utils import read_split_data, plot_data_loader_image
 
-# http://download.tensorflow.org/example_images/flower_photos.tgz
+# https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
 root = "/home/wz/my_github/data_set/flower_data/flower_photos"  # 数据集所在根目录
 
 

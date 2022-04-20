@@ -4,38 +4,63 @@ import datetime
 import torch
 
 import transforms
-from network_files import FasterRCNN, FastRCNNPredictor
-from backbone import resnet50_fpn_backbone
+from network_files import FasterRCNN, AnchorsGenerator
 from my_dataset import VOCDataSet
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups
 from train_utils import train_eval_utils as utils
+from backbone import BackboneWithFPN, LastLevelMaxPool
 
 
-def create_model(num_classes, load_pretrain_weights=True):
-    # 注意，这里的backbone默认使用的是FrozenBatchNorm2d，即不会去更新bn参数
-    # 目的是为了防止batch_size太小导致效果更差(如果显存很小，建议使用默认的FrozenBatchNorm2d)
-    # 如果GPU显存很大可以设置比较大的batch_size就可以将norm_layer设置为普通的BatchNorm2d
-    # trainable_layers包括['layer4', 'layer3', 'layer2', 'layer1', 'conv1']， 5代表全部训练
-    # resnet50 imagenet weights url: https://download.pytorch.org/models/resnet50-0676ba61.pth
-    backbone = resnet50_fpn_backbone(pretrain_path="resnet50.pth",
-                                     norm_layer=torch.nn.BatchNorm2d,
-                                     trainable_layers=3)
-    # 训练自己数据集时不要修改这里的91，修改的是传入的num_classes参数
-    model = FasterRCNN(backbone=backbone, num_classes=91)
-    
-    if load_pretrain_weights:
-        # 载入预训练模型权重
-        # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-        weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location='cpu')
-        missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
-        if len(missing_keys) != 0 or len(unexpected_keys) != 0:
-            print("missing_keys: ", missing_keys)
-            print("unexpected_keys: ", unexpected_keys)
+def create_model(num_classes):
+    import torchvision
+    from torchvision.models.feature_extraction import create_feature_extractor
 
-    # get number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    # --- mobilenet_v3_large fpn backbone --- #
+    backbone = torchvision.models.mobilenet_v3_large(pretrained=True)
+    # print(backbone)
+    return_layers = {"features.6": "0",   # stride 8
+                     "features.12": "1",  # stride 16
+                     "features.16": "2"}  # stride 32
+    # 提供给fpn的每个特征层channel
+    in_channels_list = [40, 112, 960]
+    new_backbone = create_feature_extractor(backbone, return_layers)
+    # img = torch.randn(1, 3, 224, 224)
+    # outputs = new_backbone(img)
+    # [print(f"{k} shape: {v.shape}") for k, v in outputs.items()]
+
+    # --- efficientnet b0 fpn backbone --- #
+    # backbone = torchvision.models.efficientnet_b0(pretrained=True)
+    # # print(backbone)
+    # return_layers = {"features.3": "0",  # stride 8
+    #                  "features.4": "1",  # stride 16
+    #                  "features.8": "2"}  # stride 32
+    # # 提供给fpn的每个特征层channel
+    # in_channels_list = [40, 80, 1280]
+    # new_backbone = create_feature_extractor(backbone, return_layers)
+    # # img = torch.randn(1, 3, 224, 224)
+    # # outputs = new_backbone(img)
+    # # [print(f"{k} shape: {v.shape}") for k, v in outputs.items()]
+
+    backbone_with_fpn = BackboneWithFPN(new_backbone,
+                                        return_layers=return_layers,
+                                        in_channels_list=in_channels_list,
+                                        out_channels=256,
+                                        extra_blocks=LastLevelMaxPool(),
+                                        re_getter=False)
+
+    anchor_sizes = ((64,), (128,), (256,), (512,))
+    aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+    anchor_generator = AnchorsGenerator(sizes=anchor_sizes,
+                                        aspect_ratios=aspect_ratios)
+
+    roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0', '1', '2'],  # 在哪些特征层上进行RoIAlign pooling
+                                                    output_size=[7, 7],  # RoIAlign pooling输出特征矩阵尺寸
+                                                    sampling_ratio=2)  # 采样率
+
+    model = FasterRCNN(backbone=backbone_with_fpn,
+                       num_classes=num_classes,
+                       rpn_anchor_generator=anchor_generator,
+                       box_roi_pool=roi_pooler)
 
     return model
 
@@ -188,7 +213,7 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='./', help='dataset')
+    parser.add_argument('--data-path', default='/data', help='dataset')
     # 检测目标类别数(不包含背景)
     parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
     # 文件保存地址
@@ -201,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=8, type=int, metavar='N',
+    parser.add_argument('--batch_size', default=2, type=int, metavar='N',
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
     # 是否使用混合精度训练(需要GPU支持混合精度)
