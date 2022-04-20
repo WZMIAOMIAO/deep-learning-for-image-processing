@@ -81,13 +81,24 @@ class BackboneWithFPN(nn.Module):
         out_channels (int): the number of channels in the FPN
     """
 
-    def __init__(self, backbone, return_layers, in_channels_list, out_channels, extra_blocks=None):
+    def __init__(self,
+                 backbone: nn.Module,
+                 return_layers=None,
+                 in_channels_list=None,
+                 out_channels=256,
+                 extra_blocks=None,
+                 re_getter=True):
         super().__init__()
 
         if extra_blocks is None:
             extra_blocks = LastLevelMaxPool()
 
-        self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+        if re_getter:
+            assert return_layers is not None
+            self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+        else:
+            self.body = backbone
+
         self.fpn = FeaturePyramidNetwork(
             in_channels_list=in_channels_list,
             out_channels=out_channels,
