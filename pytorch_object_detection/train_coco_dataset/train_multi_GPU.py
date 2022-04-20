@@ -209,7 +209,7 @@ if __name__ == "__main__":
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
     # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.02 / 8 * num_GPU
-    parser.add_argument('--lr', default=0.005, type=float,
+    parser.add_argument('--lr', default=0.01, type=float,
                         help='initial learning rate, 0.02 is the default value for training '
                              'on 8 gpus and 2 images_per_gpu')
     # SGD的momentum参数
