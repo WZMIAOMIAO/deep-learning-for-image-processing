@@ -35,8 +35,8 @@ def create_model(num_classes):
     return model
 
 
-def main(parser_data):
-    device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
+def main(args):
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print("Using {} device training.".format(device.type))
 
     results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -47,7 +47,7 @@ def main(parser_data):
         "val": transforms.Compose([transforms.ToTensor()])
     }
 
-    VOC_root = parser_data.data_path
+    VOC_root = args.data_path
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
         raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
@@ -67,7 +67,7 @@ def main(parser_data):
         train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
 
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
-    batch_size = parser_data.batch_size
+    batch_size = args.batch_size
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using %g dataloader workers' % nw)
     if train_sampler:
@@ -97,7 +97,7 @@ def main(parser_data):
 
     # create model
     # 注意：不包含背景
-    model = create_model(num_classes=parser_data.num_classes)
+    model = create_model(num_classes=args.num_classes)
     # print(model)
 
     model.to(device)
@@ -115,21 +115,21 @@ def main(parser_data):
                                                    gamma=0.33)
 
     # 如果指定了上次训练保存的权重文件地址，则接着上次结果接着训练
-    if parser_data.resume != "":
-        checkpoint = torch.load(parser_data.resume, map_location='cpu')
+    if args.resume != "":
+        checkpoint = torch.load(args.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-        parser_data.start_epoch = checkpoint['epoch'] + 1
+        args.start_epoch = checkpoint['epoch'] + 1
         if args.amp and "scaler" in checkpoint:
             scaler.load_state_dict(checkpoint["scaler"])
-        print("the training process from epoch{}...".format(parser_data.start_epoch))
+        print("the training process from epoch{}...".format(args.start_epoch))
 
     train_loss = []
     learning_rate = []
     val_map = []
 
-    for epoch in range(parser_data.start_epoch, parser_data.epochs):
+    for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch, printing every 10 iterations
         mean_loss, lr = utils.train_one_epoch(model, optimizer, train_data_loader,
                                               device, epoch, print_freq=50,
