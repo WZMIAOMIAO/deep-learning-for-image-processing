@@ -82,7 +82,7 @@ def main():
                              classes,
                              scores,
                              category_index=category_index,
-                             box_thresh=0.5,
+                             box_thresh=0.2,
                              line_thickness=3,
                              font='arial.ttf',
                              font_size=20)
