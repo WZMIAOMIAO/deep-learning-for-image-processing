@@ -269,7 +269,7 @@ class FasterRCNN(FasterRCNNBase):
                 "same for all the levels"
             )
 
-        assert isinstance(rpn_anchor_generator, (AnchorsGenerator, type(None)))
+        # assert isinstance(rpn_anchor_generator, (AnchorsGenerator, type(None)))
         assert isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None)))
 
         if num_classes is not None:
