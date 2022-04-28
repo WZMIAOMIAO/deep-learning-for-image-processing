@@ -60,8 +60,13 @@ def main():
     # test_data_iter = iter(validate_loader)
     # test_image, test_label = test_data_iter.next()
 
+    net = GoogLeNet(num_classes=5, aux_logits=True, init_weights=True)
+    # 如果要使用官方的预训练权重，注意是将权重载入官方的模型，不是我们自己实现的模型
+    # 官方的模型中使用了bn层以及改了一些参数，不能混用
+    # import torchvision
     # net = torchvision.models.googlenet(num_classes=5)
     # model_dict = net.state_dict()
+    # # 预训练权重下载地址: https://download.pytorch.org/models/googlenet-1378be20.pth
     # pretrain_model = torch.load("googlenet.pth")
     # del_list = ["aux1.fc2.weight", "aux1.fc2.bias",
     #             "aux2.fc2.weight", "aux2.fc2.bias",
@@ -69,7 +74,6 @@ def main():
     # pretrain_dict = {k: v for k, v in pretrain_model.items() if k not in del_list}
     # model_dict.update(pretrain_dict)
     # net.load_state_dict(model_dict)
-    net = GoogLeNet(num_classes=5, aux_logits=True, init_weights=True)
     net.to(device)
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.0003)
