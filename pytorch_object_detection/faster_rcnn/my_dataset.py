@@ -25,13 +25,28 @@ class VOCDataSet(Dataset):
         assert os.path.exists(txt_path), "not found {} file.".format(txt_name)
 
         with open(txt_path) as read:
-            self.xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
-                             for line in read.readlines() if len(line.strip()) > 0]
+            xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
+                        for line in read.readlines() if len(line.strip()) > 0]
 
+        self.xml_list = []
         # check file
+        for xml_path in xml_list:
+            if os.path.exists(xml_path) is False:
+                print(f"Warning: not found '{xml_path}', skip this annotation file.")
+                continue
+
+            # check for targets
+            with open(xml_path) as fid:
+                xml_str = fid.read()
+            xml = etree.fromstring(xml_str)
+            data = self.parse_xml_to_dict(xml)["annotation"]
+            if "object" not in data:
+                print(f"INFO: no objects in {xml_path}, skip this annotation file.")
+                continue
+
+            self.xml_list.append(xml_path)
+
         assert len(self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
-        for xml_path in self.xml_list:
-            assert os.path.exists(xml_path), "not found '{}' file.".format(xml_path)
 
         # read class_indict
         json_file = './pascal_voc_classes.json'
