@@ -1,0 +1,1 @@
+from .hrnet import HighResolutionNet
