@@ -263,7 +263,10 @@ class HalfBody(object):
                 w = xmax - xmin
                 h = ymax - ymin
                 if w > 1 and h > 1:
-                    target["box"] = [xmin, ymin, w, h]
+                    # 把w和h适当放大点，要不然关键点处于边缘位置
+                    scale_w, scale_h = w * 1.5, h * 1.5
+                    xmin, ymin, _, _ = adjust_box(xmin, ymin, w, h, (scale_h, scale_w))
+                    target["box"] = [xmin, ymin, scale_w, scale_h]
 
         return image, target
 
