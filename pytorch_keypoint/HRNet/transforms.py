@@ -162,7 +162,7 @@ def resize_pad(img: np.ndarray, size: tuple):
     return resize_img, reverse_trans
 
 
-def adjust_box(xmin, ymin, w, h, fixed_size):
+def adjust_box(xmin: float, ymin: float, w: float, h: float, fixed_size: Tuple[float, float]):
     """通过增加w或者h的方式保证输入图片的长宽比固定"""
     xmax = xmin + w
     ymax = ymin + h
@@ -182,6 +182,15 @@ def adjust_box(xmin, ymin, w, h, fixed_size):
         ymax = ymax + pad_h
 
     return xmin, ymin, xmax, ymax
+
+
+def scale_box(xmin: float, ymin: float, w: float, h: float, scale_ratio: Tuple[float, float]):
+    """根据传入的h、w缩放因子scale_ratio，重新计算xmin，ymin，w，h"""
+    s_h = h * scale_ratio[0]
+    s_w = w * scale_ratio[1]
+    xmin = xmin - (s_w - w) / 2.
+    ymin = ymin - (s_h - h) / 2.
+    return xmin, ymin, s_w, s_h
 
 
 def plot_heatmap(image, heatmap, kps, kps_weights):
@@ -264,9 +273,8 @@ class HalfBody(object):
                 h = ymax - ymin
                 if w > 1 and h > 1:
                     # 把w和h适当放大点，要不然关键点处于边缘位置
-                    scale_w, scale_h = w * 1.5, h * 1.5
-                    xmin, ymin, _, _ = adjust_box(xmin, ymin, w, h, (scale_h, scale_w))
-                    target["box"] = [xmin, ymin, scale_w, scale_h]
+                    xmin, ymin, w, h = scale_box(xmin, ymin, w, h, (1.5, 1.5))
+                    target["box"] = [xmin, ymin, w, h]
 
         return image, target
 
