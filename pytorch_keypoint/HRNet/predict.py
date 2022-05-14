@@ -42,8 +42,11 @@ def predict_single_person():
     # create model
     # HRNet-W32: base_channel=32
     # HRNet-W48: base_channel=48
-    model = HighResolutionNet(base_channel=32).to(device)
-    model.load_state_dict(torch.load(weights_path, map_location=device))
+    model = HighResolutionNet(base_channel=32)
+    weights = torch.load(weights_path, map_location=device)
+    weights = weights if "model" not in weights else weights["model"]
+    model.load_state_dict(weights)
+    model.to(device)
     model.eval()
 
     with torch.inference_mode():
