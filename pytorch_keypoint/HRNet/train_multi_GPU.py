@@ -218,7 +218,7 @@ if __name__ == "__main__":
     parser.add_argument('--keypoints-path', default="./person_keypoints.json", type=str,
                         help='person_keypoints.json path')
     # 原项目提供的验证集person检测信息，如果要使用GT信息，直接将该参数置为None，建议设置成None
-    parser.add_argument('--person-det', type=str, default="./COCO_val2017_detections_AP_H_56_person.json")
+    parser.add_argument('--person-det', type=str, default=None)
     parser.add_argument('--fixed-size', default=[256, 192], nargs='+', type=int, help='input size')
     # 检测目标类别数(不包含背景)
     parser.add_argument('--num-joints', default=17, type=int, help='num_joints(num_keypoints)')
@@ -233,9 +233,9 @@ if __name__ == "__main__":
     # 数据加载以及预处理的线程数
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.032 / bs * num_GPU
-    parser.add_argument('--lr', default=0.004, type=float,
-                        help='initial learning rate, 0.004 is the default value for training '
+    # 学习率
+    parser.add_argument('--lr', default=0.001, type=float,
+                        help='initial learning rate, 0.001 is the default value for training '
                              'on 4 gpus and 32 images_per_gpu')
     # AdamW的weight_decay参数
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,

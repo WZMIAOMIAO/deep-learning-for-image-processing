@@ -187,7 +187,7 @@ if __name__ == "__main__":
     parser.add_argument('--keypoints-path', default="./person_keypoints.json", type=str,
                         help='person_keypoints.json path')
     # 原项目提供的验证集person检测信息，如果要使用GT信息，直接将该参数置为None，建议设置成None
-    parser.add_argument('--person-det', type=str, default="./COCO_val2017_detections_AP_H_56_person.json")
+    parser.add_argument('--person-det', type=str, default=None)
     parser.add_argument('--fixed-size', default=[256, 192], nargs='+', type=int, help='input size')
     # keypoints点数
     parser.add_argument('--num-joints', default=17, type=int, help='num_joints')
