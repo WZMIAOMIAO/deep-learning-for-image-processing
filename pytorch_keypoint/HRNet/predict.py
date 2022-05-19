@@ -4,6 +4,7 @@ import json
 import torch
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 from model import HighResolutionNet
 from draw_utils import draw_keypoints
@@ -72,6 +73,8 @@ def predict_single_person():
         scores = np.squeeze(scores)
 
         plot_img = draw_keypoints(img, keypoints, scores, thresh=0.2, r=3)
+        plt.imshow(plot_img)
+        plt.show()
         plot_img.save("test_result.jpg")
 
 
