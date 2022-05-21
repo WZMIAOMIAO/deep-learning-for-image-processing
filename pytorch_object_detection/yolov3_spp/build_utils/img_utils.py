@@ -37,8 +37,8 @@ def letterbox(img: np.ndarray,
         dw, dh = np.mod(dw, 64), np.mod(dh, 64)  # wh padding
     elif scale_fill:  # stretch 简单粗暴的将图片缩放到指定尺寸
         dw, dh = 0, 0
-        new_unpad = new_shape
-        ratio = new_shape[0] / shape[1], new_shape[1] / shape[0]  # wh ratios
+        new_unpad = new_shape[::-1]  # [h, w] -> [w, h]
+        ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # wh ratios
 
     dw /= 2  # divide padding into 2 sides 将padding分到上下，左右两侧
     dh /= 2
