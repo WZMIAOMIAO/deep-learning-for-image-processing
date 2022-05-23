@@ -98,9 +98,8 @@
     * [YOLOV5网络讲解](https://www.bilibili.com/video/BV1T3411p7zR)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
   
-  * FCOS（规划中）
-    * FCOS网络讲解
-    * FCOS源码解析(Pytorch版)
+  * FCOS（已完成）
+    * [FCOS网络讲解](https://www.bilibili.com/video/BV1G5411X7jw)
 
 * 语义分割 
   * FCN (已完成)
