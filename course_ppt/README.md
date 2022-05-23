@@ -32,6 +32,7 @@
 - **YOLOv3SPP** 链接: https://pan.baidu.com/s/15LRssnPez9pn6jRpW89Wlw  密码: nv9f
 - **YOLOv4** 链接：https://pan.baidu.com/s/1Ltw4v1pg0eZNFYR2ZBbZmQ  密码：qjx4
 - **YOLOv5** 链接：https://pan.baidu.com/s/1rnvjwHLvOlJ9KpJ5z95GWw  密码：kt04
+- **FCOS** 链接: https://pan.baidu.com/s/1KUc9dzvAbtwtGGm3ZZy_cw  密码: h0as
 - **Calculate mAP** 链接: https://pan.baidu.com/s/1jdA_n78J7nSUoOg6TTO5Bg  密码: eh62
 - **coco数据集简介** 链接：https://pan.baidu.com/s/1HfCvjt-8o9j5a916IYNVjw  密码：6rec 
 
@@ -48,3 +49,7 @@
 
 ## 实例分割
 - **Mask R-CNN** 链接：https://pan.baidu.com/s/1JpQ7ENEv_x9A1-O_NpjwYA 密码：1t4i
+
+## 关键点检测
+- **HRNet** 链接: https://pan.baidu.com/s/1-8AJdU82K1j70KZK_rN7aQ  密码: t4me
+
