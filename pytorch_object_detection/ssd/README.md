@@ -38,6 +38,7 @@
 * 确保提前下载好对应预训练模型权重
 * 单GPU训练或CPU，直接使用train_ssd300.py训练脚本
 * 若要使用多GPU训练，使用 "python -m torch.distributed.launch --nproc_per_node=8 --use_env train_multi_GPU.py" 指令,nproc_per_node参数为使用GPU数量
+* 训练过程中保存的`results.txt`是每个epoch在验证集上的COCO指标，前12个值是COCO指标，后面两个值是训练平均损失以及学习率
 
 ## 如果对SSD算法原理不是很理解可参考我的bilibili
 * https://www.bilibili.com/video/BV1fT4y1L7Gi

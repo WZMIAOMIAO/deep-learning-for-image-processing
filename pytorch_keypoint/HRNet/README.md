@@ -95,7 +95,7 @@ python train.py --data-path /data/coco2017
 3. 在使用预测脚本时，如果要读取自己训练好的权重要将`weights_path`设置为你自己生成的权重路径。
 
 
-## 如果对Mask RCNN原理不是很理解可参考我的bilibili
+## 如果对HRNet网络不是很理解可参考我的bilibili
 https://www.bilibili.com/video/BV1bB4y1y7qP
 
 ## HRNet网络结构图
