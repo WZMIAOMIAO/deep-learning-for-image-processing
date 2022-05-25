@@ -3,9 +3,9 @@
 ## 1 环境配置：
 * Python3.6或者3.7
 * Pytorch1.7.1(注意：必须是1.6.0或以上，因为使用官方提供的混合精度训练1.6.0后才支持)
-* pycocotools(Linux: ```pip install pycocotools```;   
-  Windows: ```pip install pycocotools-windows```(不需要额外安装vs))
-* 更多环境配置信息，请查看```requirements.txt```文件
+* pycocotools(Linux: `pip install pycocotools`;   
+  Windows: `pip install pycocotools-windows`(不需要额外安装vs))
+* 更多环境配置信息，请查看`requirements.txt`文件
 * 最好使用GPU训练
 
 ## 2 文件结构：
@@ -39,8 +39,8 @@
 ```
 
 ## 3 训练数据的准备以及目录结构
-* 这里建议标注数据时直接生成yolo格式的标签文件```.txt```，推荐使用免费开源的标注软件(支持yolo格式)，[https://github.com/tzutalin/labelImg](https://github.com/tzutalin/labelImg)
-* 如果之前已经标注成pascal voc的```.xml```格式了也没关系，我写了个voc转yolo格式的转化脚本，4.1会讲怎么使用
+* 这里建议标注数据时直接生成yolo格式的标签文件`.txt`，推荐使用免费开源的标注软件(支持yolo格式)，[https://github.com/tzutalin/labelImg](https://github.com/tzutalin/labelImg)
+* 如果之前已经标注成pascal voc的`.xml`格式了也没关系，我写了个voc转yolo格式的转化脚本，4.1会讲怎么使用
 * 测试图像时最好将图像缩放到32的倍数
 * 标注好的数据集请按照以下目录结构进行摆放:
 ```
@@ -58,12 +58,12 @@
 ├── data 利用数据集生成的一系列相关准备文件目录
 │    ├── my_train_data.txt:  该文件里存储的是所有训练图片的路径地址
 │    ├── my_val_data.txt:  该文件里存储的是所有验证图片的路径地址
-│    ├── my_data_label.names:  该文件里存储的是所有类别的名称，一个类别对应一行(这里会根据```.json```文件自动生成)
+│    ├── my_data_label.names:  该文件里存储的是所有类别的名称，一个类别对应一行(这里会根据`.json`文件自动生成)
 │    └── my_data.data:  该文件里记录的是类别数类别信息、train以及valid对应的txt文件
 ```
 
 ### 4.1 将VOC标注数据转为YOLO标注数据(如果你的数据已经是YOLO格式了，可跳过该步骤)
-* 使用```trans_voc2yolo.py```脚本进行转换，并在```./data/```文件夹下生成```my_data_label.names```标签文件，
+* 使用`trans_voc2yolo.py`脚本进行转换，并在`./data/`文件夹下生成`my_data_label.names`标签文件，
 * 执行脚本前，需要根据自己的路径修改以下参数
 ```python
 # voc数据集根目录以及版本
@@ -80,7 +80,7 @@ save_file_root = "/home/wz/my_project/my_yolo_dataset"
 # label标签对应json文件
 label_json_path = './data/pascal_voc_classes.json'
 ```
-* 生成的```my_data_label.names```标签文件格式如下
+* 生成的`my_data_label.names`标签文件格式如下
 ```text
 aeroplane
 bicycle
@@ -92,7 +92,7 @@ bus
 ```
 
 ### 4.2 根据摆放好的数据集信息生成一系列相关准备文件
-* 使用```calculate_dataset.py```脚本生成```my_train_data.txt```文件、```my_val_data.txt```文件以及```my_data.data```文件，并生成新的```my_yolov3.cfg```文件
+* 使用`calculate_dataset.py`脚本生成`my_train_data.txt`文件、`my_val_data.txt`文件以及`my_data.data`文件，并生成新的`my_yolov3.cfg`文件
 * 执行脚本前，需要根据自己的路径修改以下参数
 ```python
 # 训练集的labels目录路径
@@ -106,21 +106,22 @@ cfg_path = "./cfg/yolov3-spp.cfg"
 ```
 
 ## 5 预训练权重下载地址（下载后放入weights文件夹中）：
-* ```yolov3-spp-ultralytics-416.pt```: 链接: https://pan.baidu.com/s/1cK3USHKxDx-d5dONij52lA  密码: r3vm
-* ```yolov3-spp-ultralytics-512.pt```: 链接: https://pan.baidu.com/s/1k5yeTZZNv8Xqf0uBXnUK-g  密码: e3k1
-* ```yolov3-spp-ultralytics-608.pt```: 链接: https://pan.baidu.com/s/1GI8BA0wxeWMC0cjrC01G7Q  密码: ma3t
-* ```yolov3spp-voc-512.pt``` **(这是我在视频演示训练中得到的权重)**: 链接: https://pan.baidu.com/s/1aFAtaHlge0ieFtQ9nhmj3w  密码: 8ph3
+* `yolov3-spp-ultralytics-416.pt`: 链接: https://pan.baidu.com/s/1cK3USHKxDx-d5dONij52lA  密码: r3vm
+* `yolov3-spp-ultralytics-512.pt`: 链接: https://pan.baidu.com/s/1k5yeTZZNv8Xqf0uBXnUK-g  密码: e3k1
+* `yolov3-spp-ultralytics-608.pt`: 链接: https://pan.baidu.com/s/1GI8BA0wxeWMC0cjrC01G7Q  密码: ma3t
+* `yolov3spp-voc-512.pt` **(这是我在视频演示训练中得到的权重)**: 链接: https://pan.baidu.com/s/1aFAtaHlge0ieFtQ9nhmj3w  密码: 8ph3
  
  
 ## 6 数据集，本例程使用的是PASCAL VOC2012数据集
-* ```Pascal VOC2012``` train/val数据集下载地址：http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
+* `Pascal VOC2012` train/val数据集下载地址：http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
 * 如果不了解数据集或者想使用自己的数据集进行训练，请参考我的bilibili：https://b23.tv/F1kSCK
 
 ## 7 使用方法
 * 确保提前准备好数据集
 * 确保提前下载好对应预训练模型权重
 * 若要使用单GPU训练或者使用CPU训练，直接使用train.py训练脚本
-* 若要使用多GPU训练，使用```python -m torch.distributed.launch --nproc_per_node=8 --use_env train_multi_GPU.py```指令,```nproc_per_node```参数为使用GPU数量
+* 若要使用多GPU训练，使用`python -m torch.distributed.launch --nproc_per_node=8 --use_env train_multi_GPU.py`指令,`nproc_per_node`参数为使用GPU数量
+* 训练过程中保存的`results.txt`是每个epoch在验证集上的COCO指标，前12个值是COCO指标，后面两个值是训练平均损失以及学习率
 
 ## 如果对YOLOv3 SPP网络原理不是很理解可参考我的bilibili
 [https://www.bilibili.com/video/BV1yi4y1g7ro?p=3](https://www.bilibili.com/video/BV1yi4y1g7ro?p=3)
