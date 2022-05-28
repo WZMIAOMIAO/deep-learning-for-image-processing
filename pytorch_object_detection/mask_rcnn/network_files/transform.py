@@ -208,6 +208,7 @@ def paste_mask_in_image(mask, box, im_h, im_w):
 
 
 def paste_masks_in_image(masks, boxes, img_shape, padding=1):
+    # refer: https://github.com/pytorch/vision/issues/5845
     # type: (Tensor, Tensor, Tuple[int, int], int) -> Tensor
     masks, scale = expand_masks(masks, padding=padding)
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64)
