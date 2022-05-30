@@ -181,6 +181,8 @@ def expand_masks(mask, padding):
 
 def paste_mask_in_image(mask, box, im_h, im_w):
     # type: (Tensor, Tensor, int, int) -> Tensor
+
+    # refer to: https://github.com/pytorch/vision/issues/5845
     TO_REMOVE = 1
     w = int(box[2] - box[0] + TO_REMOVE)
     h = int(box[3] - box[1] + TO_REMOVE)
@@ -189,7 +191,7 @@ def paste_mask_in_image(mask, box, im_h, im_w):
 
     # Set shape to [batch, C, H, W]
     # 因为后续的bilinear操作只支持4-D的Tensor
-    mask = mask.expand((1, 1, -1, -1))
+    mask = mask.expand((1, 1, -1, -1))  # -1 means not changing the size of that dimension
 
     # Resize mask
     mask = F.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
@@ -209,6 +211,9 @@ def paste_mask_in_image(mask, box, im_h, im_w):
 
 def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     # type: (Tensor, Tensor, Tuple[int, int], int) -> Tensor
+
+    # pytorch官方说对mask进行expand能够略微提升mAP
+    # refer to: https://github.com/pytorch/vision/issues/5845
     masks, scale = expand_masks(masks, padding=padding)
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64)
     im_h, im_w = img_shape
@@ -219,7 +224,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
         )[:, None]
     res = [paste_mask_in_image(m[0], b, im_h, im_w) for m, b in zip(masks, boxes)]
     if len(res) > 0:
-        ret = torch.stack(res, dim=0)[:, None]
+        ret = torch.stack(res, dim=0)[:, None]  # [num_obj, 1, H, W]
     else:
         ret = masks.new_empty((0, 1, im_h, im_w))
     return ret

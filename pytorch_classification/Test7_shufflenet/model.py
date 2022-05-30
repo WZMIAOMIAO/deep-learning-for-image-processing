@@ -147,6 +147,23 @@ class ShuffleNetV2(nn.Module):
         return self._forward_impl(x)
 
 
+def shufflenet_v2_x0_5(num_classes=1000):
+    """
+    Constructs a ShuffleNetV2 with 0.5x output channels, as described in
+    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
+    <https://arxiv.org/abs/1807.11164>`.
+    weight: https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth
+
+    :param num_classes:
+    :return:
+    """
+    model = ShuffleNetV2(stages_repeats=[4, 8, 4],
+                         stages_out_channels=[24, 48, 96, 192, 1024],
+                         num_classes=num_classes)
+
+    return model
+
+
 def shufflenet_v2_x1_0(num_classes=1000):
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
@@ -164,18 +181,35 @@ def shufflenet_v2_x1_0(num_classes=1000):
     return model
 
 
-def shufflenet_v2_x0_5(num_classes=1000):
+def shufflenet_v2_x1_5(num_classes=1000):
     """
-    Constructs a ShuffleNetV2 with 0.5x output channels, as described in
+    Constructs a ShuffleNetV2 with 1.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`.
-    weight: https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth
+    weight: https://download.pytorch.org/models/shufflenetv2_x1_5-3c479a10.pth
 
     :param num_classes:
     :return:
     """
     model = ShuffleNetV2(stages_repeats=[4, 8, 4],
-                         stages_out_channels=[24, 48, 96, 192, 1024],
+                         stages_out_channels=[24, 176, 352, 704, 1024],
+                         num_classes=num_classes)
+
+    return model
+
+
+def shufflenet_v2_x2_0(num_classes=1000):
+    """
+    Constructs a ShuffleNetV2 with 1.0x output channels, as described in
+    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
+    <https://arxiv.org/abs/1807.11164>`.
+    weight: https://download.pytorch.org/models/shufflenetv2_x2_0-8be3c8ee.pth
+
+    :param num_classes:
+    :return:
+    """
+    model = ShuffleNetV2(stages_repeats=[4, 8, 4],
+                         stages_out_channels=[24, 244, 488, 976, 2048],
                          num_classes=num_classes)
 
     return model
