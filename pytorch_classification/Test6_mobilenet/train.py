@@ -5,6 +5,7 @@ import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, datasets
 from tqdm import tqdm
 
@@ -14,7 +15,7 @@ from model_v2 import MobileNetV2
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
-
+    
     batch_size = 16
     epochs = 5
 
@@ -61,7 +62,7 @@ def main():
                                                                            val_num))
 
     # create model
-    net = MobileNetV2(num_classes=5)
+    net = MobileNetV2(num_classes=6)
 
     # load pretrain weights
     # download url: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth

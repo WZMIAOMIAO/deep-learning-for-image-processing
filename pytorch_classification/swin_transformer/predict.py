@@ -20,7 +20,7 @@ def main():
          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     # load image
-    img_path = "../tulip.jpg"
+    img_path = "data/10018/10018_00000008.jpg"
     assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
     img = Image.open(img_path)
     plt.imshow(img)
@@ -37,9 +37,9 @@ def main():
         class_indict = json.load(f)
 
     # create model
-    model = create_model(num_classes=5).to(device)
+    model = create_model(num_classes=6).to(device)
     # load model weights
-    model_weight_path = "./weights/model-9.pth"
+    model_weight_path = "./weights/model-7.pth"
     model.load_state_dict(torch.load(model_weight_path, map_location=device))
     model.eval()
     with torch.no_grad():

@@ -64,6 +64,7 @@ def main(args):
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
+        # weights_dict = torch.load(args.weights, map_location=device)
         weights_dict = torch.load(args.weights, map_location=device)["model"]
         # 删除有关分类类别的权重
         for k in list(weights_dict.keys()):
@@ -115,8 +116,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--num_classes', type=int, default=6)
+    parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--lr', type=float, default=5e-4)
     parser.add_argument('--wd', type=float, default=5e-2)
@@ -124,14 +125,14 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="/data/flower_photos")
+                        default="./data")
 
     # 预训练权重路径，如果不想载入就设置为空字符
     # 链接: https://pan.baidu.com/s/1aNqQW4n_RrUlWUBNlaJRHA  密码: i83t
     parser.add_argument('--weights', type=str, default='./convnext_tiny_1k_224_ema.pth',
                         help='initial weights path')
     # 是否冻结head以外所有权重
-    parser.add_argument('--freeze-layers', type=bool, default=False)
+    parser.add_argument('--freeze-layers', type=bool, default=True)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
 
     opt = parser.parse_args()

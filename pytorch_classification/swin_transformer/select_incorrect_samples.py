@@ -11,7 +11,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from my_dataset import MyDataSet
-from model import swin_base_patch4_window12_384_in22k as create_model
+from model import swin_tiny_patch4_window7_224 as create_model
 from utils import read_split_data
 
 
@@ -20,7 +20,7 @@ def main(args):
 
     _, _, val_images_path, val_images_label = read_split_data(args.data_path)
 
-    img_size = 384
+    img_size =224
     data_transform = {
         "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
                                    transforms.CenterCrop(img_size),
@@ -77,16 +77,16 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--num_classes', type=int, default=6)
+    parser.add_argument('--batch-size', type=int, default=4)
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="/data/flower_photos")
+                        default="./data")
 
     # 训练权重路径
-    parser.add_argument('--weights', type=str, default='./weights/model-19.pth',
+    parser.add_argument('--weights', type=str, default='./weights/model-129.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

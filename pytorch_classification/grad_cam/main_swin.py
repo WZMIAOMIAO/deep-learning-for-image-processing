@@ -6,7 +6,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from torchvision import transforms
 from utils import GradCAM, show_cam_on_image, center_crop_img
-from swin_model import swin_base_patch4_window7_224
+from swin_model import swin_tiny_patch4_window7_224
 
 
 class ResizeTransform:
@@ -42,11 +42,11 @@ def main():
     img_size = 224
     assert img_size % 32 == 0
 
-    model = swin_base_patch4_window7_224()
+    model = swin_tiny_patch4_window7_224()
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
-    weights_path = "./swin_base_patch4_window7_224.pth"
-    model.load_state_dict(torch.load(weights_path, map_location="cpu")["model"], strict=False)
-
+    weights_path = "./swin_tiny_patch4_window7_224.pth"
+    # model.load_state_dict(torch.load(weights_path, map_location="cpu")["model"], strict=False)
+    model.load_state_dict(torch.load(weights_path, map_location="cpu"), strict=False)
     target_layers = [model.norm]
 
     data_transform = transforms.Compose([transforms.ToTensor(),

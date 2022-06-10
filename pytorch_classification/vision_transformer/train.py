@@ -61,11 +61,12 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = create_model(num_classes=5, has_logits=False).to(device)
-
+    # model = create_model(num_classes=6, has_logits=False).to(device)
+    model = create_model(num_classes=6).to(device)
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
         weights_dict = torch.load(args.weights, map_location=device)
+        # print(model.load_state_dict(weights_dict, strict=False))
         # 删除不需要的权重
         del_keys = ['head.weight', 'head.bias'] if model.has_logits \
             else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
@@ -82,7 +83,7 @@ def main(args):
                 print("training {}".format(name))
 
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-5)
+    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-2)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -115,8 +116,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--num_classes', type=int, default=6)
+    parser.add_argument('--epochs', type=int, default=120)
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
@@ -124,7 +125,7 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="/data/flower_photos")
+                        default="./data")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符

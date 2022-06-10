@@ -217,7 +217,7 @@ class WindowAttention(nn.Module):
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
-        coords = torch.stack(torch.meshgrid([coords_h, coords_w], indexing="ij"))  # [2, Mh, Mw]
+        coords = torch.stack(torch.meshgrid([coords_h, coords_w]))  # [2, Mh, Mw]
         coords_flatten = torch.flatten(coords, 1)  # [2, Mh*Mw]
         # [2, Mh*Mw, 1] - [2, 1, Mh*Mw]
         relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # [2, Mh*Mw, Mh*Mw]
