@@ -33,7 +33,7 @@ def main(args):
                 "B5": 456,
                 "B6": 528,
                 "B7": 600}
-    num_model = "B7"
+    num_model = "B0"
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(img_size[num_model]),
@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
     # 数据集所在根目录
     parser.add_argument('--data-path', type=str,
-                        default="./resize640")
+                        default="./datasets")
 
     # download model weights
     # 链接: https://pan.baidu.com/s/1ouX0UmjCsmSx3ZrqXbowjw  密码: 090i

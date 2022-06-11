@@ -8,16 +8,17 @@ from torchvision import transforms
 
 from my_dataset import MyDataSet
 from model import swin_tiny_patch4_window7_224 as create_model
-from utils import read_split_data, train_one_epoch, evaluate
+from utils import read_split_data, train_one_epoch, evaluate,create_lr_scheduler
 
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
-
-    tb_writer = SummaryWriter()
+    print(args)
+    print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
+    if os.path.exists("./logs/weights") is False:
+        os.makedirs("./logs/weights")
+    tb_writer = SummaryWriter('logs')
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
@@ -84,7 +85,10 @@ def main(args):
 
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
+    lr_scheduler = create_lr_scheduler(optimizer, len(train_loader), args.epochs,
+                                       warmup=True, warmup_epochs=1)
 
+    best_acc = 0.
     for epoch in range(args.epochs):
         # train
         train_loss, train_acc = train_one_epoch(model=model,
@@ -92,7 +96,7 @@ def main(args):
                                                 data_loader=train_loader,
                                                 device=device,
                                                 epoch=epoch)
-
+        lr_scheduler.step()
         # validate
         val_loss, val_acc = evaluate(model=model,
                                      data_loader=val_loader,
@@ -106,8 +110,9 @@ def main(args):
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
-
+        if best_acc < val_acc:
+            torch.save(model.state_dict(), "./logs/weights/best_model.pth")
+            best_acc = val_acc
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
