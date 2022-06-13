@@ -11,7 +11,7 @@ from torchvision import transforms
 
 from my_dataset import MyDataSet
 from vit_model import vit_base_patch16_224 as create_model
-from utils import read_split_data, train_one_epoch, evaluate
+from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 
 def main(args):
@@ -82,8 +82,10 @@ def main(args):
             else:
                 print("training {}".format(name))
 
-    pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-2)
+    # pg = [p for p in model.parameters() if p.requires_grad]
+    # optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-2)
+    pg = get_params_groups(model, weight_decay=args.wd)
+    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=args.wd)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -124,6 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lrf', type=float, default=0.01)
+    parser.add_argument('--wd', type=float, default=5e-2)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
