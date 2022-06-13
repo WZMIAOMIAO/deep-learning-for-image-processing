@@ -94,9 +94,10 @@
 
   * YOLO Series (已完成)
     * [YOLO系列网络讲解(V1~V3)](https://www.bilibili.com/video/BV1yi4y1g7ro)
+    * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
     * [YOLOV4网络讲解](https://b23.tv/WLptQ7Q)
     * [YOLOV5网络讲解](https://www.bilibili.com/video/BV1T3411p7zR)
-    * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
+    * [YOLOX 网络讲解](https://www.bilibili.com/video/BV1JW4y1k76c)
   
   * FCOS（已完成）
     * [FCOS网络讲解](https://www.bilibili.com/video/BV1G5411X7jw)
