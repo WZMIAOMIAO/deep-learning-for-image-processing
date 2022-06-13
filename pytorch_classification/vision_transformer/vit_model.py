@@ -304,7 +304,7 @@ def vit_base_patch16_224(num_classes: int = 1000):
     return model
 
 
-def vit_base_patch16_224_in21k(num_classes: int = 21843, has_logits: bool = True):
+def vit_base_patch16_224_in21k(num_classes: int = 21843, has_logits: bool = False):
     """
     ViT-Base model (ViT-B/16) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.

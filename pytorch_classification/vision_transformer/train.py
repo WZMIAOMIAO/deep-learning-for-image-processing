@@ -10,7 +10,7 @@ from torchvision import transforms
 
 
 from my_dataset import MyDataSet
-from vit_model import vit_base_patch16_224 as create_model
+from vit_model import vit_base_patch16_224_in21k as create_model
 from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 
@@ -82,10 +82,10 @@ def main(args):
             else:
                 print("training {}".format(name))
 
-    # pg = [p for p in model.parameters() if p.requires_grad]
-    # optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-2)
-    pg = get_params_groups(model, weight_decay=args.wd)
-    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=args.wd)
+    pg = [p for p in model.parameters() if p.requires_grad]
+    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-2)
+    # pg = get_params_groups(model, weight_decay=args.wd)
+    # optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=args.wd)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=6)
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lrf', type=float, default=0.01)
     parser.add_argument('--wd', type=float, default=5e-2)
@@ -132,10 +132,10 @@ if __name__ == '__main__':
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
                         default="./datasets")
-    parser.add_argument('--model-name', default='vit_base_patch16_224', help='create model name')
+    parser.add_argument('--model-name', default='vit_base_patch16_224_in21k', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./vit_base_patch16_224.pth',
+    parser.add_argument('--weights', type=str, default='./vit_base_patch16_224_in21k.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
