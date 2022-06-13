@@ -46,6 +46,7 @@ def main_fun(rank, world_size, args):
     batch_size = args.batch_size
     weights_path = args.weights
     args.lr *= args.world_size  # 学习率要根据并行GPU的数量进行倍增
+    checkpoint_path = ""
 
     if rank == 0:  # 在第一个进程中打印信息，并实例化tensorboard
         print(args)
