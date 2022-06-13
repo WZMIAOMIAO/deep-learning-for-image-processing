@@ -10,7 +10,7 @@ from torchvision import transforms
 
 
 from my_dataset import MyDataSet
-from vit_model import vit_base_patch16_224_in21k as create_model
+from vit_model import vit_base_patch16_224 as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
 
@@ -121,18 +121,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=6)
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=256)
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lrf', type=float, default=0.01)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
                         default="./datasets")
-    parser.add_argument('--model-name', default='vit_base_patch16_224_in21k', help='create model name')
+    parser.add_argument('--model-name', default='vit_base_patch16_224', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./vit_base_patch16_224_in21k.pth',
+    parser.add_argument('--weights', type=str, default='./vit_base_patch16_224.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)

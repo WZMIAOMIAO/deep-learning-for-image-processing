@@ -51,6 +51,9 @@ class ConfusionMatrix(object):
             Specificity = round(TN / (TN + FP), 3) if TN + FP != 0 else 0.
             table.add_row([self.labels[i], Precision, Recall, Specificity])
         print(table)
+        with open('./metrics.txt', 'w') as f:
+            f.write(str(table))
+
 
     def plot(self):
         matrix = self.matrix
@@ -86,6 +89,7 @@ def main(args):
     print(f"using device: {device}")
 
     _, _, val_images_path, val_images_label = read_split_data(args.data_path)
+
 
     img_size = 224
     data_transform = {
@@ -146,7 +150,7 @@ if __name__ == '__main__':
                         default="./data")
 
     # 训练权重路径
-    parser.add_argument('--weights', type=str, default='./weights/model-119.pth',
+    parser.add_argument('--weights', type=str, default='./best_model.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
