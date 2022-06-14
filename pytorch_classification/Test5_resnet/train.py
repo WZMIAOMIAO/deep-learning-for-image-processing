@@ -1,11 +1,13 @@
 import os
 import argparse
+import math
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
+import torch.optim.lr_scheduler as lr_scheduler
 
 
 from my_dataset import MyDataSet
@@ -98,7 +100,9 @@ def main(args):
     # construct an optimizer
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(pg, lr=args.lr, momentum=0.9, weight_decay=args.wd)
-
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     best_acc = 0.0
     # save_path = './resNet34.pth'
