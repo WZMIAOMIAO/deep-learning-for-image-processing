@@ -1,14 +1,12 @@
 import os
-import sys
-import json
 import argparse
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms, datasets
+from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
+
 
 from my_dataset import MyDataSet
 from model import resnet50 as create_model
@@ -145,11 +143,11 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./datasets")
-    parser.add_argument('--model-name', default='resnet34', help='create model name')
+                        default="./resize640")
+    parser.add_argument('--model-name', default='resnet50', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./resnet50-19c8e357.pth',
+    parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/resnet50-19c8e357.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=True)
