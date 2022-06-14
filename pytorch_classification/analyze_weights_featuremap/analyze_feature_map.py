@@ -1,6 +1,7 @@
 import torch
 from alexnet_model import AlexNet
 from resnet_model import resnet34
+from swin_model import  swin_tiny_patch4_window7_224
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
@@ -18,7 +19,7 @@ data_transform = transforms.Compose(
 #      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
 # create model
-model = AlexNet(num_classes=5)
+model = swin_tiny_patch4_window7_224(num_classes=6)
 # model = resnet34(num_classes=5)
 # load model weights
 model_weight_path = "./AlexNet.pth"  # "./resNet34.pth"

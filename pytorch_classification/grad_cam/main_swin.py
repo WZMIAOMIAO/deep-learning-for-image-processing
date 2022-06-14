@@ -52,7 +52,7 @@ def main():
     data_transform = transforms.Compose([transforms.ToTensor(),
                                          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
     # load image
-    img_path = "10018_00000005.jpg"
+    img_path = "10047_00000160.jpg"
     assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
     img = Image.open(img_path).convert('RGB')
     img = np.array(img, dtype=np.uint8)
@@ -67,7 +67,7 @@ def main():
     cam = GradCAM(model=model, target_layers=target_layers, use_cuda=False,
                   reshape_transform=ResizeTransform(im_h=img_size, im_w=img_size))
     # target_category = 281  # tabby, tabby cat
-    target_category = 2
+    target_category = 5
     # target_category = 254  # pug, pug-dog
 
     grayscale_cam = cam(input_tensor=input_tensor, target_category=target_category)
