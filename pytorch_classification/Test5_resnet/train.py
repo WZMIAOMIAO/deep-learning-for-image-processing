@@ -85,7 +85,7 @@ def main(args):
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = args.weights
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
-    model.load_state_dict(torch.load(model_weight_path, map_location=lambda storage, loc: storage.cuda()))
+    model.load_state_dict(torch.load(model_weight_path, map_location='cpu'))
     # for param in net.parameters():
     #     param.requires_grad = False
 
