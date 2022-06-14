@@ -13,7 +13,7 @@ from model import resnet50 as create_model
 from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 def main(args):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
     print(args)
     if os.path.exists("./logs/weights") is False:
@@ -77,13 +77,13 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = create_model().to(device)
+    model = create_model()
     # model = resnet34()
     # load pretrain weights
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = args.weights
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
-    model.load_state_dict(torch.load(model_weight_path, map_location=device))
+    model.load_state_dict(torch.load(model_weight_path, map_location=lambda storage, loc: storage.cuda()))
     # for param in net.parameters():
     #     param.requires_grad = False
 
@@ -143,14 +143,14 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./resize640")
+                        default="./datasets")
     parser.add_argument('--model-name', default='resnet50', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/resnet50-19c8e357.pth',
                         help='initial weights path')
     # 是否冻结权重
-    parser.add_argument('--freeze-layers', type=bool, default=True)
+    parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
 
     opt = parser.parse_args()
