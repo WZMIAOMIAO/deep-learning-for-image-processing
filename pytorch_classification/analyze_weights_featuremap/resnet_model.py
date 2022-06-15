@@ -125,9 +125,12 @@ class ResNet(nn.Module):
 
         x = self.layer1(x)
         outputs.append(x)
-        # x = self.layer2(x)
+        x = self.layer2(x)
+        outputs.append(x)
         # x = self.layer3(x)
+        # outputs.append(x)
         # x = self.layer4(x)
+        # outputs.append(x)
         #
         # if self.include_top:
         #     x = self.avgpool(x)
@@ -139,6 +142,10 @@ class ResNet(nn.Module):
 
 def resnet34(num_classes=1000, include_top=True):
     return ResNet(BasicBlock, [3, 4, 6, 3], num_classes=num_classes, include_top=include_top)
+
+def resnet50(num_classes=1000, include_top=True):
+    # https://download.pytorch.org/models/resnet50-19c8e357.pth
+    return ResNet(Bottleneck, [3, 4, 6, 3], num_classes=num_classes, include_top=include_top)
 
 
 def resnet101(num_classes=1000, include_top=True):
