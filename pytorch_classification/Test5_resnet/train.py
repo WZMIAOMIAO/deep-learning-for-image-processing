@@ -11,7 +11,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 from my_dataset import MyDataSet
-from model import resnet50 as create_model
+from ghostnet import ghostnet as create_model
 from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 def main(args):
@@ -85,13 +85,16 @@ def main(args):
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     model_weight_path = args.weights
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
-    model.load_state_dict(torch.load(model_weight_path, map_location='cpu'))
+    model.load_state_dict(torch.load(model_weight_path, map_location=device))
     # for param in net.parameters():
     #     param.requires_grad = False
 
     # change fc layer structure
-    in_channel = model.fc.in_features
-    model.fc = nn.Linear(in_channel, 6)
+    # resnet
+    # in_channel = model.fc.in_features
+    # model.fc = nn.Linear(in_channel, 6)
+
+    model.classifier = nn.Linear(1280, args.num_classes)
     model.to(device)
 
     # define loss function
@@ -139,7 +142,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=6)
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--batch-size', type=int, default=4)
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--lrf', type=float, default=0.01)
     parser.add_argument('--wd', type=float, default=5e-2)
@@ -147,11 +150,11 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./datasets")
+                        default="./resize640")
     parser.add_argument('--model-name', default='resnet50', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/resnet50-19c8e357.pth',
+    parser.add_argument('--weights', type=str, default='./ghostnet_weights.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
