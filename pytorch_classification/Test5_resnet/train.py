@@ -11,7 +11,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 from my_dataset import MyDataSet
-from model import resnet101 as create_model
+from model import resnet50 as create_model
 from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 def main(args):
@@ -99,7 +99,7 @@ def main(args):
 
     # construct an optimizer
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.AdamW(pg, lr=args.lr, momentum=0.9, weight_decay=args.wd)
+    optimizer = optim.AdamW(pg, lr=args.lr,weight_decay=args.wd)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -115,7 +115,7 @@ def main(args):
                                                 device=device,
                                                 epoch=epoch)
 
-
+        scheduler.step()
 
         # validate
         val_loss, val_acc = evaluate(model=model,
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
                         default="./datasets")
-    parser.add_argument('--model-name', default='resnet101', help='create model name')
+    parser.add_argument('--model-name', default='resnet50', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/resnet50-19c8e357.pth',
