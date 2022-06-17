@@ -674,3 +674,11 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
                             num_classes=num_classes,
                             **kwargs)
     return model
+
+if __name__ == "__main__":
+    from torchsummary import summary
+
+    # 需要使用device来指定网络在GPU还是CPU运行
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = swin_tiny_patch4_window7_224(num_classes=6).to(device)
+    summary(model, input_size=(3,224,224))
