@@ -98,20 +98,20 @@ def main(args):
     # test_image, test_label = test_data_iter.next()
 
     num_classes = args.num_classes
-    model = create_model(model_name="vgg16",  init_weights=True)
+    model = create_model(model_name="vgg16")
 
-    # model_weight_path = args.weights
-    # assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
-    # model.load_state_dict(torch.load(model_weight_path, map_location=device))
-    # model.classifier = nn.Sequential(
-    #     nn.Linear(512 * 7 * 7, 4096),
-    #     nn.ReLU(True),
-    #     nn.Dropout(),
-    #     nn.Linear(4096, 4096),
-    #     nn.ReLU(True),
-    #     nn.Dropout(),
-    #     nn.Linear(4096, num_classes),
-    # )
+    model_weight_path = args.weights
+    assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
+    model.load_state_dict(torch.load(model_weight_path, map_location=device))
+    model.classifier = nn.Sequential(
+        nn.Linear(512 * 7 * 7, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, num_classes),
+    )
     model.to(device)
     # loss_function = nn.CrossEntropyLoss()
     pg = [p for p in model.parameters() if p.requires_grad]
