@@ -99,7 +99,9 @@ def main(args):
 
     num_classes = args.num_classes
     model = create_model(model_name="vgg16")
-
+    init_img = torch.zeros((1, 3, 224, 224))
+    tb_writer.add_graph(model, init_img)
+    
     model_weight_path = args.weights
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
     model.load_state_dict(torch.load(model_weight_path, map_location=device))
