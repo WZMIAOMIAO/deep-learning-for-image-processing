@@ -15,14 +15,14 @@ from utils import read_split_data, train_one_epoch, evaluate
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
-
+    print("using {} device.".format(device))
     print(args)
-    print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-    tb_writer = SummaryWriter()
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    if os.path.exists("./logs/weights") is False:
+        os.makedirs("./logs/weights")
+    tb_writer = SummaryWriter('logs')
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
+
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -63,6 +63,8 @@ def main(args):
 
     # 如果存在预训练权重则载入
     model = densenet121(num_classes=args.num_classes).to(device)
+    init_img = torch.zeros((1, 3, 224, 224))
+    tb_writer.add_graph(model, init_img)
     if args.weights != "":
         if os.path.exists(args.weights):
             load_state_dict(model, args.weights)
@@ -84,44 +86,48 @@ def main(args):
 
     for epoch in range(args.epochs):
         # train
-        mean_loss = train_one_epoch(model=model,
-                                    optimizer=optimizer,
-                                    data_loader=train_loader,
-                                    device=device,
-                                    epoch=epoch)
+        train_loss, train_acc = train_one_epoch(model=model,
+                                                optimizer=optimizer,
+                                                data_loader=train_loader,
+                                                device=device,
+                                                epoch=epoch)
 
         scheduler.step()
 
         # validate
-        acc = evaluate(model=model,
-                       data_loader=val_loader,
-                       device=device)
+        val_loss, val_acc = evaluate(model=model,
+                                     data_loader=val_loader,
+                                     device=device,
+                                     epoch=epoch)
 
-        print("[epoch {}] accuracy: {}".format(epoch, round(acc, 3)))
-        tags = ["loss", "accuracy", "learning_rate"]
-        tb_writer.add_scalar(tags[0], mean_loss, epoch)
-        tb_writer.add_scalar(tags[1], acc, epoch)
-        tb_writer.add_scalar(tags[2], optimizer.param_groups[0]["lr"], epoch)
+        tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
+        tb_writer.add_scalar(tags[0], train_loss, epoch)
+        tb_writer.add_scalar(tags[1], train_acc, epoch)
+        tb_writer.add_scalar(tags[2], val_loss, epoch)
+        tb_writer.add_scalar(tags[3], val_acc, epoch)
+        tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
+        if best_acc < val_acc:
+            torch.save(model.state_dict(), "./logs/weights/best_model.pth")
+            best_acc = val_acc
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=30)
-    parser.add_argument('--batch-size', type=int, default=16)
+    parser.add_argument('--num_classes', type=int, default=6)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.1)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="/data/flower_photos")
+                        default="./datasets")
 
     # densenet121 官方权重下载地址
     # https://download.pytorch.org/models/densenet121-a639ec97.pth
-    parser.add_argument('--weights', type=str, default='densenet121.pth',
+    parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/densenet121-a639ec97.pth',
                         help='initial weights path')
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
