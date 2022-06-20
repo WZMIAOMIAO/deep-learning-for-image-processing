@@ -74,12 +74,15 @@ def main(args):
 
     num_classes = args.num_classes
     model = creat_model(num_classes=6, init_weights=True)
-
+    init_img = torch.zeros((1, 3, 224, 224))
+    tb_writer.add_graph(model, init_img)
     model.to(device)
-    loss_function = nn.CrossEntropyLoss()
+    # loss_function = nn.CrossEntropyLoss()
     # pata = list(net.parameters())
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
-
+    optimizer = optim.SGD(model.parameters(), lr=args.lr,momentum=0.9,weight_decay=args.wd)
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     best_acc = 0.0
     for epoch in range(args.epochs):
@@ -114,14 +117,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', type=int, default=6)
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=4)
-    parser.add_argument('--lr', type=float, default=0.0005)
-    # parser.add_argument('--lrf', type=float, default=0.01)
-    # parser.add_argument('--wd', type=float, default=5e-2)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--lrf', type=float, default=0.1)
+    parser.add_argument('--wd', type=float, default=5e-2)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./resize640")
+                        default="./datasets")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
