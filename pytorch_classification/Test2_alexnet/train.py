@@ -73,12 +73,35 @@ def main(args):
     # imshow(utils.make_grid(test_image))
 
     num_classes = args.num_classes
-    model = creat_model(num_classes=6, init_weights=True)
+    # 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth'预训练权重
+
+    # model = creat_model(num_classes=6, init_weights=False)
+
+    # 这使用torchvision官方实现的alexnet模型
+    import torchvision
+    model = torchvision.models.alexnet(pretrained=False)  # 我们不下载预训练权重
+    # print(model)
+
     init_img = torch.zeros((1, 3, 224, 224))
     tb_writer.add_graph(model, init_img)
+    model_weight_path = args.weights
+    assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
+    model.load_state_dict(torch.load(model_weight_path, map_location=device))
+    model.classifier = nn.Sequential(
+        nn.Dropout(),
+        nn.Linear(256 * 6 * 6, 4096),
+        nn.ReLU(inplace=True),
+        nn.Dropout(),
+        nn.Linear(4096, 4096),
+        nn.ReLU(inplace=True),
+        nn.Linear(4096, num_classes),
+    )
     model.to(device)
+
     # loss_function = nn.CrossEntropyLoss()
     # pata = list(net.parameters())
+
+
     optimizer = optim.SGD(model.parameters(), lr=args.lr,momentum=0.9,weight_decay=args.wd)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
@@ -115,8 +138,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=6)
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lrf', type=float, default=0.1)
     parser.add_argument('--wd', type=float, default=5e-2)
@@ -124,13 +147,13 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./datasets")
+                        default="./resize640")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    # parser.add_argument('--weights', type=str,
-    #                     default='./vgg16-397923af.pth',
-    #                     help='initial weights path')
+    parser.add_argument('--weights', type=str,
+                        default='./alexnet-owt-4df8aa71.pth',
+                        help='initial weights path')
     # 是否冻结权重
     # parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
