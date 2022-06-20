@@ -53,6 +53,8 @@ def main(args):
                                                num_workers=nw,
                                                collate_fn=train_dataset.collate_fn)
 
+    scheduler.step()
+
     val_loader = torch.utils.data.DataLoader(val_dataset,
                                              batch_size=batch_size,
                                              shuffle=False,
