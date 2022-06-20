@@ -84,6 +84,8 @@ def main(args):
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
+
+    best_acc =0.0
     for epoch in range(args.epochs):
         # train
         train_loss, train_acc = train_one_epoch(model=model,
