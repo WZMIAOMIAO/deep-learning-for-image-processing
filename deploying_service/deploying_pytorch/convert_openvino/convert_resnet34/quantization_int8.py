@@ -3,20 +3,20 @@ from compression.engines.ie_engine import IEEngine
 from compression.graph import load_model, save_model
 from compression.graph.model_utils import compress_model_weights
 from compression.pipeline.initializer import create_pipeline
-from utils import MyDataSet, Accuracy, read_split_data
+from utils import MyDataLoader, Accuracy, read_split_data
 
 
 def main():
     data_path = "/data/flower_photos"
-    ir_model_xml = "ir_output/mobilenet_v3.xml"
-    ir_model_bin = "ir_output/mobilenet_v3.bin"
+    ir_model_xml = "ir_output/resnet34.xml"
+    ir_model_bin = "ir_output/resnet34.bin"
     save_dir = "quant_ir_output"
-    model_name = "quantized_mobilenet_v3"
+    model_name = "quantized_resnet34"
     img_w = 224
     img_h = 224
 
     model_config = Dict({
-        'model_name': 'mobilenet_v3',
+        'model_name': 'resnet34',
         'model': ir_model_xml,
         'weights': ir_model_bin
     })
@@ -45,7 +45,7 @@ def main():
 
     # Step 2: Initialize the data loader.
     _, _, val_images_path, val_images_label = read_split_data(data_path, val_rate=0.2)
-    data_loader = MyDataSet(dataset_config, val_images_path, val_images_label, img_w, img_h)
+    data_loader = MyDataLoader(dataset_config, val_images_path, val_images_label, img_w, img_h)
 
     # Step 3 (Optional. Required for AccuracyAwareQuantization): Initialize the metric.
     metric = Accuracy(top_k=1)

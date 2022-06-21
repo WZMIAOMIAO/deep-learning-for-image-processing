@@ -2,9 +2,10 @@ import os
 import json
 import random
 
-import cv2
+from PIL import Image
 import numpy as np
 from compression.api import DataLoader, Metric
+from torchvision.transforms import transforms
 
 
 def read_split_data(root: str, val_rate: float = 0.2):
@@ -57,7 +58,6 @@ def read_split_data(root: str, val_rate: float = 0.2):
 
 # Custom implementation of classification accuracy metric.
 class Accuracy(Metric):
-
     # Required methods
     def __init__(self, top_k=1):
         super().__init__()
@@ -104,13 +104,17 @@ class Accuracy(Metric):
                              'type': 'accuracy'}}
 
 
-class MyDataSet(DataLoader):
+class MyDataLoader(DataLoader):
     def __init__(self, cfg, images_path: list, images_label: list, img_w: int = 224, img_h: int = 224):
         super().__init__(cfg)
         self.images_path = images_path
         self.images_label = images_label
         self.image_w = img_w
         self.image_h = img_h
+        self.transforms = transforms.Compose([
+            transforms.Resize(min(img_h, img_w)),
+            transforms.CenterCrop((img_h, img_w))
+        ])
 
     def __len__(self):
         return len(self.images_label)
@@ -123,11 +127,11 @@ class MyDataSet(DataLoader):
         if index >= len(self):
             raise IndexError
 
-        image = cv2.cvtColor(cv2.imread(self.images_path[index]), cv2.COLOR_BGR2RGB)
-        resized_image = cv2.resize(image, (self.image_w, self.image_h))
+        img = Image.open(self.images_path[index])
+        img = self.transforms(img)
 
         # Convert the resized images to network input shape
         # [h, w, c] -> [c, h, w] -> [1, c, h, w]
-        img = np.expand_dims(np.transpose(resized_image, (2, 0, 1)), 0)
+        img = np.expand_dims(np.transpose(np.array(img), (2, 0, 1)), 0)
 
         return (index, self.images_label[index]), img

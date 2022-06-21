@@ -4,3 +4,5 @@ onnx==1.9.0
 onnxruntime==1.8.0
 protobuf==3.19.4
 openvino-dev==2022.1.0
+matplotlib
+torchmetrics==0.9.1

@@ -3,7 +3,7 @@ import torch.onnx
 import onnx
 import onnxruntime
 import numpy as np
-from model import mobilenet_v3_large
+from torchvision.models import resnet34
 
 device = torch.device("cpu")
 
@@ -13,15 +13,15 @@ def to_numpy(tensor):
 
 
 def main():
-    weights_path = "mbv3_flower.pth"
-    onnx_file_name = "mobilenet_v3.onnx"
+    weights_path = "resNet34(flower).pth"
+    onnx_file_name = "resnet34.onnx"
     batch_size = 1
     img_h = 224
     img_w = 224
     img_channel = 3
 
     # create model and load pretrain weights
-    model = mobilenet_v3_large(num_classes=5)
+    model = resnet34(pretrained=False, num_classes=5)
     model.load_state_dict(torch.load(weights_path, map_location='cpu'))
 
     model.eval()
