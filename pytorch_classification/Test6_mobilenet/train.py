@@ -11,7 +11,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from my_dataset import MyDataSet
-from model_v2 import MobileNetV2 as creat_model
+from model_v3 import mobilenet_v3_small as creat_model
 from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 
@@ -87,7 +87,7 @@ def main(args):
 
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(params, lr=0.0001)
+    optimizer = optim.Adam(params, lr=args.lr)
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str,
-                        default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/mobilenet_v2-b0353104.pth',
+                        default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/mobilenet_v3_small-047dcff4.pth',
                         help='initial weights path')
     # 是否冻结权重
     # parser.add_argument('--freeze-layers', type=bool, default=False)
