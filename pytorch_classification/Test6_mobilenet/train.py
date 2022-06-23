@@ -11,7 +11,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from my_dataset import MyDataSet
-from model_v3 import mobilenet_v3_small as creat_model
+from model_v3 import mobilenet_v3_large as creat_model
 from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
 
 
@@ -87,7 +87,7 @@ def main(args):
 
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(params, lr=args.lr)
+    optimizer = optim.SGD(params, lr=args.lr,momentum=0.9,weight_decay=args.wd)
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
@@ -124,10 +124,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=6)
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=512)
-    parser.add_argument('--lr', type=float, default=0.0001)
-    parser.add_argument('--lrf', type=float, default=0.01)
-    # parser.add_argument('--wd', type=float, default=5e-2)
+    parser.add_argument('--batch-size', type=int, default=256)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lrf', type=float, default=0.1)
+    parser.add_argument('--wd', type=float, default=5e-2)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str,
-                        default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/mobilenet_v3_small-047dcff4.pth',
+                        default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/mobilenet_v3_large-8738ca79.pth',
                         help='initial weights path')
     # 是否冻结权重
     # parser.add_argument('--freeze-layers', type=bool, default=False)
