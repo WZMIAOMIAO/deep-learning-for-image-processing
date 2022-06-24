@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import torch.optim.lr_scheduler as lr_scheduler
 
-from model import efficientnet_b7 as create_model
+from model import efficientnet_b0 as create_model
 from my_dataset import MyDataSet
 from utils import read_split_data, train_one_epoch, evaluate
 
@@ -25,14 +25,15 @@ def main(args):
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
-    img_size = {"B0": 224,
-                "B1": 240,
-                "B2": 260,
-                "B3": 300,
-                "B4": 380,
-                "B5": 456,
-                "B6": 528,
-                "B7": 600}
+    # img_size = {"B0": 224,
+    #             "B1": 240,
+    #             "B2": 260,
+    #             "B3": 300,
+    #             "B4": 380,
+    #             "B5": 456,
+    #             "B6": 528,
+    #             "B7": 600}
+    img_size = 224
     num_model = "B0"
 
     data_transform = {
@@ -129,8 +130,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=6)
-    parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=512)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lrf', type=float, default=0.01)
 
@@ -140,9 +141,9 @@ if __name__ == '__main__':
 
     # download model weights
     # 链接: https://pan.baidu.com/s/1ouX0UmjCsmSx3ZrqXbowjw  密码: 090i
-    parser.add_argument('--weights', type=str, default='./efficientnetb7.pth',
+    parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/efficientnetb0.pth',
                         help='initial weights path')
-    parser.add_argument('--freeze-layers', type=bool, default=True)
+    parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
 
     opt = parser.parse_args()
