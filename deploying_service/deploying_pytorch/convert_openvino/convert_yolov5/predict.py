@@ -4,8 +4,7 @@ import torch
 from PIL import Image
 import matplotlib.pyplot as plt
 from openvino.runtime import Core
-from openvino.runtime.opset8 import multiclass_nms
-from utils import letterbox, scale_coords, non_max_suppression, xywh2xyxy, coco80_names
+from utils import letterbox, scale_coords, non_max_suppression, coco80_names
 from draw_box_utils import draw_objs
 
 
@@ -29,14 +28,6 @@ def main():
     request = compiled_model.create_infer_request()
     request.infer(inputs={inputs_names[0]: input_img})
     result = request.get_output_tensor(outputs_names[0].index).data
-
-    # boxes = result[0, :, :4]
-    # # Compute conf
-    # result[:, :, 5:] *= result[:, :, 4:5]  # conf = obj_conf * cls_conf
-    # # Box (center x, center y, width, height) to (x1, y1, x2, y2)
-    # boxes = xywh2xyxy(boxes)
-    # scores = result[:, :, 5:]
-    # s = multiclass_nms(boxes=boxes[None], scores=scores, iou_threshold=0.45, score_threshold=0.25, keep_top_k=100)
 
     # post-process
     result = non_max_suppression(torch.Tensor(result))[0]
