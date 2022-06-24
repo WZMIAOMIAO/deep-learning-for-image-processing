@@ -1,4 +1,5 @@
 import numpy as np
+import onnxruntime
 from openvino.runtime import Core
 
 
@@ -12,16 +13,12 @@ def normalize(image: np.ndarray) -> np.ndarray:
 
 
 def onnx_inference(onnx_path: str, image: np.ndarray):
-    # Load network to Inference Engine
-    ie = Core()
-    model_onnx = ie.read_model(model=onnx_path)
-    compiled_model_onnx = ie.compile_model(model=model_onnx, device_name="CPU")
+    # load onnx model
+    ort_session = onnxruntime.InferenceSession(onnx_path)
 
-    input_layer_onnx = next(iter(compiled_model_onnx.inputs))
-    output_layer_onnx = next(iter(compiled_model_onnx.outputs))
-
-    # Run inference on the input image
-    res_onnx = compiled_model_onnx(inputs=[image])[output_layer_onnx]
+    # compute onnx Runtime output prediction
+    ort_inputs = {ort_session.get_inputs()[0].name: image}
+    res_onnx = ort_session.run(None, ort_inputs)[0]
     return res_onnx
 
 

@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import torch
+import onnxruntime
 import matplotlib.pyplot as plt
 from openvino.runtime import Core
 
@@ -15,18 +16,15 @@ def normalize(image: np.ndarray) -> np.ndarray:
 
 
 def onnx_inference(onnx_path: str, image: np.ndarray, num_images: int = 20):
-    # Load network to Inference Engine
-    ie = Core()
-    model_onnx = ie.read_model(model=onnx_path)
-    compiled_model_onnx = ie.compile_model(model=model_onnx, device_name="CPU")
+    # load onnx model
+    ort_session = onnxruntime.InferenceSession(onnx_path)
 
-    input_layer_onnx = next(iter(compiled_model_onnx.inputs))
-    output_layer_onnx = next(iter(compiled_model_onnx.outputs))
+    # compute onnx Runtime output prediction
+    ort_inputs = {ort_session.get_inputs()[0].name: image}
 
     start = time.perf_counter()
-    request_onnx = compiled_model_onnx.create_infer_request()
     for _ in range(num_images):
-        request_onnx.infer(inputs={input_layer_onnx.any_name: image})
+        ort_session.run(None, ort_inputs)
     end = time.perf_counter()
     time_onnx = end - start
     print(
@@ -111,9 +109,9 @@ def main():
     input_image = np.expand_dims(np.transpose(image, (2, 0, 1)), 0)
     normalized_input_image = np.expand_dims(np.transpose(normalized_image, (2, 0, 1)), 0)
 
-    onnx_fps = onnx_inference(onnx_path, normalized_input_image, num_images=50)
-    ir_fps = ir_inference(ir_path, input_image, num_images=50)
-    pytorch_fps = pytorch_inference(normalized_input_image, num_images=50)
+    onnx_fps = onnx_inference(onnx_path, normalized_input_image, num_images=100)
+    ir_fps = ir_inference(ir_path, input_image, num_images=100)
+    pytorch_fps = pytorch_inference(normalized_input_image, num_images=100)
     plot_fps({"pytorch": round(pytorch_fps, 2),
               "onnx": round(onnx_fps, 2),
               "ir": round(ir_fps, 2)})
