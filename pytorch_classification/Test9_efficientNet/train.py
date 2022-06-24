@@ -33,7 +33,14 @@ def main(args):
     #             "B5": 456,
     #             "B6": 528,
     #             "B7": 600}
-    img_size = 224
+    img_size = {"B0": 224,
+                "B1": 224,
+                "B2": 224,
+                "B3": 224,
+                "B4": 224,
+                "B5": 224,
+                "B6": 224,
+                "B7": 224}
     num_model = "B0"
 
     data_transform = {
