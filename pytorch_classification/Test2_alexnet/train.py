@@ -116,6 +116,7 @@ def main(args):
                                                 data_loader=train_loader,
                                                 device=device,
                                                 epoch=epoch)
+        scheduler.step()
         # validate
         val_loss, val_acc = evaluate(model=model,
                                      data_loader=val_loader,
