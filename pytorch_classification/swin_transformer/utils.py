@@ -6,9 +6,28 @@ import random
 import math
 import torch
 from tqdm import tqdm
+import numpy as np
 
 import matplotlib.pyplot as plt
 
+#---------------------------------------------------------#
+#   将图像转换成RGB图像，防止灰度图在预测时报错。
+#   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
+#---------------------------------------------------------#
+def cvtColor(image):
+    if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+        return image
+    else:
+        image = image.convert('RGB')
+        return image
+
+#----------------------------------------#
+#   预处理训练图片
+#----------------------------------------#
+def preprocess_input(x):
+    x /= 127.5
+    x -= 1.
+    return x
 
 def read_split_data(root: str, val_rate: float = 0.2):
     random.seed(0)  # 保证随机结果可复现
@@ -47,6 +66,9 @@ def read_split_data(root: str, val_rate: float = 0.2):
             if img_path in val_path:  # 如果该路径在采样的验证集样本中则存入验证集
                 val_images_path.append(img_path)
                 val_images_label.append(image_class)
+                # 特殊情况将验证集也划分进来
+                train_images_path.append(img_path)
+                train_images_label.append(image_class)
             else:  # 否则存入训练集
                 train_images_path.append(img_path)
                 train_images_label.append(image_class)
@@ -201,3 +223,27 @@ def evaluate(model, data_loader, device, epoch):
                                                                                accu_num.item() / sample_num)
 
     return accu_loss.item() / (step + 1), accu_num.item() / sample_num
+
+def get_params_groups(model: torch.nn.Module, weight_decay: float = 1e-5):
+    # 记录optimize要训练的权重参数
+    parameter_group_vars = {"decay": {"params": [], "weight_decay": weight_decay},
+                            "no_decay": {"params": [], "weight_decay": 0.}}
+
+    # 记录对应的权重名称
+    parameter_group_names = {"decay": {"params": [], "weight_decay": weight_decay},
+                             "no_decay": {"params": [], "weight_decay": 0.}}
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue  # frozen weights
+
+        if len(param.shape) == 1 or name.endswith(".bias"):
+            group_name = "no_decay"
+        else:
+            group_name = "decay"
+
+        parameter_group_vars[group_name]["params"].append(param)
+        parameter_group_names[group_name]["params"].append(name)
+
+    print("Param groups = %s" % json.dumps(parameter_group_names, indent=2))
+    return list(parameter_group_vars.values())

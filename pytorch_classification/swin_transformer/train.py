@@ -10,8 +10,8 @@ from torchvision import transforms
 from my_dataset import MyDataSet
 import torch.optim.lr_scheduler as lr_scheduler
 from model import swin_tiny_patch4_window7_224 as create_model
-from utils import read_split_data, train_one_epoch, evaluate,create_lr_scheduler
-
+from utils import read_split_data, train_one_epoch, evaluate,get_params_groups
+from dataloader import DataGenerator
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
@@ -24,42 +24,57 @@ def main(args):
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
     img_size = 224
-    data_transform = {
-        "train": transforms.Compose([transforms.RandomResizedCrop(img_size),
-                                     transforms.RandomHorizontalFlip(),
-                                     transforms.ToTensor(),
-                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
-        "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
-                                   transforms.CenterCrop(img_size),
-                                   transforms.ToTensor(),
-                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
+    input_shape = [224,224]
+    # data_transform = {
+    #     "train": transforms.Compose([transforms.RandomResizedCrop(img_size),
+    #                                  transforms.RandomHorizontalFlip(),
+    #                                  transforms.ToTensor(),
+    #                                  transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
+    #     "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
+    #                                transforms.CenterCrop(img_size),
+    #                                transforms.ToTensor(),
+    #                                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
     # 实例化训练数据集
-    train_dataset = MyDataSet(images_path=train_images_path,
-                              images_class=train_images_label,
-                              transform=data_transform["train"])
+    # train_dataset = MyDataSet(images_path=train_images_path,
+    #                           images_class=train_images_label,
+    #                           transform=data_transform["train"])
+
+    train_dataset = DataGenerator(images_path=train_images_path,
+                                  input_shape=input_shape,
+                                  images_class=train_images_label,
+                                  random=True)
 
     # 实例化验证数据集
-    val_dataset = MyDataSet(images_path=val_images_path,
-                            images_class=val_images_label,
-                            transform=data_transform["val"])
+    # val_dataset = MyDataSet(images_path=val_images_path,
+    #                         images_class=val_images_label,
+    #                         transform=data_transform["val"])
+    val_dataset = DataGenerator(images_path=val_images_path,
+                                  input_shape=input_shape,
+                                  images_class=val_images_label,
+                                  random=False)
+
+
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = 4
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
                                                shuffle=True,
                                                pin_memory=True,
                                                num_workers=nw,
-                                               collate_fn=train_dataset.collate_fn)
+                                               # drop_last=True,
+                                               collate_fn=train_dataset.detection_collate)
 
     val_loader = torch.utils.data.DataLoader(val_dataset,
                                              batch_size=batch_size,
                                              shuffle=False,
                                              pin_memory=True,
                                              num_workers=nw,
-                                             collate_fn=val_dataset.collate_fn)
+                                             # drop_last=True,
+                                             collate_fn=val_dataset.detection_collate)
 
     model = create_model(num_classes=args.num_classes).to(device)
 
@@ -84,8 +99,9 @@ def main(args):
             else:
                 print("training {}".format(name))
 
-    pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
+    # pg = [p for p in model.parameters() if p.requires_grad]
+    pg = get_params_groups(model, weight_decay=args.wd)
+    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=args.wd)
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
@@ -117,19 +133,20 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=7)
-    parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--num_classes', type=int, default=11)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--lrf', type=float, default=0.01)
+    parser.add_argument('--wd', type=float, default=5E-2)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./datasets")
+                        default="./resizepeper_d4do")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/swin_tiny_patch4_window7_224.pth',
+    parser.add_argument('--weights', type=str, default='./swin_tiny_patch4_window7_224.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
