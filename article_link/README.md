@@ -33,7 +33,8 @@
 - BEiT: BERT Pre-Training of Image Transformers [https://arxiv.org/abs/2106.08254](https://arxiv.org/abs/2106.08254)
 - MAE(Masked Autoencoders Are Scalable Vision Learners) [https://arxiv.org/abs/2111.06377](https://arxiv.org/abs/2111.06377)
 - ConvNeXt(A ConvNet for the 2020s) [https://arxiv.org/abs/2201.03545](https://arxiv.org/abs/2201.03545)
-- MobileViT(v1) [https://arxiv.org/abs/2110.02178](https://arxiv.org/abs/2110.02178)
+- MobileViT V1 [https://arxiv.org/abs/2110.02178](https://arxiv.org/abs/2110.02178)
+- MobileViT V2(Separable Self-attention for Mobile Vision Transformers) [https://arxiv.org/abs/2206.02680](https://arxiv.org/abs/2206.02680)
 - MobileOne(An Improved One millisecond Mobile Backbone) [https://arxiv.org/abs/2206.04040](https://arxiv.org/abs/2206.04040)
 
 
