@@ -20,13 +20,12 @@ class DUTSDataset(data.Dataset):
         mask_names = [p for p in os.listdir(self.mask_root) if p.endswith(".png")]
 
         # check images and mask
-        if len(image_names) != len(mask_names):
-            re_mask_names = []
-            for p in image_names:
-                mask_name = p.replace(".jpg", ".png")
-                assert mask_name in mask_names, f"{p} has no corresponding mask."
-                re_mask_names.append(mask_name)
-            mask_names = re_mask_names
+        re_mask_names = []
+        for p in image_names:
+            mask_name = p.replace(".jpg", ".png")
+            assert mask_name in mask_names, f"{p} has no corresponding mask."
+            re_mask_names.append(mask_name)
+        mask_names = re_mask_names
 
         self.images_path = [os.path.join(self.image_root, n) for n in image_names]
         self.masks_path = [os.path.join(self.mask_root, n) for n in mask_names]
@@ -78,4 +77,4 @@ if __name__ == '__main__':
     val_dataset = DUTSDataset("./", train=False)
     print(len(val_dataset))
 
-    i, m = train_dataset[0]
+    i, t = train_dataset[0]

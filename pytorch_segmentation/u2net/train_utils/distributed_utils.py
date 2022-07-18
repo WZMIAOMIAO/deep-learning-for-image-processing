@@ -96,8 +96,6 @@ class MeanAbsoluteError(object):
 
     def update(self, pred: torch.Tensor, gt: torch.Tensor):
         batch_size, c, h, w = pred.shape
-        pred = torch.gt(pred, self.threshold).to(torch.int64)
-        gt = gt.to(torch.int64)
         error_pixels = torch.sum(torch.abs(pred - gt), dim=(1, 2, 3)) / (h * w)
         self.mae_list.extend(error_pixels.tolist())
 
@@ -111,7 +109,10 @@ class MeanAbsoluteError(object):
         if not torch.distributed.is_initialized():
             return
         torch.distributed.barrier()
-        self.mae_list = all_gather(self.mae_list)
+        gather_mae_list = []
+        for i in all_gather(self.mae_list):
+            gather_mae_list.extend(i)
+        self.mae_list = gather_mae_list
 
     def __str__(self):
         mae = self.compute()

@@ -27,9 +27,10 @@ def main(args):
 
     num_workers = 8
     val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=2,
+                                             batch_size=1,
                                              num_workers=num_workers,
                                              pin_memory=True,
+                                             shuffle=False,
                                              collate_fn=val_dataset.collate_fn)
 
     model = u2net_full()
