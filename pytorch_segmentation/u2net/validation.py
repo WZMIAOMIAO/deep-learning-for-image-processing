@@ -7,7 +7,7 @@ from my_dataset import DUTSDataset
 import transforms as T
 
 
-class SegmentationPresetEval:
+class SODPresetEval:
     def __init__(self, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
@@ -23,7 +23,7 @@ def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     assert os.path.exists(args.weights), f"weights {args.weights} not found."
 
-    val_dataset = DUTSDataset(args.data_path, train=False, transforms=SegmentationPresetEval(320))
+    val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
 
     num_workers = 4
     val_loader = torch.utils.data.DataLoader(val_dataset,

@@ -18,6 +18,7 @@ class DUTSDataset(data.Dataset):
 
         image_names = [p for p in os.listdir(self.image_root) if p.endswith(".jpg")]
         mask_names = [p for p in os.listdir(self.mask_root) if p.endswith(".png")]
+        assert len(image_names) > 0, f"not find any images in {self.image_root}."
 
         # check images and mask
         re_mask_names = []

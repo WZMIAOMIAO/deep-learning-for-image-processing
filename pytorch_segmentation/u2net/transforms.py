@@ -1,6 +1,7 @@
 import random
 from typing import List, Union
 from torchvision.transforms import functional as F
+from torchvision.transforms import transforms as T
 
 
 class Compose(object):
@@ -52,4 +53,27 @@ class Resize(object):
         if self.resize_mask is True:
             target = F.resize(target, self.size)
 
+        return image, target
+
+
+class RandomCrop(object):
+    def __init__(self, size: int):
+        self.size = size
+
+    def pad_if_smaller(self, img, fill=0):
+        # 如果图像最小边长小于给定size，则用数值fill进行padding
+        min_size = min(img.shape[-2:])
+        if min_size < self.size:
+            ow, oh = img.size
+            padh = self.size - oh if oh < self.size else 0
+            padw = self.size - ow if ow < self.size else 0
+            img = F.pad(img, [0, 0, padw, padh], fill=fill)
+        return img
+
+    def __call__(self, image, target):
+        image = self.pad_if_smaller(image)
+        target = self.pad_if_smaller(target)
+        crop_params = T.RandomCrop.get_params(image, (self.size, self.size))
+        image = F.crop(image, *crop_params)
+        target = F.crop(target, *crop_params)
         return image, target
