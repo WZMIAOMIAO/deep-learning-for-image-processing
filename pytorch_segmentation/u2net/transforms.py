@@ -17,7 +17,7 @@ class Compose(object):
 class ToTensor(object):
     def __call__(self, image, target):
         image = F.to_tensor(image)
-        target["mask"] = F.to_tensor(target["mask"])
+        target = F.to_tensor(target)
         return image, target
 
 
@@ -28,7 +28,7 @@ class RandomHorizontalFlip(object):
     def __call__(self, image, target):
         if random.random() < self.flip_prob:
             image = F.hflip(image)
-            target["mask"] = F.hflip(target["mask"])
+            target = F.hflip(target)
         return image, target
 
 
@@ -43,11 +43,13 @@ class Normalize(object):
 
 
 class Resize(object):
-    def __init__(self, size: Union[int, List[int]]):
+    def __init__(self, size: Union[int, List[int]], resize_mask: bool = True):
         self.size = size  # [h, w]
+        self.resize_mask = resize_mask
 
     def __call__(self, image, target=None):
         image = F.resize(image, self.size)
-        target["mask"] = F.resize(target["mask"], self.size)
+        if self.resize_mask is True:
+            target = F.resize(target, self.size)
 
         return image, target

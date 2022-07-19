@@ -3,6 +3,7 @@ import datetime
 import time
 import torch
 import torch.distributed as dist
+import torch.nn.functional as F
 
 import errno
 import os
@@ -90,13 +91,13 @@ def all_gather(data):
 
 
 class MeanAbsoluteError(object):
-    def __init__(self, threshold: float = 0.5):
-        self.threshold = threshold
+    def __init__(self):
         self.mae_list = []
 
     def update(self, pred: torch.Tensor, gt: torch.Tensor):
-        batch_size, c, h, w = pred.shape
-        error_pixels = torch.sum(torch.abs(pred - gt), dim=(1, 2, 3)) / (h * w)
+        batch_size, c, h, w = gt.shape
+        resize_pred = F.interpolate(pred, (h, w), mode="bilinear")
+        error_pixels = torch.sum(torch.abs(resize_pred - gt), dim=(1, 2, 3)) / (h * w)
         self.mae_list.extend(error_pixels.tolist())
 
     def compute(self):

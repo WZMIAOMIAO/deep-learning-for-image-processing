@@ -21,11 +21,11 @@ def evaluate(model, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
-        for image, target in metric_logger.log_every(data_loader, 100, header):
-            image, target = image.to(device), target.to(device)
-            output = model(image)
+        for images, targets in metric_logger.log_every(data_loader, 100, header):
+            images, targets = images.to(device), targets.to(device)
+            output = model(images)
 
-            confmat.update(output, target)
+            confmat.update(output, targets)
 
         confmat.gather_from_all_processes()
 

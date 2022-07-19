@@ -40,10 +40,9 @@ class DUTSDataset(data.Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # BGR -> RGB
         h, w, _ = image.shape
 
-        mask = cv2.imread(mask_path, flags=cv2.IMREAD_GRAYSCALE)
-        assert mask is not None, f"failed to read mask: {mask_path}"
+        target = cv2.imread(mask_path, flags=cv2.IMREAD_GRAYSCALE)
+        assert target is not None, f"failed to read mask: {mask_path}"
 
-        target = {"mask": mask, "origin_hw": (h, w)}
         if self.transforms is not None:
             image, target = self.transforms(image, target)
 
@@ -56,8 +55,8 @@ class DUTSDataset(data.Dataset):
     def collate_fn(batch):
         images, targets = list(zip(*batch))
         batched_imgs = cat_list(images, fill_value=0)
-        masks = [t["mask"] for t in targets]
-        batched_targets = cat_list(masks, fill_value=0)
+        batched_targets = cat_list(targets, fill_value=0)
+
         return batched_imgs, batched_targets
 
 

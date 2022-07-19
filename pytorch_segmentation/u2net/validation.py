@@ -11,7 +11,7 @@ class SegmentationPresetEval:
     def __init__(self, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
-            T.Resize([base_size, base_size]),
+            T.Resize([base_size, base_size], resize_mask=False),
             T.Normalize(mean=mean, std=std),
         ])
 
@@ -25,9 +25,9 @@ def main(args):
 
     val_dataset = DUTSDataset(args.data_path, train=False, transforms=SegmentationPresetEval(320))
 
-    num_workers = 8
+    num_workers = 4
     val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=1,
+                                             batch_size=1,  # must be 1
                                              num_workers=num_workers,
                                              pin_memory=True,
                                              shuffle=False,
