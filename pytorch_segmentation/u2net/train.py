@@ -54,7 +54,7 @@ def main(args):
                                                collate_fn=train_dataset.collate_fn)
 
     val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=1,
+                                             batch_size=1,  # must be 1
                                              num_workers=num_workers,
                                              pin_memory=True,
                                              collate_fn=val_dataset.collate_fn)
@@ -80,16 +80,17 @@ def main(args):
         mean_loss, lr = train_one_epoch(model, optimizer, train_loader, device, epoch,
                                         print_freq=args.print_freq, scaler=scaler)
 
-        confmat = evaluate(model, val_loader, device=device)
-        val_info = str(confmat)
-        print(val_info)
-        # write into txt
-        with open(results_file, "a") as f:
-            # 记录每个epoch对应的train_loss、lr以及验证集各指标
-            train_info = f"[epoch: {epoch}]\n" \
-                         f"train_loss: {mean_loss:.4f}\n" \
-                         f"lr: {lr:.6f}\n"
-            f.write(train_info + val_info + "\n\n")
+        if epoch % args.eval_interval == 0 or epoch == args.epochs - 1:
+            # 每间隔eval_interval个epoch验证一次，减少验证频率节省训练时间
+            mae_metric, f1_metric = evaluate(model, val_loader, device=device)
+            mae_info = str(mae_metric)
+            f1_info = str(f1_metric)
+            print(mae_info, f1_info)
+            # write into txt
+            with open(results_file, "a") as f:
+                # 记录每个epoch对应的train_loss、lr以及验证集各指标
+                write_info = f"[epoch: {epoch}] train_loss: {mean_loss:.4f} lr: {lr:.6f} {mae_info} {f1_info}"
+                f.write(write_info)
 
         save_file = {"model": model.state_dict(),
                      "optimizer": optimizer.state_dict(),
@@ -113,13 +114,9 @@ def parse_args():
     parser.add_argument("-b", "--batch-size", default=2, type=int)
     parser.add_argument("--epochs", default=720, type=int, metavar="N",
                         help="number of total epochs to train")
+    parser.add_argument("--eval-interval", default=10, type=int, help="validation interval default 10 Epochs")
 
     parser.add_argument('--lr', default=0.001, type=float, help='initial learning rate')
-    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
-                        help='momentum')
-    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
-                        metavar='W', help='weight decay (default: 1e-4)',
-                        dest='weight_decay')
     parser.add_argument('--print-freq', default=50, type=int, help='print frequency')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',

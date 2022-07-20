@@ -41,8 +41,8 @@ def main(args):
         model.load_state_dict(pretrain_weights)
     model.to(device)
 
-    confmat = evaluate(model, val_loader, device=device)
-    print(confmat)
+    mae_metric, f1_metric = evaluate(model, val_loader, device=device)
+    print(mae_metric, f1_metric)
 
 
 def parse_args():

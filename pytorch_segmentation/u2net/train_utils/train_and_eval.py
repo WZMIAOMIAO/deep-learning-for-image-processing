@@ -4,7 +4,7 @@ import train_utils.distributed_utils as utils
 
 
 def criterion(inputs, target):
-    losses = [F.binary_cross_entropy(inputs[i], target) for i in range(len(inputs))]
+    losses = [F.binary_cross_entropy_with_logits(inputs[i], target) for i in range(len(inputs))]
     total_loss = sum(losses)
 
     return total_loss
@@ -12,7 +12,8 @@ def criterion(inputs, target):
 
 def evaluate(model, data_loader, device):
     model.eval()
-    confmat = utils.MeanAbsoluteError()
+    mae_metric = utils.MeanAbsoluteError()
+    f1_metric = utils.F1Score()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
@@ -20,11 +21,13 @@ def evaluate(model, data_loader, device):
             images, targets = images.to(device), targets.to(device)
             output = model(images)
 
-            confmat.update(output, targets)
+            mae_metric.update(output, targets)
+            f1_metric.update(output, targets)
 
-        confmat.gather_from_all_processes()
+        mae_metric.gather_from_all_processes()
+        f1_metric.reduce_from_all_processes()
 
-    return confmat
+    return mae_metric, f1_metric
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10, scaler=None):

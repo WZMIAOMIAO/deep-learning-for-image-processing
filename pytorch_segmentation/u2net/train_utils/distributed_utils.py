@@ -96,6 +96,7 @@ class MeanAbsoluteError(object):
 
     def update(self, pred: torch.Tensor, gt: torch.Tensor):
         batch_size, c, h, w = gt.shape
+        assert batch_size == 1, f"validation mode batch_size must be 1, but got batch_size: {batch_size}."
         resize_pred = F.interpolate(pred, (h, w), mode="bilinear")
         error_pixels = torch.sum(torch.abs(resize_pred - gt), dim=(1, 2, 3)) / (h * w)
         self.mae_list.extend(error_pixels.tolist())
@@ -117,7 +118,73 @@ class MeanAbsoluteError(object):
 
     def __str__(self):
         mae = self.compute()
-        return f'mean absolute error: {mae * 100:.1f}\n'
+        return f'MAE: {mae:.3f}'
+
+
+class F1Score(object):
+    """
+    refer: https://github.com/xuebinqin/DIS/blob/main/IS-Net/basics.py
+    """
+
+    def __init__(self, threshold: float = 0.5):
+        self.precision_cum = None
+        self.recall_cum = None
+        self.num_cum = None
+        self.threshold = threshold
+
+    def update(self, pred: torch.Tensor, gt: torch.Tensor):
+        batch_size, c, h, w = gt.shape
+        assert batch_size == 1, f"validation mode batch_size must be 1, but got batch_size: {batch_size}."
+        resize_pred = F.interpolate(pred, (h, w), mode="bilinear")
+        gt_num = torch.sum(torch.gt(gt, self.threshold).float())
+
+        pp = resize_pred[torch.gt(gt, self.threshold)]  # 对应预测map中GT为前景的区域
+        nn = resize_pred[torch.le(gt, self.threshold)]  # 对应预测map中GT为背景的区域
+
+        pp_hist = torch.histc(pp, bins=255, min=0.0, max=1.0)
+        nn_hist = torch.histc(nn, bins=255, min=0.0, max=1.0)
+
+        pp_hist_flip = torch.flipud(pp_hist)
+        nn_hist_flip = torch.flipud(nn_hist)
+
+        pp_hist_flip_cum = torch.cumsum(pp_hist_flip, dim=0)
+        nn_hist_flip_cum = torch.cumsum(nn_hist_flip, dim=0)
+
+        precision = pp_hist_flip_cum / (pp_hist_flip_cum + nn_hist_flip_cum + 1e-4)
+        recall = pp_hist_flip_cum / (gt_num + 1e-4)
+
+        if self.precision_cum is None:
+            self.precision_cum = torch.full_like(precision, fill_value=0.)
+
+        if self.recall_cum is None:
+            self.recall_cum = torch.full_like(recall, fill_value=0.)
+
+        if self.num_cum is None:
+            self.num_cum = torch.zeros([1], dtype=gt.dtype, device=gt.device)
+
+        self.precision_cum += precision
+        self.recall_cum += recall
+        self.num_cum += batch_size
+
+    def compute(self):
+        pre_mean = self.precision_cum / self.num_cum
+        rec_mean = self.recall_cum / self.num_cum
+        f1_mean = (1 + 0.3) * pre_mean * rec_mean / (0.3 * pre_mean + rec_mean + 1e-8)
+        return f1_mean
+
+    def reduce_from_all_processes(self):
+        if not torch.distributed.is_available():
+            return
+        if not torch.distributed.is_initialized():
+            return
+        torch.distributed.barrier()
+        torch.distributed.all_reduce(self.precision_cum)
+        torch.distributed.all_reduce(self.recall_cum)
+        torch.distributed.all_reduce(self.num_cum)
+
+    def __str__(self):
+        f1_mean = self.compute()
+        return f'maxF1: {torch.amax(f1_mean).item():.3f}'
 
 
 class MetricLogger(object):

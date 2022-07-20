@@ -166,7 +166,7 @@ class U2Net(nn.Module):
         if self.training:
             out_list = []
             for x_ in [x] + side_outputs:
-                out_list.append(torch.sigmoid(x_))
+                out_list.append(x_)  # do not use torch.sigmoid for amp safe
             return out_list
         else:
             return torch.sigmoid(x)
