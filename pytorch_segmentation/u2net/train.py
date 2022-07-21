@@ -46,18 +46,18 @@ def main(args):
     val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
 
     num_workers = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])
-    train_loader = torch.utils.data.DataLoader(train_dataset,
-                                               batch_size=batch_size,
-                                               num_workers=num_workers,
-                                               shuffle=True,
-                                               pin_memory=True,
-                                               collate_fn=train_dataset.collate_fn)
+    train_data_loader = torch.utils.data.DataLoader(train_dataset,
+                                                    batch_size=batch_size,
+                                                    num_workers=num_workers,
+                                                    shuffle=True,
+                                                    pin_memory=True,
+                                                    collate_fn=train_dataset.collate_fn)
 
-    val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=1,  # must be 1
-                                             num_workers=num_workers,
-                                             pin_memory=True,
-                                             collate_fn=val_dataset.collate_fn)
+    val_data_loader = torch.utils.data.DataLoader(val_dataset,
+                                                  batch_size=1,  # must be 1
+                                                  num_workers=num_workers,
+                                                  pin_memory=True,
+                                                  collate_fn=val_dataset.collate_fn)
 
     model = u2net_full()
     model.to(device)
@@ -75,22 +75,11 @@ def main(args):
         if args.amp:
             scaler.load_state_dict(checkpoint["scaler"])
 
+    current_mae, current_f1 = 1.0, 0.0
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
-        mean_loss, lr = train_one_epoch(model, optimizer, train_loader, device, epoch,
+        mean_loss, lr = train_one_epoch(model, optimizer, train_data_loader, device, epoch,
                                         print_freq=args.print_freq, scaler=scaler)
-
-        if epoch % args.eval_interval == 0 or epoch == args.epochs - 1:
-            # 每间隔eval_interval个epoch验证一次，减少验证频率节省训练时间
-            mae_metric, f1_metric = evaluate(model, val_loader, device=device)
-            mae_info = str(mae_metric)
-            f1_info = str(f1_metric)
-            print(mae_info, f1_info)
-            # write into txt
-            with open(results_file, "a") as f:
-                # 记录每个epoch对应的train_loss、lr以及验证集各指标
-                write_info = f"[epoch: {epoch}] train_loss: {mean_loss:.4f} lr: {lr:.6f} {mae_info} {f1_info}"
-                f.write(write_info)
 
         save_file = {"model": model.state_dict(),
                      "optimizer": optimizer.state_dict(),
@@ -98,7 +87,28 @@ def main(args):
                      "args": args}
         if args.amp:
             save_file["scaler"] = scaler.state_dict()
-        torch.save(save_file, "save_weights/model_{}.pth".format(epoch))
+
+        if epoch % args.eval_interval == 0 or epoch == args.epochs - 1:
+            # 每间隔eval_interval个epoch验证一次，减少验证频率节省训练时间
+            mae_metric, f1_metric = evaluate(model, val_data_loader, device=device)
+            mae_info, f1_info = mae_metric.compute(), f1_metric.compute()
+            print(f"[epoch: {epoch} val_MAE: {mae_info:.3f} val_maxF1: {f1_info:.3f}]")
+            # write into txt
+            with open(results_file, "a") as f:
+                # 记录每个epoch对应的train_loss、lr以及验证集各指标
+                write_info = f"[epoch: {epoch}] train_loss: {mean_loss:.4f} lr: {lr:.6f} " \
+                             f"MAE: {mae_info:.3f} maxF1: {f1_info:.3f} \n"
+                f.write(write_info)
+
+            # save_best
+            if current_mae > mae_info and current_f1 < f1_info:
+                torch.save(save_file, "save_weights/model_best.pth")
+
+        # only save latest 10 epoch weights
+        if os.path.exists(f"save_weights/model_{epoch-10}.pth"):
+            os.remove(f"save_weights/model_{epoch-10}.pth")
+
+        torch.save(save_file, f"save_weights/model_{epoch}.pth")
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -111,7 +121,7 @@ def parse_args():
 
     parser.add_argument("--data-path", default="./", help="DUTS root")
     parser.add_argument("--device", default="cuda", help="training device")
-    parser.add_argument("-b", "--batch-size", default=2, type=int)
+    parser.add_argument("-b", "--batch-size", default=16, type=int)
     parser.add_argument("--epochs", default=720, type=int, metavar="N",
                         help="number of total epochs to train")
     parser.add_argument("--eval-interval", default=10, type=int, help="validation interval default 10 Epochs")

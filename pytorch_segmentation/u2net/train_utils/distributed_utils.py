@@ -144,6 +144,7 @@ class F1Score(object):
         pp_hist = torch.histc(pp, bins=255, min=0.0, max=1.0)
         nn_hist = torch.histc(nn, bins=255, min=0.0, max=1.0)
 
+        # Sort according to the prediction probability from large to small
         pp_hist_flip = torch.flipud(pp_hist)
         nn_hist_flip = torch.flipud(nn_hist)
 
@@ -170,7 +171,8 @@ class F1Score(object):
         pre_mean = self.precision_cum / self.num_cum
         rec_mean = self.recall_cum / self.num_cum
         f1_mean = (1 + 0.3) * pre_mean * rec_mean / (0.3 * pre_mean + rec_mean + 1e-8)
-        return f1_mean
+        max_f1 = torch.amax(f1_mean).item()
+        return max_f1
 
     def reduce_from_all_processes(self):
         if not torch.distributed.is_available():
@@ -183,8 +185,8 @@ class F1Score(object):
         torch.distributed.all_reduce(self.num_cum)
 
     def __str__(self):
-        f1_mean = self.compute()
-        return f'maxF1: {torch.amax(f1_mean).item():.3f}'
+        max_f1 = self.compute()
+        return f'maxF1: {max_f1:.3f}'
 
 
 class MetricLogger(object):

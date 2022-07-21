@@ -26,12 +26,12 @@ def main(args):
     val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
 
     num_workers = 4
-    val_loader = torch.utils.data.DataLoader(val_dataset,
-                                             batch_size=1,  # must be 1
-                                             num_workers=num_workers,
-                                             pin_memory=True,
-                                             shuffle=False,
-                                             collate_fn=val_dataset.collate_fn)
+    val_data_loader = torch.utils.data.DataLoader(val_dataset,
+                                                  batch_size=1,  # must be 1
+                                                  num_workers=num_workers,
+                                                  pin_memory=True,
+                                                  shuffle=False,
+                                                  collate_fn=val_dataset.collate_fn)
 
     model = u2net_full()
     pretrain_weights = torch.load(args.weights, map_location='cpu')
@@ -41,7 +41,7 @@ def main(args):
         model.load_state_dict(pretrain_weights)
     model.to(device)
 
-    mae_metric, f1_metric = evaluate(model, val_loader, device=device)
+    mae_metric, f1_metric = evaluate(model, val_data_loader, device=device)
     print(mae_metric, f1_metric)
 
 

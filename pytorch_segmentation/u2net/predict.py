@@ -33,7 +33,11 @@ def main():
     img = torch.unsqueeze(img, 0).to(device)  # [C, H, W] -> [1, C, H, W]
 
     model = u2net_full()
-    model.load_state_dict(torch.load(weights_path, map_location="cpu"))
+    weights = torch.load(weights_path, map_location='cpu')
+    if "model" in weights:
+        model.load_state_dict(weights["model"])
+    else:
+        model.load_state_dict(weights)
     model.to(device)
     model.eval()
 
@@ -46,7 +50,7 @@ def main():
         t_start = time_synchronized()
         pred = model(img)
         t_end = time_synchronized()
-        print("inference+NMS time: {}".format(t_end - t_start))
+        print("inference time: {}".format(t_end - t_start))
         pred = torch.squeeze(pred).to("cpu").numpy()  # [1, 1, H, W] -> [H, W]
 
         pred = cv2.resize(pred, dsize=(w, h), interpolation=cv2.INTER_LINEAR)
