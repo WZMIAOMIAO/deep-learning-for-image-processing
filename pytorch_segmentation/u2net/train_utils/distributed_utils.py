@@ -97,7 +97,7 @@ class MeanAbsoluteError(object):
     def update(self, pred: torch.Tensor, gt: torch.Tensor):
         batch_size, c, h, w = gt.shape
         assert batch_size == 1, f"validation mode batch_size must be 1, but got batch_size: {batch_size}."
-        resize_pred = F.interpolate(pred, (h, w), mode="bilinear")
+        resize_pred = F.interpolate(pred, (h, w), mode="bilinear", align_corners=False)
         error_pixels = torch.sum(torch.abs(resize_pred - gt), dim=(1, 2, 3)) / (h * w)
         self.mae_list.extend(error_pixels.tolist())
 
@@ -135,7 +135,7 @@ class F1Score(object):
     def update(self, pred: torch.Tensor, gt: torch.Tensor):
         batch_size, c, h, w = gt.shape
         assert batch_size == 1, f"validation mode batch_size must be 1, but got batch_size: {batch_size}."
-        resize_pred = F.interpolate(pred, (h, w), mode="bilinear")
+        resize_pred = F.interpolate(pred, (h, w), mode="bilinear", align_corners=False)
         gt_num = torch.sum(torch.gt(gt, self.threshold).float())
 
         pp = resize_pred[torch.gt(gt, self.threshold)]  # 对应预测map中GT为前景的区域

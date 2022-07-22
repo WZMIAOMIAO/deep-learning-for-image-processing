@@ -9,7 +9,7 @@ class ConvBNReLU(nn.Module):
         super().__init__()
 
         padding = kernel_size // 2 if dilation == 1 else dilation
-        self.conv = nn.Conv2d(in_ch, out_ch, kernel_size, padding=padding, dilation=dilation)
+        self.conv = nn.Conv2d(in_ch, out_ch, kernel_size, padding=padding, dilation=dilation, bias=False)
         self.bn = nn.BatchNorm2d(out_ch)
         self.relu = nn.ReLU(inplace=True)
 

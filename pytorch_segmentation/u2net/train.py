@@ -1,10 +1,11 @@
 import os
 import time
 import datetime
+
 import torch
 
 from src import u2net_full
-from train_utils import train_one_epoch, evaluate
+from train_utils import train_one_epoch, evaluate, get_params_groups, create_lr_scheduler
 from my_dataset import DUTSDataset
 import transforms as T
 
@@ -62,8 +63,10 @@ def main(args):
     model = u2net_full()
     model.to(device)
 
-    params_to_optimize = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.Adam(params_to_optimize, lr=args.lr)
+    params_group = get_params_groups(model, weight_decay=args.weight_decay)
+    optimizer = torch.optim.AdamW(params_group, lr=args.lr, weight_decay=args.weight_decay)
+    lr_scheduler = create_lr_scheduler(optimizer, len(train_data_loader), args.epochs,
+                                       warmup=True, warmup_epochs=2)
 
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
@@ -71,6 +74,7 @@ def main(args):
         checkpoint = torch.load(args.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
         if args.amp:
             scaler.load_state_dict(checkpoint["scaler"])
@@ -79,10 +83,11 @@ def main(args):
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         mean_loss, lr = train_one_epoch(model, optimizer, train_data_loader, device, epoch,
-                                        print_freq=args.print_freq, scaler=scaler)
+                                        lr_scheduler=lr_scheduler, print_freq=args.print_freq, scaler=scaler)
 
         save_file = {"model": model.state_dict(),
                      "optimizer": optimizer.state_dict(),
+                     "lr_scheduler": lr_scheduler.state_dict(),
                      "epoch": epoch,
                      "args": args}
         if args.amp:
@@ -92,7 +97,7 @@ def main(args):
             # 每间隔eval_interval个epoch验证一次，减少验证频率节省训练时间
             mae_metric, f1_metric = evaluate(model, val_data_loader, device=device)
             mae_info, f1_info = mae_metric.compute(), f1_metric.compute()
-            print(f"[epoch: {epoch} val_MAE: {mae_info:.3f} val_maxF1: {f1_info:.3f}]")
+            print(f"[epoch: {epoch}] val_MAE: {mae_info:.3f} val_maxF1: {f1_info:.3f}")
             # write into txt
             with open(results_file, "a") as f:
                 # 记录每个epoch对应的train_loss、lr以及验证集各指标
@@ -122,7 +127,10 @@ def parse_args():
     parser.add_argument("--data-path", default="./", help="DUTS root")
     parser.add_argument("--device", default="cuda", help="training device")
     parser.add_argument("-b", "--batch-size", default=16, type=int)
-    parser.add_argument("--epochs", default=720, type=int, metavar="N",
+    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
+                        metavar='W', help='weight decay (default: 1e-4)',
+                        dest='weight_decay')
+    parser.add_argument("--epochs", default=360, type=int, metavar="N",
                         help="number of total epochs to train")
     parser.add_argument("--eval-interval", default=10, type=int, help="validation interval default 10 Epochs")
 

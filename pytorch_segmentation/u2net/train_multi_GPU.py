@@ -3,9 +3,11 @@ import os
 import datetime
 
 import torch
+from torch.utils import data
 
 from src import u2net_full
-from train_utils import train_one_epoch, evaluate, init_distributed_mode, save_on_master, mkdir
+from train_utils import (train_one_epoch, evaluate, init_distributed_mode, save_on_master, mkdir,
+                         create_lr_scheduler, get_params_groups)
 from my_dataset import DUTSDataset
 import transforms as T
 
@@ -42,7 +44,7 @@ def main(args):
 
     device = torch.device(args.device)
 
-    # 用来保存coco_info的文件
+    # 用来保存训练以及验证过程中信息
     results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     train_dataset = DUTSDataset(args.data_path, train=True, transforms=SODPresetTrain(320, crop_size=288))
@@ -50,21 +52,21 @@ def main(args):
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
+        train_sampler = data.distributed.DistributedSampler(train_dataset)
+        test_sampler = data.distributed.DistributedSampler(val_dataset)
     else:
-        train_sampler = torch.utils.data.RandomSampler(train_dataset)
-        test_sampler = torch.utils.data.SequentialSampler(val_dataset)
+        train_sampler = data.RandomSampler(train_dataset)
+        test_sampler = data.SequentialSampler(val_dataset)
 
-    train_data_loader = torch.utils.data.DataLoader(
+    train_data_loader = data.DataLoader(
         train_dataset, batch_size=args.batch_size,
         sampler=train_sampler, num_workers=args.workers,
-        collate_fn=train_dataset.collate_fn, drop_last=True)
+        pin_memory=True, collate_fn=train_dataset.collate_fn, drop_last=True)
 
-    val_data_loader = torch.utils.data.DataLoader(
+    val_data_loader = data.DataLoader(
         val_dataset, batch_size=1,  # batch_size must be 1
         sampler=test_sampler, num_workers=args.workers,
-        collate_fn=train_dataset.collate_fn)
+        pin_memory=True, collate_fn=train_dataset.collate_fn)
 
     # create model num_classes equal background + 20 classes
     model = u2net_full()
@@ -78,8 +80,10 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    params_to_optimize = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.Adam(params_to_optimize, lr=args.lr)
+    params_group = get_params_groups(model, weight_decay=args.weight_decay)
+    optimizer = torch.optim.AdamW(params_group, lr=args.lr, weight_decay=args.weight_decay)
+    lr_scheduler = create_lr_scheduler(optimizer, len(train_data_loader), args.epochs,
+                                       warmup=True, warmup_epochs=2)
 
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
@@ -91,6 +95,7 @@ def main(args):
         checkpoint = torch.load(args.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
         model_without_ddp.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
         if args.amp:
             scaler.load_state_dict(checkpoint["scaler"])
@@ -108,10 +113,11 @@ def main(args):
             train_sampler.set_epoch(epoch)
 
         mean_loss, lr = train_one_epoch(model, optimizer, train_data_loader, device, epoch,
-                                        print_freq=args.print_freq, scaler=scaler)
+                                        lr_scheduler=lr_scheduler, print_freq=args.print_freq, scaler=scaler)
 
         save_file = {'model': model_without_ddp.state_dict(),
                      'optimizer': optimizer.state_dict(),
+                     "lr_scheduler": lr_scheduler.state_dict(),
                      'args': args,
                      'epoch': epoch}
         if args.amp:
@@ -121,7 +127,7 @@ def main(args):
             # 每间隔eval_interval个epoch验证一次，减少验证频率节省训练时间
             mae_metric, f1_metric = evaluate(model, val_data_loader, device=device)
             mae_info, f1_info = mae_metric.compute(), f1_metric.compute()
-            print(f"[epoch: {epoch} val_MAE: {mae_info:.3f} val_maxF1: {f1_info:.3f}]")
+            print(f"[epoch: {epoch}] val_MAE: {mae_info:.3f} val_maxF1: {f1_info:.3f}")
 
             # 只在主进程上进行写操作
             if args.rank in [-1, 0]:
@@ -140,9 +146,10 @@ def main(args):
                                        os.path.join(args.output_dir, 'model_best.pth'))
 
         if args.output_dir:
-            # only save latest 10 epoch weights
-            if os.path.exists(os.path.join(args.output_dir, f'model_{epoch - 10}.pth')):
-                os.remove(os.path.join(args.output_dir, f'model_{epoch - 10}.pth'))
+            if args.rank in [-1, 0]:
+                # only save latest 10 epoch weights
+                if os.path.exists(os.path.join(args.output_dir, f'model_{epoch - 10}.pth')):
+                    os.remove(os.path.join(args.output_dir, f'model_{epoch - 10}.pth'))
 
             # 只在主节点上执行保存权重操作
             save_on_master(save_file,
@@ -160,7 +167,7 @@ if __name__ == "__main__":
         description=__doc__)
 
     # 训练文件的根目录(VOCdevkit)
-    parser.add_argument('--data-path', default='/data/', help='DUTS root')
+    parser.add_argument('--data-path', default='./', help='DUTS root')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 每块GPU上的batch_size
@@ -169,8 +176,11 @@ if __name__ == "__main__":
     # 指定接着从哪个epoch数开始训练
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
     # 训练的总epoch数
-    parser.add_argument('--epochs', default=720, type=int, metavar='N',
+    parser.add_argument('--epochs', default=360, type=int, metavar='N',
                         help='number of total epochs to run')
+    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
+                        metavar='W', help='weight decay (default: 1e-4)',
+                        dest='weight_decay')
     # 是否使用同步BN(在多个GPU之间同步)，默认不开启，开启后训练速度会变慢
     parser.add_argument('--sync_bn', type=bool, default=False, help='whether using SyncBatchNorm')
     # 数据加载以及预处理的线程数
