@@ -49,8 +49,8 @@ def main(args):
     # 用来保存训练以及验证过程中信息
     results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
-    train_dataset = DUTSDataset(args.data_path, train=True, transforms=SODPresetTrain(320, crop_size=288))
-    val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
+    train_dataset = DUTSDataset(args.data_path, train=True, transforms=SODPresetTrain([320, 320], crop_size=288))
+    val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval([320, 320]))
 
     print("Creating data loaders")
     if args.distributed:

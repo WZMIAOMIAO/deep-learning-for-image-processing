@@ -26,7 +26,7 @@ def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     assert os.path.exists(args.weights), f"weights {args.weights} not found."
 
-    val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
+    val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval([320, 320]))
 
     num_workers = 4
     val_data_loader = data.DataLoader(val_dataset,
