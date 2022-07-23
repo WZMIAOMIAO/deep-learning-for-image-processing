@@ -1,8 +1,10 @@
 import os
 import time
 import datetime
+from typing import Union, List
 
 import torch
+from torch.utils import data
 
 from src import u2net_full
 from train_utils import train_one_epoch, evaluate, get_params_groups, create_lr_scheduler
@@ -11,10 +13,11 @@ import transforms as T
 
 
 class SODPresetTrain:
-    def __init__(self, base_size, crop_size, hflip_prob=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, base_size: Union[int, List[int]], crop_size: int,
+                 hflip_prob=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
-            T.Resize([base_size, base_size], resize_mask=True),
+            T.Resize(base_size, resize_mask=True),
             T.RandomCrop(crop_size),
             T.RandomHorizontalFlip(hflip_prob),
             T.Normalize(mean=mean, std=std)
@@ -25,10 +28,10 @@ class SODPresetTrain:
 
 
 class SODPresetEval:
-    def __init__(self, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, base_size: Union[int, List[int]], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
-            T.Resize([base_size, base_size], resize_mask=False),
+            T.Resize(base_size, resize_mask=False),
             T.Normalize(mean=mean, std=std),
         ])
 
@@ -47,18 +50,18 @@ def main(args):
     val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
 
     num_workers = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])
-    train_data_loader = torch.utils.data.DataLoader(train_dataset,
-                                                    batch_size=batch_size,
-                                                    num_workers=num_workers,
-                                                    shuffle=True,
-                                                    pin_memory=True,
-                                                    collate_fn=train_dataset.collate_fn)
+    train_data_loader = data.DataLoader(train_dataset,
+                                        batch_size=batch_size,
+                                        num_workers=num_workers,
+                                        shuffle=True,
+                                        pin_memory=True,
+                                        collate_fn=train_dataset.collate_fn)
 
-    val_data_loader = torch.utils.data.DataLoader(val_dataset,
-                                                  batch_size=1,  # must be 1
-                                                  num_workers=num_workers,
-                                                  pin_memory=True,
-                                                  collate_fn=val_dataset.collate_fn)
+    val_data_loader = data.DataLoader(val_dataset,
+                                      batch_size=1,  # must be 1
+                                      num_workers=num_workers,
+                                      pin_memory=True,
+                                      collate_fn=val_dataset.collate_fn)
 
     model = u2net_full()
     model.to(device)
@@ -106,7 +109,7 @@ def main(args):
                 f.write(write_info)
 
             # save_best
-            if current_mae > mae_info and current_f1 < f1_info:
+            if current_mae >= mae_info and current_f1 <= f1_info:
                 torch.save(save_file, "save_weights/model_best.pth")
 
         # only save latest 10 epoch weights

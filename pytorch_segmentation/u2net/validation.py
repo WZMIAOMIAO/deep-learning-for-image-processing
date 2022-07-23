@@ -1,5 +1,8 @@
 import os
+from typing import Union, List
+
 import torch
+from torch.utils import data
 
 from src import u2net_full
 from train_utils import evaluate
@@ -8,10 +11,10 @@ import transforms as T
 
 
 class SODPresetEval:
-    def __init__(self, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, base_size: Union[int, List[int]], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
-            T.Resize([base_size, base_size], resize_mask=False),
+            T.Resize(base_size, resize_mask=False),
             T.Normalize(mean=mean, std=std),
         ])
 
@@ -26,12 +29,12 @@ def main(args):
     val_dataset = DUTSDataset(args.data_path, train=False, transforms=SODPresetEval(320))
 
     num_workers = 4
-    val_data_loader = torch.utils.data.DataLoader(val_dataset,
-                                                  batch_size=1,  # must be 1
-                                                  num_workers=num_workers,
-                                                  pin_memory=True,
-                                                  shuffle=False,
-                                                  collate_fn=val_dataset.collate_fn)
+    val_data_loader = data.DataLoader(val_dataset,
+                                      batch_size=1,  # must be 1
+                                      num_workers=num_workers,
+                                      pin_memory=True,
+                                      shuffle=False,
+                                      collate_fn=val_dataset.collate_fn)
 
     model = u2net_full()
     pretrain_weights = torch.load(args.weights, map_location='cpu')

@@ -1,6 +1,7 @@
 import time
 import os
 import datetime
+from typing import Union, List
 
 import torch
 from torch.utils import data
@@ -13,10 +14,11 @@ import transforms as T
 
 
 class SODPresetTrain:
-    def __init__(self, base_size, crop_size, hflip_prob=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, base_size: Union[int, List[int]], crop_size: int,
+                 hflip_prob=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
-            T.Resize([base_size, base_size], resize_mask=True),
+            T.Resize(base_size, resize_mask=True),
             T.RandomCrop(crop_size),
             T.RandomHorizontalFlip(hflip_prob),
             T.Normalize(mean=mean, std=std)
@@ -27,10 +29,10 @@ class SODPresetTrain:
 
 
 class SODPresetEval:
-    def __init__(self, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, base_size: Union[int, List[int]], mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.ToTensor(),
-            T.Resize([base_size, base_size], resize_mask=False),
+            T.Resize(base_size, resize_mask=False),
             T.Normalize(mean=mean, std=std),
         ])
 
@@ -139,7 +141,7 @@ def main(args):
                     f.write(write_info)
 
                 # save_best
-                if current_mae > mae_info and current_f1 < f1_info:
+                if current_mae >= mae_info and current_f1 <= f1_info:
                     if args.output_dir:
                         # 只在主节点上执行保存权重操作
                         save_on_master(save_file,
