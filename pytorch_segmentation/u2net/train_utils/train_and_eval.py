@@ -22,6 +22,11 @@ def evaluate(model, data_loader, device):
             images, targets = images.to(device), targets.to(device)
             output = model(images)
 
+            # post norm
+            # ma = torch.max(output)
+            # mi = torch.min(output)
+            # output = (output - mi) / (ma - mi)
+
             mae_metric.update(output, targets)
             f1_metric.update(output, targets)
 

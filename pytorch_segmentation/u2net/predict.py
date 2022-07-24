@@ -1,9 +1,12 @@
+import os
 import time
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torchvision.transforms import transforms
+
 from src import u2net_full
 
 
@@ -16,6 +19,8 @@ def main():
     weights_path = "./u2net_full.pth"
     img_path = "./test.png"
     threshold = 0.5
+
+    assert os.path.exists(img_path), f"image file {img_path} dose not exists."
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
