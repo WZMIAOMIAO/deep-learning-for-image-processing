@@ -13,10 +13,10 @@
 
 ## 官方权重
 从官方转换得到的权重：
-`u2net_full.pth`下载链接: https://pan.baidu.com/s/1ojJZS8v3F_eFKkF3DEdEXA  密码: fh1v
-`u2net_lite.pth`下载链接: https://pan.baidu.com/s/1TIWoiuEz9qRvTX9quDqQHg  密码: 5stj
+- `u2net_full.pth`下载链接: https://pan.baidu.com/s/1ojJZS8v3F_eFKkF3DEdEXA  密码: fh1v
+- `u2net_lite.pth`下载链接: https://pan.baidu.com/s/1TIWoiuEz9qRvTX9quDqQHg  密码: 5stj
 
-u2net_full在DUTS-TE上的验证结果(使用`validation.py`进行验证)：
+`u2net_full`在DUTS-TE上的验证结果(使用`validation.py`进行验证)：
 ```
 MAE: 0.044
 maxF1: 0.868
@@ -32,7 +32,7 @@ output = (output - mi) / (ma - mi)
 - 如果要载入官方提供的权重，需要将`src/model.py`中`ConvBNReLU`类里卷积的bias设置成True，因为官方代码里没有进行设置（Conv2d的bias默认为True）。
 因为卷积后跟了BN，所以bias是没有用的，所以在本仓库中默认将bias设置为False。
 
-## 训练记录(u2net_full)
+## 训练记录(`u2net_full`)
 训练指令：
 ```
 torchrun --nproc_per_node=4 train_multi_GPU.py --lr 0.004 --amp
@@ -42,5 +42,4 @@ torchrun --nproc_per_node=4 train_multi_GPU.py --lr 0.004 --amp
 MAE: 0.047
 maxF1: 0.859
 ```
-训练过程详情可见results.txt文件
-训练权重下载链接: https://pan.baidu.com/s/1df2jMkrjbgEv-r1NMaZCZg  密码: n4l6
+训练过程详情可见results.txt文件，训练权重下载链接: https://pan.baidu.com/s/1df2jMkrjbgEv-r1NMaZCZg  密码: n4l6
