@@ -210,6 +210,7 @@ def parse_objects(data: dict, xml_path: str, class_dict: dict, idx: int):
             "area": area}
 
 
-# dataset = VOCInstances(voc_root="/data/")
-# d1 = dataset[0]
-# print(d1)
+if __name__ == '__main__':
+    dataset = VOCInstances(voc_root="/data/")
+    print(len(dataset))
+    d1 = dataset[0]
