@@ -84,6 +84,8 @@
     * [使用Pytorch搭建ConvNeXt](https://b23.tv/gzpCv5z)
     * [使用Tensorflow2搭建ConvNeXt](https://b23.tv/zikVoch)
 
+  * MobileViT(规划中)
+
 * 目标检测
   * Faster-RCNN/FPN（已完成）
     * [Faster-RCNN网络讲解](https://www.bilibili.com/video/BV1af4y1m7iL)
@@ -123,9 +125,12 @@
   * U-Net (已完成)
     * [U-Net网络讲解](https://www.bilibili.com/video/BV1Vq4y127fB/)
     * [U-Net源码解析(Pytorch版)](https://b23.tv/PCJJmqN)
+  
+  * U2Net(规划中)
+  * SegFormer(规划中)
 
 * 实例分割
-  * Mask R-CNN（进行中）
+  * Mask R-CNN（已完成）
     * [Mask R-CNN网络讲解](https://www.bilibili.com/video/BV1ZY411774T)
     * [Mask R-CNN源码解析(Pytorch版)](https://www.bilibili.com/video/BV1hY411E7wD)
 
