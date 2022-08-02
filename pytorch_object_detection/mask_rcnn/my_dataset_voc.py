@@ -51,7 +51,6 @@ class VOCInstances(Dataset):
             assert os.path.exists(img_path), f"not find {img_path}"
             assert os.path.exists(xml_path), f"not find {xml_path}"
             assert os.path.exists(mask_path), f"not find {mask_path}"
-            assert os.path.exists(xml_path), f"not find {xml_path}"
 
             # 解析xml中bbox信息
             with open(xml_path) as fid:
