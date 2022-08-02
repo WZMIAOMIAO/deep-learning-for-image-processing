@@ -13,7 +13,7 @@ class CocoDetection(data.Dataset):
 
     Args:
         root (string): Root directory where images are downloaded to.
-        annFile (string): Path to json annotation file.
+        dataset (string): train or val.
         transforms (callable, optional): A function/transform that takes input sample and its target as entry
             and returns a transformed version.
     """
@@ -148,7 +148,7 @@ class CocoDetection(data.Dataset):
         return tuple(zip(*batch))
 
 
-# train = CocoDetection("/data/coco2017/", dataset="train")
-# print(len(train))
-# t = train[0]
-# print(t)
+if __name__ == '__main__':
+    train = CocoDetection("/data/coco2017", dataset="train")
+    print(len(train))
+    t = train[0]
