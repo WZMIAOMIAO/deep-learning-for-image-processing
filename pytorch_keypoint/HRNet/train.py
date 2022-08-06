@@ -3,6 +3,7 @@ import os
 import datetime
 
 import torch
+from torch.utils import data
 import numpy as np
 
 import transforms
@@ -77,23 +78,23 @@ def main(args):
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using %g dataloader workers' % nw)
 
-    train_data_loader = torch.utils.data.DataLoader(train_dataset,
-                                                    batch_size=batch_size,
-                                                    shuffle=True,
-                                                    pin_memory=True,
-                                                    num_workers=nw,
-                                                    collate_fn=train_dataset.collate_fn)
+    train_data_loader = data.DataLoader(train_dataset,
+                                        batch_size=batch_size,
+                                        shuffle=True,
+                                        pin_memory=True,
+                                        num_workers=nw,
+                                        collate_fn=train_dataset.collate_fn)
 
     # load validation data set
     # coco2017 -> annotations -> person_keypoints_val2017.json
     val_dataset = CocoKeypoint(data_root, "val", transforms=data_transform["val"], fixed_size=args.fixed_size,
                                det_json_path=args.person_det)
-    val_data_set_loader = torch.utils.data.DataLoader(val_dataset,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      pin_memory=True,
-                                                      num_workers=nw,
-                                                      collate_fn=val_dataset.collate_fn)
+    val_data_set_loader = data.DataLoader(val_dataset,
+                                          batch_size=batch_size,
+                                          shuffle=False,
+                                          pin_memory=True,
+                                          num_workers=nw,
+                                          collate_fn=val_dataset.collate_fn)
 
     # create model
     model = create_model(num_joints=args.num_joints)

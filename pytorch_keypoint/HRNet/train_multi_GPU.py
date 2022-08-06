@@ -4,6 +4,7 @@ import os
 import datetime
 
 import torch
+from torch.utils import data
 import numpy as np
 
 import transforms
@@ -84,24 +85,24 @@ def main(args):
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
+        train_sampler = data.distributed.DistributedSampler(train_dataset)
+        test_sampler = data.distributed.DistributedSampler(val_dataset)
     else:
-        train_sampler = torch.utils.data.RandomSampler(train_dataset)
-        test_sampler = torch.utils.data.SequentialSampler(val_dataset)
+        train_sampler = data.RandomSampler(train_dataset)
+        test_sampler = data.SequentialSampler(val_dataset)
 
-    train_batch_sampler = torch.utils.data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
+    train_batch_sampler = data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
 
-    data_loader = torch.utils.data.DataLoader(train_dataset,
-                                              batch_sampler=train_batch_sampler,
-                                              num_workers=args.workers,
-                                              collate_fn=train_dataset.collate_fn)
+    data_loader = data.DataLoader(train_dataset,
+                                  batch_sampler=train_batch_sampler,
+                                  num_workers=args.workers,
+                                  collate_fn=train_dataset.collate_fn)
 
-    data_loader_test = torch.utils.data.DataLoader(val_dataset,
-                                                   batch_size=args.batch_size,
-                                                   sampler=test_sampler,
-                                                   num_workers=args.workers,
-                                                   collate_fn=train_dataset.collate_fn)
+    data_loader_test = data.DataLoader(val_dataset,
+                                       batch_size=args.batch_size,
+                                       sampler=test_sampler,
+                                       num_workers=args.workers,
+                                       collate_fn=train_dataset.collate_fn)
 
     print("Creating model")
     # create model num_classes equal background + classes
