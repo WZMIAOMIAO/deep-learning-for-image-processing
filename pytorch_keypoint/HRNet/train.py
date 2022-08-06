@@ -89,12 +89,12 @@ def main(args):
     # coco2017 -> annotations -> person_keypoints_val2017.json
     val_dataset = CocoKeypoint(data_root, "val", transforms=data_transform["val"], fixed_size=args.fixed_size,
                                det_json_path=args.person_det)
-    val_data_set_loader = data.DataLoader(val_dataset,
-                                          batch_size=batch_size,
-                                          shuffle=False,
-                                          pin_memory=True,
-                                          num_workers=nw,
-                                          collate_fn=val_dataset.collate_fn)
+    val_data_loader = data.DataLoader(val_dataset,
+                                      batch_size=batch_size,
+                                      shuffle=False,
+                                      pin_memory=True,
+                                      num_workers=nw,
+                                      collate_fn=val_dataset.collate_fn)
 
     # create model
     model = create_model(num_joints=args.num_joints)
@@ -141,7 +141,7 @@ def main(args):
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        coco_info = utils.evaluate(model, val_data_set_loader, device=device,
+        coco_info = utils.evaluate(model, val_data_loader, device=device,
                                    flip=True, flip_pairs=person_kps_info["flip_pairs"])
 
         # write into txt
