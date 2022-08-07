@@ -261,7 +261,7 @@ if __name__ == "__main__":
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
     parser.add_argument("--sync-bn", action="store_true", help="Use sync batch norm")
     # 是否使用混合精度训练(需要GPU支持混合精度)
-    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
 

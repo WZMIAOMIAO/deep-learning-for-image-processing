@@ -217,7 +217,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', default=32, type=int, metavar='N',
                         help='batch size when training.')
     # 是否使用混合精度训练(需要GPU支持混合精度)
-    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
     print(args)
