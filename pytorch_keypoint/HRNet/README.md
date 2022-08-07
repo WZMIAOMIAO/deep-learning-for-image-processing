@@ -79,7 +79,7 @@
 并不高(在20%~60%之间浮动)，暂时猜测是网络结构的原因。
 * 确保提前准备好数据集
 * 确保提前下载好对应预训练模型权重
-* 确保设置好`--num-joints`(对于人体检测的关键点个数，COCO是17个点)、`fixed-size`(输入目标图像的高宽，默认[256, 192])和`--data-path`(指向`coco2017`目录)
+* 确保设置好`--num-joints`(对于人体检测的关键点个数，COCO是17个点)、`--fixed-size`(输入目标图像的高宽，默认[256, 192])和`--data-path`(指向`coco2017`目录)
 * 若要使用单GPU训练直接使用train.py训练脚本
 * 若要使用多GPU训练，使用`torchrun --nproc_per_node=8 train_multi_GPU.py`指令,`nproc_per_node`参数为使用GPU数量
 * 如果想指定使用哪些GPU设备可在指令前加上`CUDA_VISIBLE_DEVICES=0,3`(例如我只要使用设备中的第1块和第4块GPU设备)
