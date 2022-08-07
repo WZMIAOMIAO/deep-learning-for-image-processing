@@ -227,7 +227,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch-size', default=32, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start-epoch', default=0, type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=210, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
-    parser.add_argument("--sync-bn", dest="sync_bn", help="Use sync batch norm", type=bool, default=False)
+    parser.add_argument("--sync-bn", action="store_true", help="Use sync batch norm")
     # 是否使用混合精度训练(需要GPU支持混合精度)
     parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
 

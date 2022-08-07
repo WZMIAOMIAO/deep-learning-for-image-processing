@@ -197,7 +197,7 @@ if __name__ == "__main__":
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
     parser.add_argument('--resume', default='', type=str, help='resume from checkpoint')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start-epoch', default=0, type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=210, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=32, type=int, metavar='N',
+    parser.add_argument('--batch-size', default=32, type=int, metavar='N',
                         help='batch size when training.')
     # 是否使用混合精度训练(需要GPU支持混合精度)
     parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
