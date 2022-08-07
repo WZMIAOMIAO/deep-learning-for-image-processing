@@ -282,7 +282,7 @@ class AffineTransform(object):
         self.fixed_size = fixed_size
 
     def __call__(self, img, target):
-        src_xmin, src_ymin, src_xmax, src_ymax = adjust_box(*target["box"], self.fixed_size)
+        src_xmin, src_ymin, src_xmax, src_ymax = adjust_box(*target["box"], fixed_size=self.fixed_size)
         src_w = src_xmax - src_xmin
         src_h = src_ymax - src_ymin
         src_center = np.array([(src_xmin + src_xmax) / 2, (src_ymin + src_ymax) / 2])
