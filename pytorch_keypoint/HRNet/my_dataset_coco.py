@@ -45,7 +45,8 @@ class CocoKeypoint(data.Dataset):
             for ann in anns:
                 # only save person class
                 if ann["category_id"] != 1:
-                    print(ann["category_id"])
+                    print(f'warning: find not support id: {ann["category_id"]}, only support id: 1 (person)')
+                    continue
 
                 # skip objs without keypoints annotation
                 if "keypoints" in ann:
@@ -96,7 +97,7 @@ class CocoKeypoint(data.Dataset):
 
 
 if __name__ == '__main__':
-    train = CocoKeypoint("/data/coco2017/", dataset="val")
+    train = CocoKeypoint("/data/coco2017/", dataset="train")
     print(len(train))
     t = train[0]
     print(t)
