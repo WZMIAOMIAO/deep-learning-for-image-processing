@@ -137,7 +137,7 @@
 * 关键点检测
   * HRNet（已完成）
     * [HRNet网络讲解](https://www.bilibili.com/video/BV1bB4y1y7qP)
-    * HRNet源码解析(Pytorch版)[https://www.bilibili.com/video/BV1ar4y157JM]
+    * [HRNet源码解析(Pytorch版)](https://www.bilibili.com/video/BV1ar4y157JM)
 
 **[更多相关视频请进入我的bilibili频道查看](https://space.bilibili.com/18161609/channel/index)**
 
