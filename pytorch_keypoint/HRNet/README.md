@@ -98,5 +98,8 @@ python train.py --data-path /data/coco2017
 ## 如果对HRNet网络不是很理解可参考我的bilibili
 https://www.bilibili.com/video/BV1bB4y1y7qP
 
+## 进一步了解该项目，以及对HRNet代码的分析可参考我的bilibili
+https://www.bilibili.com/video/BV1ar4y157JM
+
 ## HRNet网络结构图
 ![HRNet.png](HRNet.png)
