@@ -72,3 +72,13 @@ MAE: 0.047
 maxF1: 0.859
 ```
 训练过程详情可见results.txt文件，训练权重下载链接: https://pan.baidu.com/s/1df2jMkrjbgEv-r1NMaZCZg  密码: n4l6
+
+## 训练方法
+* 确保提前准备好数据集
+* 若要使用单GPU或者CPU训练，直接使用train.py训练脚本
+* 若要使用多GPU训练，使用`torchrun --nproc_per_node=8 train_multi_GPU.py`指令,`nproc_per_node`参数为使用GPU数量
+* 如果想指定使用哪些GPU设备可在指令前加上`CUDA_VISIBLE_DEVICES=0,3`(例如我只要使用设备中的第1块和第4块GPU设备)
+* `CUDA_VISIBLE_DEVICES=0,3 torchrun --nproc_per_node=2 train_multi_GPU.py`
+
+## 如果对U-Net网络不了解的可参考我的bilibili
+- [https://www.bilibili.com/video/BV1yB4y1z7m](https://www.bilibili.com/video/BV1yB4y1z7m)
