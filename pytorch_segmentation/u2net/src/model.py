@@ -30,7 +30,7 @@ class DownConvBNReLU(ConvBNReLU):
 
 
 class UpConvBNReLU(ConvBNReLU):
-    def __init__(self,  in_ch: int, out_ch: int, kernel_size: int = 3, dilation: int = 1, flag: bool = True):
+    def __init__(self, in_ch: int, out_ch: int, kernel_size: int = 3, dilation: int = 1, flag: bool = True):
         super().__init__(in_ch, out_ch, kernel_size, dilation)
         self.up_flag = flag
 
