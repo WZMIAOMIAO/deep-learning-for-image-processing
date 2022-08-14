@@ -82,3 +82,7 @@ maxF1: 0.859
 
 ## 如果对U2Net网络不了解的可参考我的bilibili
 - [https://www.bilibili.com/video/BV1yB4y1z7m](https://www.bilibili.com/video/BV1yB4y1z7m)
+
+
+## U2NET网络结构
+![u2net](./u2net.png)
