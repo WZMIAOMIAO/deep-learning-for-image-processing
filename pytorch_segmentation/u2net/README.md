@@ -80,5 +80,5 @@ maxF1: 0.859
 * 如果想指定使用哪些GPU设备可在指令前加上`CUDA_VISIBLE_DEVICES=0,3`(例如我只要使用设备中的第1块和第4块GPU设备)
 * `CUDA_VISIBLE_DEVICES=0,3 torchrun --nproc_per_node=2 train_multi_GPU.py`
 
-## 如果对U-Net网络不了解的可参考我的bilibili
+## 如果对U2Net网络不了解的可参考我的bilibili
 - [https://www.bilibili.com/video/BV1yB4y1z7m](https://www.bilibili.com/video/BV1yB4y1z7m)
