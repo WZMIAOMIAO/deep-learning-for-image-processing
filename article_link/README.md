@@ -83,6 +83,14 @@
 ## 关键点检测(Keypoint Detection)
 - HRNet(Deep High-Resolution Representation Learning for Human Pose Estimation) [https://arxiv.org/abs/1902.09212](https://arxiv.org/abs/1902.09212)
 
+## 网络量化(Quantization)
+- Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference [https://arxiv.org/abs/1712.05877](https://arxiv.org/abs/1712.05877)
+- Quantizing deep convolutional networks for efficient inference: A whitepaper [https://arxiv.org/abs/1806.08342](https://arxiv.org/abs/1806.08342)
+- Data-Free Quantization Through Weight Equalization and Bias Correction [https://arxiv.org/abs/1906.04721](https://arxiv.org/abs/1906.04721)
+- LSQ: Learned Step Size Quantization [https://arxiv.org/abs/1902.08153](https://arxiv.org/abs/1902.08153)
+- LSQ+: Improving low-bit quantization through learnable offsets and better initialization [https://arxiv.org/abs/2004.09576](https://arxiv.org/abs/2004.09576)
+
+
 
 ## 自然语言处理
 - Attention Is All You Need [https://arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)
