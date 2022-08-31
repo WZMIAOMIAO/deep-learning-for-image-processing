@@ -47,6 +47,7 @@
 - **DeepLab V1** 链接：https://pan.baidu.com/s/1NFxb7ADQOMVYLxmIKqTONQ  密码：500s
 - **DeepLab V2** 链接：https://pan.baidu.com/s/1woe3lJYBVkOdnn6XXlKf8g 密码：76ec
 - **DeepLab V3** 链接：https://pan.baidu.com/s/1WVBgc2Ld13D0_dkHGwhTpA 密码：m54m
+- **U2Net**  链接：https://pan.baidu.com/s/1ekbEm4dsjlFamK8dCs8yfA  密码：472j
 
 
 ## 实例分割
