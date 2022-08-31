@@ -126,7 +126,10 @@
     * [U-Net网络讲解](https://www.bilibili.com/video/BV1Vq4y127fB/)
     * [U-Net源码解析(Pytorch版)](https://b23.tv/PCJJmqN)
   
-  * U2Net(规划中)
+  * U2Net (已完成)
+    * [U2Net网络讲解](https://www.bilibili.com/video/BV1yB4y1z7mj)
+    * [U2Net源码解析(Pytorch版)](https://www.bilibili.com/video/BV1Kt4y137iS)
+  
   * SegFormer(规划中)
 
 * 实例分割
