@@ -143,7 +143,7 @@ def parse_args():
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     # Mixed precision training parameters
-    parser.add_argument("--amp", action='store_ture',
+    parser.add_argument("--amp", action='store_true',
                         help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
