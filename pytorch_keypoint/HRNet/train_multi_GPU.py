@@ -47,7 +47,7 @@ def main(args):
 
     # 用来保存coco_info的文件
     now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    key_results_file = f"key_results{now}.txt"
+    key_results_file = f"results{now}.txt"
 
     with open(args.keypoints_path, "r") as f:
         person_kps_info = json.load(f)
