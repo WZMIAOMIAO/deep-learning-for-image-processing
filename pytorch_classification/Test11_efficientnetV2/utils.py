@@ -16,7 +16,7 @@ def read_split_data(root: str, val_rate: float = 0.2):
 
     # 遍历文件夹，一个文件夹对应一个类别
     flower_class = [cla for cla in os.listdir(root) if os.path.isdir(os.path.join(root, cla))]
-    # 排序，保证顺序一致
+    # 排序，保证各平台顺序一致
     flower_class.sort()
     # 生成类别名称以及对应的数字索引
     class_indices = dict((k, v) for v, k in enumerate(flower_class))
@@ -36,6 +36,8 @@ def read_split_data(root: str, val_rate: float = 0.2):
         # 遍历获取supported支持的所有文件路径
         images = [os.path.join(root, cla, i) for i in os.listdir(cla_path)
                   if os.path.splitext(i)[-1] in supported]
+        # 排序，保证各平台顺序一致
+        images.sort()
         # 获取该类别对应的索引
         image_class = class_indices[cla]
         # 记录该类别的样本数量
@@ -54,6 +56,8 @@ def read_split_data(root: str, val_rate: float = 0.2):
     print("{} images were found in the dataset.".format(sum(every_class_num)))
     print("{} images for training.".format(len(train_images_path)))
     print("{} images for validation.".format(len(val_images_path)))
+    assert len(train_images_path) > 0, "number of training images must greater than 0."
+    assert len(val_images_path) > 0, "number of validation images must greater than 0."
 
     plot_image = False
     if plot_image:
