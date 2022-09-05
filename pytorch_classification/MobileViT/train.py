@@ -63,7 +63,8 @@ def main(args):
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-        weights_dict = torch.load(args.weights, map_location=device)["model"]
+        weights_dict = torch.load(args.weights, map_location=device)
+        weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
         # 删除有关分类类别的权重
         for k in list(weights_dict.keys()):
             if "classifier" in k:
