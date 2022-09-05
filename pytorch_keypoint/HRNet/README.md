@@ -91,7 +91,7 @@
 ```
 python train.py --data-path /data/coco2017
 ```
-2. 训练过程中保存的`key_results.txt`是每个epoch在验证集上的COCO指标，前10个值是COCO指标，后面两个值是训练平均损失以及学习率
+2. 训练过程中保存的`results.txt`是每个epoch在验证集上的COCO指标，前10个值是COCO指标，后面两个值是训练平均损失以及学习率
 3. 在使用预测脚本时，如果要读取自己训练好的权重要将`weights_path`设置为你自己生成的权重路径。
 
 
