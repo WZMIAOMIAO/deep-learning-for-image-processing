@@ -15,6 +15,7 @@
 - **Vision Transformer** 链接：https://pan.baidu.com/s/1wzpHG8EK5gxg6UCMscYqMw 密码：cm1m
 - **Swin Transformer** 链接：https://pan.baidu.com/s/1O6XEEZUb6B6AGYON7-EOgA 密码：qkrn
 - **ConvNeXt** 链接：https://pan.baidu.com/s/1mgZjkirJPZ8huVls-O0xXA  密码：kvqx
+- **RepVGG** 链接：https://pan.baidu.com/s/1uJP3hCHI79-tUdBNR_VAWQ  密码：qe8a
 - **ConfusionMatrix** 链接: https://pan.baidu.com/s/1EtKzHkZyv2XssYtqmGYCLg  密码: uoo5
 - **Grad-CAM** 链接：https://pan.baidu.com/s/1ZHKBW7hINQXFI36hBYdC0Q  密码：aru7
 
@@ -46,6 +47,7 @@
 - **DeepLab V1** 链接：https://pan.baidu.com/s/1NFxb7ADQOMVYLxmIKqTONQ  密码：500s
 - **DeepLab V2** 链接：https://pan.baidu.com/s/1woe3lJYBVkOdnn6XXlKf8g 密码：76ec
 - **DeepLab V3** 链接：https://pan.baidu.com/s/1WVBgc2Ld13D0_dkHGwhTpA 密码：m54m
+- **U2Net**  链接：https://pan.baidu.com/s/1ekbEm4dsjlFamK8dCs8yfA  密码：472j
 
 
 ## 实例分割

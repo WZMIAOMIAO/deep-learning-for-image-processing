@@ -79,7 +79,7 @@
 并不高(在20%~60%之间浮动)，暂时猜测是网络结构的原因。
 * 确保提前准备好数据集
 * 确保提前下载好对应预训练模型权重
-* 确保设置好`--num-joints`(对于人体检测的关键点个数，COCO是17个点)、`fixed-size`(输入目标图像的高宽，默认[256, 192])和`--data-path`(指向`coco2017`目录)
+* 确保设置好`--num-joints`(对于人体检测的关键点个数，COCO是17个点)、`--fixed-size`(输入目标图像的高宽，默认[256, 192])和`--data-path`(指向`coco2017`目录)
 * 若要使用单GPU训练直接使用train.py训练脚本
 * 若要使用多GPU训练，使用`torchrun --nproc_per_node=8 train_multi_GPU.py`指令,`nproc_per_node`参数为使用GPU数量
 * 如果想指定使用哪些GPU设备可在指令前加上`CUDA_VISIBLE_DEVICES=0,3`(例如我只要使用设备中的第1块和第4块GPU设备)
@@ -91,12 +91,15 @@
 ```
 python train.py --data-path /data/coco2017
 ```
-2. 训练过程中保存的`key_results.txt`是每个epoch在验证集上的COCO指标，前10个值是COCO指标，后面两个值是训练平均损失以及学习率
+2. 训练过程中保存的`results.txt`是每个epoch在验证集上的COCO指标，前10个值是COCO指标，后面两个值是训练平均损失以及学习率
 3. 在使用预测脚本时，如果要读取自己训练好的权重要将`weights_path`设置为你自己生成的权重路径。
 
 
 ## 如果对HRNet网络不是很理解可参考我的bilibili
 https://www.bilibili.com/video/BV1bB4y1y7qP
+
+## 进一步了解该项目，以及对HRNet代码的分析可参考我的bilibili
+https://www.bilibili.com/video/BV1ar4y157JM
 
 ## HRNet网络结构图
 ![HRNet.png](HRNet.png)

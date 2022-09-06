@@ -61,7 +61,7 @@ def main():
         t_start = time_synchronized()
         output = model(img.to(device))
         t_end = time_synchronized()
-        print("inference+NMS time: {}".format(t_end - t_start))
+        print("inference time: {}".format(t_end - t_start))
 
         prediction = output['out'].argmax(1).squeeze(0)
         prediction = prediction.to("cpu").numpy().astype(np.uint8)

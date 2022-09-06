@@ -3,6 +3,7 @@ import os
 import datetime
 
 import torch
+from torch.utils import data
 import numpy as np
 
 import transforms
@@ -77,23 +78,23 @@ def main(args):
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using %g dataloader workers' % nw)
 
-    train_data_loader = torch.utils.data.DataLoader(train_dataset,
-                                                    batch_size=batch_size,
-                                                    shuffle=True,
-                                                    pin_memory=True,
-                                                    num_workers=nw,
-                                                    collate_fn=train_dataset.collate_fn)
+    train_data_loader = data.DataLoader(train_dataset,
+                                        batch_size=batch_size,
+                                        shuffle=True,
+                                        pin_memory=True,
+                                        num_workers=nw,
+                                        collate_fn=train_dataset.collate_fn)
 
     # load validation data set
     # coco2017 -> annotations -> person_keypoints_val2017.json
     val_dataset = CocoKeypoint(data_root, "val", transforms=data_transform["val"], fixed_size=args.fixed_size,
                                det_json_path=args.person_det)
-    val_data_set_loader = torch.utils.data.DataLoader(val_dataset,
-                                                      batch_size=batch_size,
-                                                      shuffle=False,
-                                                      pin_memory=True,
-                                                      num_workers=nw,
-                                                      collate_fn=val_dataset.collate_fn)
+    val_data_loader = data.DataLoader(val_dataset,
+                                      batch_size=batch_size,
+                                      shuffle=False,
+                                      pin_memory=True,
+                                      num_workers=nw,
+                                      collate_fn=val_dataset.collate_fn)
 
     # create model
     model = create_model(num_joints=args.num_joints)
@@ -140,7 +141,7 @@ def main(args):
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        coco_info = utils.evaluate(model, val_data_set_loader, device=device,
+        coco_info = utils.evaluate(model, val_data_loader, device=device,
                                    flip=True, flip_pairs=person_kps_info["flip_pairs"])
 
         # write into txt
@@ -196,7 +197,7 @@ if __name__ == "__main__":
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
     parser.add_argument('--resume', default='', type=str, help='resume from checkpoint')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start-epoch', default=0, type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=210, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -213,10 +214,10 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=1, type=int, metavar='N',
+    parser.add_argument('--batch-size', default=32, type=int, metavar='N',
                         help='batch size when training.')
     # 是否使用混合精度训练(需要GPU支持混合精度)
-    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
     print(args)
