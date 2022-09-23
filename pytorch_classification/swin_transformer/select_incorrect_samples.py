@@ -77,16 +77,16 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=6)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--num_classes', type=int, default=7)
+    parser.add_argument('--batch-size', type=int, default=8)
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./data")
+                        default="./resize640_7")
 
     # 训练权重路径
-    parser.add_argument('--weights', type=str, default='./weights/model-129.pth',
+    parser.add_argument('--weights', type=str, default='./swin_test7_26.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

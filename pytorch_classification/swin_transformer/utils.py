@@ -69,8 +69,8 @@ def read_split_data(root: str, val_rate: float = 0.2):
                 val_images_path.append(img_path)
                 val_images_label.append(image_class)
                 # 特殊情况将验证集也划分进来
-                train_images_path.append(img_path)
-                train_images_label.append(image_class)
+                # train_images_path.append(img_path)
+                # train_images_label.append(image_class)
             else:  # 否则存入训练集
                 train_images_path.append(img_path)
                 train_images_label.append(image_class)

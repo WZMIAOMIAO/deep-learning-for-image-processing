@@ -77,7 +77,8 @@ def main(args):
     #                                                                        val_num))
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = 4
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -117,7 +118,7 @@ def main(args):
     model.to(device)
     # loss_function = nn.CrossEntropyLoss()
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(pg, lr=args.lr,momentum=0.9,weight_decay=args.wd)
+    optimizer = optim.AdamW(pg, lr=args.lr,weight_decay=args.wd)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -159,22 +160,22 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=6)
+    parser.add_argument('--num_classes', type=int, default=2)
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=128)
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--lrf', type=float, default=0.01)
     parser.add_argument('--wd', type=float, default=5e-2)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./datasets")
+                        default="./flower_photos_2_test")
     parser.add_argument('--model-name', default='vgg16', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str,
-                        default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/vgg16-397923af.pth',
+                        default='vgg16-397923af.pth',
                         help='initial weights path')
     # 是否冻结权重
     # parser.add_argument('--freeze-layers', type=bool, default=False)

@@ -117,7 +117,9 @@ def read_pickle(file_name: str) -> list:
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch):
     model.train()
-    loss_function = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
+    # 调试label_smoothing
+    # loss_function = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
+    loss_function = torch.nn.CrossEntropyLoss()
     accu_loss = torch.zeros(1).to(device)  # 累计损失
     accu_num = torch.zeros(1).to(device)   # 累计预测正确的样本数
     optimizer.zero_grad()

@@ -3,12 +3,31 @@ import sys
 import json
 import pickle
 import random
-
+import math
 import torch
 from tqdm import tqdm
+import numpy as np
 
 import matplotlib.pyplot as plt
 
+#---------------------------------------------------------#
+#   将图像转换成RGB图像，防止灰度图在预测时报错。
+#   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
+#---------------------------------------------------------#
+def cvtColor(image):
+    if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+        return image
+    else:
+        image = image.convert('RGB')
+        return image
+
+#----------------------------------------#
+#   预处理训练图片
+#----------------------------------------#
+def preprocess_input(x):
+    x /= 127.5
+    x -= 1.
+    return x
 
 def read_split_data(root: str, val_rate: float = 0.2):
     random.seed(0)  # 保证随机结果可复现
@@ -73,6 +92,34 @@ def read_split_data(root: str, val_rate: float = 0.2):
         plt.show()
 
     return train_images_path, train_images_label, val_images_path, val_images_label
+
+def create_lr_scheduler(optimizer,
+                        num_step: int,
+                        epochs: int,
+                        warmup=True,
+                        warmup_epochs=1,
+                        warmup_factor=1e-3,
+                        end_factor=1e-6):
+    assert num_step > 0 and epochs > 0
+    if warmup is False:
+        warmup_epochs = 0
+
+    def f(x):
+        """
+        根据step数返回一个学习率倍率因子，
+        注意在训练开始之前，pytorch会提前调用一次lr_scheduler.step()方法
+        """
+        if warmup is True and x <= (warmup_epochs * num_step):
+            alpha = float(x) / (warmup_epochs * num_step)
+            # warmup过程中lr倍率因子从warmup_factor -> 1
+            return warmup_factor * (1 - alpha) + alpha
+        else:
+            current_step = (x - warmup_epochs * num_step)
+            cosine_steps = (epochs - warmup_epochs) * num_step
+            # warmup后lr倍率因子从1 -> end_factor
+            return ((1 + math.cos(current_step * math.pi / cosine_steps)) / 2) * (1 - end_factor) + end_factor
+
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=f)
 
 
 def plot_data_loader_image(data_loader):
@@ -173,27 +220,3 @@ def evaluate(model, data_loader, device, epoch):
                                                                                accu_num.item() / sample_num)
 
     return accu_loss.item() / (step + 1), accu_num.item() / sample_num
-
-def get_params_groups(model: torch.nn.Module, weight_decay: float = 1e-5):
-    # 记录optimize要训练的权重参数
-    parameter_group_vars = {"decay": {"params": [], "weight_decay": weight_decay},
-                            "no_decay": {"params": [], "weight_decay": 0.}}
-
-    # 记录对应的权重名称
-    parameter_group_names = {"decay": {"params": [], "weight_decay": weight_decay},
-                             "no_decay": {"params": [], "weight_decay": 0.}}
-
-    for name, param in model.named_parameters():
-        if not param.requires_grad:
-            continue  # frozen weights
-
-        if len(param.shape) == 1 or name.endswith(".bias"):
-            group_name = "no_decay"
-        else:
-            group_name = "decay"
-
-        parameter_group_vars[group_name]["params"].append(param)
-        parameter_group_names[group_name]["params"].append(name)
-
-    print("Param groups = %s" % json.dumps(parameter_group_names, indent=2))
-    return list(parameter_group_vars.values())

@@ -62,7 +62,7 @@ def main(args):
                                              collate_fn=val_dataset.collate_fn)
 
     # model = create_model(num_classes=6, has_logits=False).to(device)
-    model = create_model(num_classes=6).to(device)
+    model = create_model(num_classes=args.num_classes).to(device)
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
         weights_dict = torch.load(args.weights, map_location=device)
@@ -83,7 +83,7 @@ def main(args):
                 print("training {}".format(name))
 
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-2)
+    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
     # pg = get_params_groups(model, weight_decay=args.wd)
     # optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=args.wd)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
@@ -121,17 +121,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=6)
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=64)
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--num_classes', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--lrf', type=float, default=0.01)
     parser.add_argument('--wd', type=float, default=5e-2)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./datasets")
+                        default="./flower_photos_2_test")
     parser.add_argument('--model-name', default='vit_base_patch16_224_in21k', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符

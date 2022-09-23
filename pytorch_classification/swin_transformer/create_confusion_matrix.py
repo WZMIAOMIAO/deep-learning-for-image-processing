@@ -13,7 +13,7 @@ from prettytable import PrettyTable
 from utils import read_split_data
 from my_dataset import MyDataSet
 from model import swin_tiny_patch4_window7_224 as create_model
-
+from dataloader import DataGenerator
 
 class ConfusionMatrix(object):
     """
@@ -51,9 +51,9 @@ class ConfusionMatrix(object):
             Specificity = round(TN / (TN + FP), 3) if TN + FP != 0 else 0.
             table.add_row([self.labels[i], Precision, Recall, Specificity])
         print(table)
-        with open('./metrics.txt', 'w') as f:
+        with open('metrics.txt','w') as f:
+            f.write(str(acc)+'\n')
             f.write(str(table))
-
 
     def plot(self):
         matrix = self.matrix
@@ -81,6 +81,7 @@ class ConfusionMatrix(object):
                          horizontalalignment='center',
                          color="white" if info > thresh else "black")
         plt.tight_layout()
+        plt.savefig('confusion_matrix',dpi=200)
         plt.show()
 
 
@@ -90,8 +91,8 @@ def main(args):
 
     _, _, val_images_path, val_images_label = read_split_data(args.data_path)
 
-
     img_size = 224
+    input_shape=[224,224]
     data_transform = {
         "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
                                    transforms.CenterCrop(img_size),
@@ -99,19 +100,33 @@ def main(args):
                                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
     # 实例化验证数据集
-    val_dataset = MyDataSet(images_path=val_images_path,
-                            images_class=val_images_label,
-                            transform=data_transform["val"])
+    # val_dataset = MyDataSet(images_path=val_images_path,
+    #                         images_class=val_images_label,
+    #                         transform=data_transform["val"])
+
+    val_dataset = DataGenerator(images_path=val_images_path,
+                                input_shape=input_shape,
+                                images_class=val_images_label,
+                                random=False)
+
 
     nw = min([os.cpu_count(), args.batch_size if args.batch_size > 1 else 0, 8])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
+
+    # val_loader = torch.utils.data.DataLoader(val_dataset,
+    #                                          batch_size=args.batch_size,
+    #                                          shuffle=False,
+    #                                          pin_memory=True,
+    #                                          num_workers=nw,
+    #                                          collate_fn=val_dataset.collate_fn)
 
     val_loader = torch.utils.data.DataLoader(val_dataset,
                                              batch_size=args.batch_size,
                                              shuffle=False,
                                              pin_memory=True,
                                              num_workers=nw,
-                                             collate_fn=val_dataset.collate_fn)
+                                             # drop_last=True,
+                                             collate_fn=val_dataset.detection_collate)
 
     model = create_model(num_classes=args.num_classes)
     # load pretrain weights
@@ -141,16 +156,16 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=6)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--num_classes', type=int, default=7)
+    parser.add_argument('--batch-size', type=int, default=8)
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="./data")
+                        default="./rice_d8d4o")
 
     # 训练权重路径
-    parser.add_argument('--weights', type=str, default='./best_model.pth',
+    parser.add_argument('--weights', type=str, default='logs/weights/best_model.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
