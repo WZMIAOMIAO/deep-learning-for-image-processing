@@ -42,9 +42,9 @@ def main():
     img_size = 224
     assert img_size % 32 == 0
 
-    model = swin_tiny_patch4_window7_224(num_classes= 6)
+    model = swin_tiny_patch4_window7_224(num_classes= 7)
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
-    weights_path = "./best_model.pth"
+    weights_path = "./swin7_adamw_lr0.0001_lrf0.01.pth"
     # model.load_state_dict(torch.load(weights_path, map_location="cpu")["model"], strict=False)
     model.load_state_dict(torch.load(weights_path, map_location="cpu"), strict=False)
     target_layers = [model.norm]
@@ -52,7 +52,7 @@ def main():
     data_transform = transforms.Compose([transforms.ToTensor(),
                                          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
     # load image
-    img_path = "10047_00000160.jpg"
+    img_path = "10000_00000032.jpg"
     assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
     img = Image.open(img_path).convert('RGB')
     img = np.array(img, dtype=np.uint8)
@@ -67,7 +67,7 @@ def main():
     cam = GradCAM(model=model, target_layers=target_layers, use_cuda=False,
                   reshape_transform=ResizeTransform(im_h=img_size, im_w=img_size))
     # target_category = 281  # tabby, tabby cat
-    target_category = 5
+    target_category = None
     # target_category = 254  # pug, pug-dog
 
     grayscale_cam = cam(input_tensor=input_tensor, target_category=target_category)
@@ -76,7 +76,7 @@ def main():
     visualization = show_cam_on_image(img / 255., grayscale_cam, use_rgb=True)
     plt.axis('off')
     plt.imshow(visualization)
-    plt.savefig('heatmap_'+img_path, dpi=200, bbox_inches='tight', pad_inches=-0.1)
+    # plt.savefig('heatmap_'+img_path, dpi=200, bbox_inches='tight', pad_inches=-0.1)
     plt.show()
 
 

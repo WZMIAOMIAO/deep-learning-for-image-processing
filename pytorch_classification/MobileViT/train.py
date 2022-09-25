@@ -120,8 +120,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=7)
-    parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.0002)
 
     # 数据集所在根目录
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str,
-                        default='/content/gdrive/MyDrive/deep-learning-for-image-processing/model_data/mobilevit_xxs.pt',
+                        default='',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
