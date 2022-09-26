@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import mobile_vit_xx_small as create_model
+from modelv3 import mobile_vit_xx_small as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
 
@@ -49,7 +49,8 @@ def main(args):
                             transform=data_transform["val"])
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = 4
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -67,6 +68,7 @@ def main(args):
 
     model = create_model(num_classes=args.num_classes).to(device)
 
+    # 没有改变网络结构时加载预训练权重
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
         weights_dict = torch.load(args.weights, map_location=device)
@@ -76,6 +78,19 @@ def main(args):
             if "classifier" in k:
                 del weights_dict[k]
         print(model.load_state_dict(weights_dict, strict=False))
+
+    # if args.weights != "":
+    #     assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
+    #     model_modified_dict = model.state_dict()
+    #     weights_dict = torch.load(args.weights, map_location=device)
+    #     weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
+    #     new_state_dict = {k: v for k, v in weights_dict.items() if k in model_modified_dict}
+    #     model_modified_dict.update(new_state_dict)
+    #     # 删除有关分类类别的权重
+    #     for k in list(model_modified_dict.keys()):
+    #         if "classifier" in k:
+    #             del model_modified_dict[k]
+    #     print(model.load_state_dict(model_modified_dict, strict=False))
 
     if args.freeze_layers:
         for name, para in model.named_parameters():
@@ -131,7 +146,7 @@ if __name__ == '__main__':
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str,
-                        default='',
+                        default='mobilevit_xxs.pt',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
