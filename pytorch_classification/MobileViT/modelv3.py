@@ -13,6 +13,8 @@ from torch.nn import functional as F
 from transformer import TransformerEncoder
 from model_config import get_config
 
+from attention import cbam_block, eca_block, se_block, CA_Block
+attention_block = [se_block, cbam_block, eca_block, CA_Block]
 
 def make_divisible(
     v: Union[float, int],
@@ -287,6 +289,7 @@ class InvertedResidual(nn.Module):
             self.stride == 1 and in_channels == out_channels and skip_connection
         )
 
+
     def forward(self, x: Tensor, *args, **kwargs) -> Tensor:
         if self.use_res_connect:
             return x + self.block(x)
@@ -520,6 +523,8 @@ class MobileViT(nn.Module):
             out_channels=exp_channels,
             kernel_size=1
         )
+        # 测试添加注意力机制
+        self.att = attention_block[0](exp_channels)
 
         self.classifier = nn.Sequential()
         self.classifier.add_module(name="global_pool", module=nn.AdaptiveAvgPool2d(1))
@@ -629,6 +634,7 @@ class MobileViT(nn.Module):
         x = self.layer_4(x)
         x = self.layer_5(x)
         x = self.conv_1x1_exp(x)
+        x = self.att(x)
         x = self.classifier(x)
         return x
 
