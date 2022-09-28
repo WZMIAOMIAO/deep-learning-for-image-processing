@@ -1,6 +1,6 @@
 import os
 import argparse
-
+import math
 import torch
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
@@ -9,6 +9,7 @@ from torchvision import transforms
 from my_dataset import MyDataSet
 from modelv3 import mobile_vit_xx_small as create_model
 from utils import read_split_data, train_one_epoch, evaluate
+import torch.optim.lr_scheduler as lr_scheduler
 
 
 def main(args):
@@ -69,28 +70,28 @@ def main(args):
     model = create_model(num_classes=args.num_classes).to(device)
 
     # 没有改变网络结构时加载预训练权重
-    if args.weights != "":
-        assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-        weights_dict = torch.load(args.weights, map_location=device)
-        weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
-        # 删除有关分类类别的权重
-        for k in list(weights_dict.keys()):
-            if "classifier" in k:
-                del weights_dict[k]
-        print(model.load_state_dict(weights_dict, strict=False))
-
     # if args.weights != "":
     #     assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-    #     model_modified_dict = model.state_dict()
     #     weights_dict = torch.load(args.weights, map_location=device)
     #     weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
-    #     new_state_dict = {k: v for k, v in weights_dict.items() if k in model_modified_dict}
-    #     model_modified_dict.update(new_state_dict)
     #     # 删除有关分类类别的权重
-    #     for k in list(model_modified_dict.keys()):
+    #     for k in list(weights_dict.keys()):
     #         if "classifier" in k:
-    #             del model_modified_dict[k]
-    #     print(model.load_state_dict(model_modified_dict, strict=False))
+    #             del weights_dict[k]
+    #     print(model.load_state_dict(weights_dict, strict=False))
+
+    if args.weights != "":
+        assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
+        model_modified_dict = model.state_dict()
+        weights_dict = torch.load(args.weights, map_location=device)
+        weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
+        new_state_dict = {k: v for k, v in weights_dict.items() if k in model_modified_dict}
+        model_modified_dict.update(new_state_dict)
+        # 删除有关分类类别的权重
+        for k in list(model_modified_dict.keys()):
+            if "classifier" in k:
+                del model_modified_dict[k]
+        print(model.load_state_dict(model_modified_dict, strict=False))
 
     if args.freeze_layers:
         for name, para in model.named_parameters():
@@ -102,6 +103,8 @@ def main(args):
 
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=1E-2)
+    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     best_acc = 0.
     for epoch in range(args.epochs):
@@ -111,6 +114,7 @@ def main(args):
                                                 data_loader=train_loader,
                                                 device=device,
                                                 epoch=epoch)
+        scheduler.step()
 
         # validate
         val_loss, val_acc = evaluate(model=model,
@@ -138,6 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.0002)
+    parser.add_argument('--lrf', type=float, default=0.01)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz

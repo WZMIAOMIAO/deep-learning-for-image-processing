@@ -248,7 +248,7 @@ class InvertedResidual(nn.Module):
         block = nn.Sequential()
 
         block.add_module(
-            name="conv_3x3",
+            name="conv_3x3_",
             module=ConvLayer(
                 in_channels=in_channels,
                 out_channels=in_channels,
@@ -260,7 +260,7 @@ class InvertedResidual(nn.Module):
 
         if expand_ratio != 1:
             block.add_module(
-                name="exp_1x1",
+                name="exp_1x1_",
                 module=ConvLayer(
                     in_channels=in_channels,
                     out_channels=hidden_dim,
@@ -524,7 +524,7 @@ class MobileViT(nn.Module):
             kernel_size=1
         )
         # 测试添加注意力机制
-        self.att = attention_block[0](exp_channels)
+        self.att = attention_block[0](out_channels)
 
         self.classifier = nn.Sequential()
         self.classifier.add_module(name="global_pool", module=nn.AdaptiveAvgPool2d(1))
@@ -633,8 +633,9 @@ class MobileViT(nn.Module):
         x = self.layer_3(x)
         x = self.layer_4(x)
         x = self.layer_5(x)
-        x = self.conv_1x1_exp(x)
         x = self.att(x)
+        x = self.conv_1x1_exp(x)
+
         x = self.classifier(x)
         return x
 
