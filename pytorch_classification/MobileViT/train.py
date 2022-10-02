@@ -151,7 +151,7 @@ if __name__ == '__main__':
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str,
-                        default='mobilevit_xxs.pt',
+                        default='',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
