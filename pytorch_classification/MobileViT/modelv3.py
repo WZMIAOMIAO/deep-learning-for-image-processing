@@ -524,7 +524,7 @@ class MobileViT(nn.Module):
             kernel_size=1
         )
         # 测试添加注意力机制
-        self.att = attention_block[0](exp_channels)
+        self.att = attention_block[1](exp_channels)
 
         self.classifier = nn.Sequential()
         self.classifier.add_module(name="global_pool", module=nn.AdaptiveAvgPool2d(1))
