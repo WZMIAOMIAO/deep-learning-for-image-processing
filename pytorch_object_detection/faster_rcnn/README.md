@@ -26,10 +26,11 @@
 ```
 
 ## 预训练权重下载地址（下载后放入backbone文件夹中）：
-* MobileNetV2 backbone: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
-* ResNet50+FPN backbone: https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
+* MobileNetV2 weights(下载后重命名为`mobilenet_v2.pth`，然后放到`bakcbone`文件夹下): https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
+* Resnet50 weights(下载后重命名为`resnet50.pth`，然后放到`bakcbone`文件夹下): https://download.pytorch.org/models/resnet50-0676ba61.pth
+* ResNet50+FPN weights: https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
 * 注意，下载的预训练权重记得要重命名，比如在train_resnet50_fpn.py中读取的是`fasterrcnn_resnet50_fpn_coco.pth`文件，
-  不是`fasterrcnn_resnet50_fpn_coco-258fb6c6.pth`
+  不是`fasterrcnn_resnet50_fpn_coco-258fb6c6.pth`，然后放到当前项目根目录下即可。
  
  
 ## 数据集，本例程使用的是PASCAL VOC2012数据集
