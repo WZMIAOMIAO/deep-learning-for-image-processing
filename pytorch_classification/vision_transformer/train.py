@@ -61,7 +61,7 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = create_model(num_classes=5, has_logits=False).to(device)
+    model = create_model(num_classes=args.num_classes, has_logits=False).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
