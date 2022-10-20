@@ -51,7 +51,9 @@ def main():
     # load train weights
     weights_path = "./save_weights/model_25.pth"
     assert os.path.exists(weights_path), "{} file dose not exist.".format(weights_path)
-    model.load_state_dict(torch.load(weights_path, map_location='cpu')["model"])
+    weights_dict = torch.load(weights_path, map_location='cpu')
+    weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
+    model.load_state_dict(weights_dict)
     model.to(device)
 
     # read class_indict
