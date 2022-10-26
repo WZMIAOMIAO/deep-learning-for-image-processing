@@ -150,7 +150,7 @@ def nms(bboxes: np.ndarray, iou_threshold=0.5, soft_threshold=0.3, sigma=0.5, me
 
         bboxes = bboxes[iou_mask]
 
-    return np.array(best_bboxes_index, dtype=np.int8)
+    return np.array(best_bboxes_index, dtype=np.int32)
 
 
 def post_process(pred: np.ndarray, multi_label=False, conf_thres=0.3):
