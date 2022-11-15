@@ -84,7 +84,9 @@
     * [使用Pytorch搭建ConvNeXt](https://b23.tv/gzpCv5z)
     * [使用Tensorflow2搭建ConvNeXt](https://b23.tv/zikVoch)
 
-  * MobileViT(规划中)
+  * MobileViT(已完成)
+    * [MobileViT网络讲解](https://www.bilibili.com/video/BV1TG41137sb)
+    * [使用Pytorch搭建MobileViT](https://www.bilibili.com/video/BV1ae411L7Ki)
 
 * 目标检测
   * Faster-RCNN/FPN（已完成）

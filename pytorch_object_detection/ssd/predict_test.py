@@ -34,8 +34,10 @@ def main():
     model = create_model(num_classes=num_classes)
 
     # load train weights
-    train_weights = "./save_weights/ssd300-14.pth"
-    model.load_state_dict(torch.load(train_weights, map_location='cpu')['model'])
+    weights_path = "./save_weights/ssd300-14.pth"
+    weights_dict = torch.load(weights_path, map_location='cpu')
+    weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
+    model.load_state_dict(weights_dict)
     model.to(device)
 
     # read class_indict

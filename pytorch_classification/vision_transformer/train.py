@@ -61,8 +61,11 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
+
     # model = create_model(num_classes=6, has_logits=False).to(device)
     model = create_model(num_classes=args.num_classes).to(device)
+
+
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
         weights_dict = torch.load(args.weights, map_location=device)
