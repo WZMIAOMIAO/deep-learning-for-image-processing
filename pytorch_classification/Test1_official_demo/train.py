@@ -25,7 +25,7 @@ def main():
     val_loader = torch.utils.data.DataLoader(val_set, batch_size=5000,
                                              shuffle=False, num_workers=0)
     val_data_iter = iter(val_loader)
-    val_image, val_label = val_data_iter.next()
+    val_image, val_label = next(val_data_iter)
     
     # classes = ('plane', 'car', 'bird', 'cat',
     #            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
