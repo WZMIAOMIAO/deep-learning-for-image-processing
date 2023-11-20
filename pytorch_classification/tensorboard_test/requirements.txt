@@ -1,6 +1,6 @@
 torchvision==0.7.0
 tqdm==4.42.1
 matplotlib==3.2.1
-torch==1.6.0
+torch==1.13.1
 Pillow
 tensorboard
