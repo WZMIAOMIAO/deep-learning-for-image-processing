@@ -11,7 +11,7 @@ def make_dirs(dirs: str):
         os.makedirs(dirs)
 
 
-def save_gen_imgs(imgs: torch.Tensor, save_num: int = 5, save_path: str = "gen_img.jpg"):
+def save_gen_imgs(imgs: torch.Tensor, save_num: int = 10, save_path: str = "gen_img.jpg"):
     b, c, h, w = imgs.shape
     save_num = min(b, save_num)
 
@@ -22,7 +22,7 @@ def save_gen_imgs(imgs: torch.Tensor, save_num: int = 5, save_path: str = "gen_i
     imgs.mul_(0.5).add_(0.5)
 
     save_dir = os.path.dirname(save_path)
-    if not os.path.exists(save_dir):
+    if save_dir and not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
     save_image(imgs, save_path)

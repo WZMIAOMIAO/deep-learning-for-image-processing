@@ -39,8 +39,13 @@ def main(args):
     make_dirs(save_weights_dir)
     make_dirs(save_imgs_dir)
 
+    if "cuda" in args.device and not torch.cuda.is_available():
+        device = torch.device("cpu")
+    else:
+        device = torch.device(args.device)
+    print(f"using device: {device} for training.")
+
     # create generator and discriminator model
-    device = torch.device(args.device)
     img_shape = args.img_shape  # [C, H, W]
     generator = Generator(latent_dim=args.latent_dim, img_shape=img_shape)
     generator.to(device)
@@ -69,6 +74,8 @@ def main(args):
     optimizer_g = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
 
+    generator.train()
+    discriminator.train()
     for epoch in range(args.epochs):
         g_loss_accumulator = 0.
         d_loss_accumulator = 0.
@@ -103,7 +110,7 @@ def main(args):
         d_loss_mean = d_loss_accumulator / (step + 1)
         print(f"[{epoch + 1}/{args.epochs}] g_loss: {g_loss_mean:.3f}, d_loss: {d_loss_mean:.3f}")
 
-        if epoch % save_freq == 0:
+        if epoch % save_freq == 0 or epoch == args.epochs - 1:
             save_gen_imgs(gen_imgs, save_path=os.path.join(save_imgs_dir, f"gen_img_{epoch}.jpg"))
             torch.save(generator.state_dict(), os.path.join(save_weights_dir, f"generator_weights_{epoch}.pth"))
             torch.save(discriminator.state_dict(), os.path.join(save_weights_dir, f"discriminator_weights_{epoch}.pth"))
