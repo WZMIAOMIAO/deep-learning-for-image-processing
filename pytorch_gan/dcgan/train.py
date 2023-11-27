@@ -8,7 +8,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 
 from model import Generator, Discriminator
-from utils import save_gen_imgs, make_dirs
+from utils import save_gen_imgs, make_dirs, create_logger, record_args
 
 
 def get_args_parser(add_help=True):
@@ -33,6 +33,9 @@ def get_args_parser(add_help=True):
 
 def main(args):
     torch.manual_seed(1234)
+    logger = create_logger()
+    record_args(logger, args)
+
     save_weights_dir = args.save_weights_dir
     save_imgs_dir = args.save_imgs_dir
     save_freq = args.save_freq
@@ -49,8 +52,11 @@ def main(args):
     img_shape = args.img_shape  # [C, H, W]
     generator = Generator(latent_dim=args.latent_dim, img_shape=img_shape)
     generator.to(device)
+    logger.info(str(generator))
+
     discriminator = Discriminator(img_shape=img_shape)
     discriminator.to(device)
+    logger.info(str(discriminator))
 
     # config dataset and dataloader
     transform = transforms.Compose([transforms.Resize(img_shape[1:]),
@@ -108,7 +114,7 @@ def main(args):
 
         g_loss_mean = g_loss_accumulator / (step + 1)
         d_loss_mean = d_loss_accumulator / (step + 1)
-        print(f"[{epoch + 1}/{args.epochs}] g_loss: {g_loss_mean:.3f}, d_loss: {d_loss_mean:.3f}")
+        logger.info(f"[{epoch + 1}/{args.epochs}] g_loss: {g_loss_mean:.3f}, d_loss: {d_loss_mean:.3f}")
 
         if epoch % save_freq == 0 or epoch == args.epochs - 1:
             save_gen_imgs(gen_imgs, save_path=os.path.join(save_imgs_dir, f"gen_img_{epoch}.jpg"))

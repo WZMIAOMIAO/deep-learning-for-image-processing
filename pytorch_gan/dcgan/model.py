@@ -4,6 +4,14 @@ import torch
 import torch.nn as nn
 
 
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif isinstance(m, nn.BatchNorm2d):
+        nn.init.normal_(m.weight, 1.0, 0.02)
+        nn.init.zeros_(m.bias)
+
+
 class Generator(nn.Module):
     def __init__(self, latent_dim: int, img_shape: List[int]) -> None:
         super().__init__()
@@ -15,19 +23,21 @@ class Generator(nn.Module):
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            # 2X
+            nn.ConvTranspose2d(128, 128, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+            # 4X
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(64, img_shape[0], kernel_size=3, stride=1, padding=1),
             nn.Tanh()
         )
+
+        self.apply(weights_init)
 
     def forward(self, noise: torch.Tensor) -> torch.Tensor:
         b = noise.shape[0]
@@ -56,12 +66,15 @@ class Discriminator(nn.Module):
             nn.Sigmoid()
         )
 
+        self.apply(weights_init)
+
     @staticmethod
     def _create_clock(in_feat: int, out_feat: int, normlize=True):
-        layers = [nn.Conv2d(in_feat, out_feat, kernel_size=3, stride=2, padding=1)]
+        layers = [nn.Conv2d(in_feat, out_feat, kernel_size=3, stride=2, padding=1, bias=not normlize)]
         if normlize:
             layers.append(nn.BatchNorm2d(out_feat))
         layers.append(nn.LeakyReLU(0.2, inplace=True))
+        layers.append(nn.Dropout2d(0.25))
         return layers
 
     def forward(self, imgs: torch.Tensor) -> torch.Tensor:

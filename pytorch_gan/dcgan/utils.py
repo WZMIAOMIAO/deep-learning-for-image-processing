@@ -1,9 +1,34 @@
 import os
+import logging
+from datetime import datetime
 
 from PIL import Image
 import numpy as np
 import torch
 from torchvision.utils import save_image
+
+
+def create_logger(name: str = "train logger"):
+    logger_fmt = logging.Formatter("%(asctime)s %(filename)s[%(lineno)d] %(levelname)s:%(message)s")
+    logger = logging.Logger(name=name)
+
+    # 将日志打印至终端
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(logger_fmt)
+    logger.addHandler(stream_handler)
+
+    # 将日志输出至文档留存, 命名为时间戳
+    now_str = datetime.now().strftime("%Y_%m_%d %H_%M_%S")
+    file_handler = logging.FileHandler(f"train_log_{now_str}.txt")
+    file_handler.setFormatter(logger_fmt)
+    logger.addHandler(file_handler)
+
+    return logger
+
+
+def record_args(logger: logging.Logger, args):
+    for k, v in args.__dict__.items():
+        logger.info(f"{k}: {v}")
 
 
 def make_dirs(dirs: str):
@@ -16,7 +41,7 @@ def save_gen_imgs(imgs: torch.Tensor, save_num: int = 10, save_path: str = "gen_
     save_num = min(b, save_num)
 
     imgs = imgs[:save_num]
-    img_list = imgs.chunk(chunks=save_num, dim=0)  
+    img_list = imgs.chunk(chunks=save_num, dim=0)
     imgs = torch.concat(img_list, dim=3)
 
     imgs.mul_(0.5).add_(0.5)
@@ -35,7 +60,7 @@ def combine_imgs(img_path: str):
     for i in img_path_list:
         img = Image.open(os.path.join(img_path, i))
         img_list.append(np.array(img))
-    
+
     img = np.concatenate(img_list, axis=0)
     img = Image.fromarray(img)
     img.save(os.path.join(img_path, "combine_img.jpg"))
