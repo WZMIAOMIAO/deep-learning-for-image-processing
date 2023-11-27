@@ -5,7 +5,7 @@ from model import Generator
 
 
 def main():
-    weights_path = "weights/generator_weights_60.pth"
+    weights_path = "weights/generator_weights_199.pth"
     latent_dim = 100
     img_shape = [3, 32, 32]
     num_classes = 10
