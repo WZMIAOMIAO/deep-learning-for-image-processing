@@ -1,11 +1,11 @@
 import torch
+from torchvision.utils import save_image
 
 from model import Generator
-from utils import save_gen_imgs
 
 
 def main():
-    weights_path = "weights/generator_weights_199.pth"
+    weights_path = "weights/generator_weights_60.pth"
     latent_dim = 100
     img_shape = [3, 32, 32]
     num_classes = 10
@@ -19,14 +19,24 @@ def main():
     model.eval()
 
     with torch.inference_mode():
-        # create noise and label as generator input
-        labels = [0] * 10  # [0, 0, 1, 1, 2, 2, 3, 3]
-        num_label = len(labels)
-        noise = torch.randn(size=(num_label, latent_dim), device=device)
-        gen_labels = torch.as_tensor(labels, dtype=torch.int64, device=device)
+        imgs_list = []
+        for _ in range(10):
+            # create noise and label as generator input
+            labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            num_label = len(labels)
+            noise = torch.randn(size=(num_label, latent_dim), device=device)
+            gen_labels = torch.as_tensor(labels, dtype=torch.int64, device=device)
 
-        gen_imgs = model(noise, gen_labels)
-        save_gen_imgs(gen_imgs, save_num=num_label, save_path="generated_img.jpg")
+            # [10, 3, 32, 32]
+            gen_imgs = model(noise, gen_labels)
+            # [10, 3, 32, 32] -> [1, 3, 32, 320]
+            imgs = torch.concat(gen_imgs.chunk(chunks=num_label, dim=0), dim=3)
+            imgs_list.append(imgs)
+
+        # [1, 3, 320, 320]
+        imgs = torch.concat(imgs_list, dim=2)
+        imgs.mul_(0.5).add_(0.5)
+        save_image(imgs, fp="generated_img.jpg")
 
 
 if __name__ == '__main__':

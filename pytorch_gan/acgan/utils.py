@@ -9,7 +9,7 @@ from torchvision.utils import save_image
 
 
 def create_logger(name: str = "train logger"):
-    logger_fmt = logging.Formatter("%(asctime)s[%(levelname)s]: %(filename)s[L:%(lineno)d] - %(message)s")
+    logger_fmt = logging.Formatter("%(asctime)s %(filename)s[%(lineno)d] %(levelname)s:%(message)s")
     logger = logging.Logger(name=name)
 
     # 将日志打印至终端

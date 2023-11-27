@@ -32,14 +32,6 @@ def get_args_parser(add_help=True):
     return parser
 
 
-def weights_init(m):
-    if isinstance(m, nn.Conv2d):
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif isinstance(m, nn.BatchNorm2d):
-        nn.init.normal_(m.weight, 1.0, 0.02)
-        nn.init.zeros_(m.bias)
-
-
 def main(args):
     torch.manual_seed(1234)
     logger = create_logger()
@@ -62,20 +54,21 @@ def main(args):
     img_shape = args.img_shape  # [C, H, W]
     generator = Generator(num_classes=num_classes, latent_dim=args.latent_dim, img_shape=img_shape)
     generator.to(device)
-    generator.apply(weights_init)
+    logger.info(str(generator))
 
     discriminator = Discriminator(num_classes=num_classes, img_shape=img_shape)
     discriminator.to(device)
-    discriminator.apply(weights_init)
+    logger.info(str(discriminator))
 
     # config dataset and dataloader
     transform = transforms.Compose([transforms.Resize(img_shape[1:]),
                                     transforms.ToTensor(),
-                                    transforms.Normalize(mean=[0.5], std=[0.5])])
+                                    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
     cifar10_dataset = datasets.CIFAR10(root="./cifar10_folder",
                                        train=True,
                                        download=True,
                                        transform=transform)
+    logger.info(f"cifar10 classes: {cifar10_dataset.classes}")
 
     dataloader = DataLoader(dataset=cifar10_dataset,
                             batch_size=args.batch_size,
