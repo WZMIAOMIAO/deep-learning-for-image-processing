@@ -18,15 +18,15 @@ def get_args_parser(add_help=True):
     parser.add_argument("--device", type=str, default="cuda:0", help="training device, e.g. cpu, cuda:0")
     parser.add_argument("--save_weights_dir", type=str, default="./weights", help="save dir for model weights")
     parser.add_argument("--save_imgs_dir", type=str, default="./gen_imgs", help="save dir for generated imgs")
-    parser.add_argument("--save_freq", type=int, default=20, help="save frequency for weights and generated imgs")
-    parser.add_argument("--epochs", type=int, default=200, help="number of epochs of training")
-    parser.add_argument("--batch_size", type=int, default=128, help="size of the batches")
+    parser.add_argument("--save_freq", type=int, default=2, help="save frequency for weights and generated imgs")
+    parser.add_argument("--epochs", type=int, default=25, help="number of epochs of training")
+    parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
     parser.add_argument("--num_workers", type=int, default=8, help="num_workers, default: 8")
     parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
-    parser.add_argument("--img_shape", type=int, nargs=3, default=[1, 32, 32], help="image shape: C, H, W")
+    parser.add_argument("--img_shape", type=int, nargs=3, default=[1, 64, 64], help="image shape: C, H, W")
 
     return parser
 
@@ -46,7 +46,7 @@ def main(args):
         device = torch.device("cpu")
     else:
         device = torch.device(args.device)
-    print(f"using device: {device} for training.")
+    logger.info(f"using device: {device} for training.")
 
     # create generator and discriminator model
     img_shape = args.img_shape  # [C, H, W]
@@ -91,26 +91,25 @@ def main(args):
             # adversarial ground truths
             valid = torch.ones(size=(b, 1), device=device)
             fake = torch.zeros(size=(b, 1), device=device)
-
             # create noise as generator input
-            noise = torch.randn(size=(b, args.latent_dim), device=device)
-
-            # train generator
-            optimizer_g.zero_grad()
-            gen_imgs = generator(noise)
-            g_loss = adversarial_loss(discriminator(gen_imgs), valid)
-            g_loss.backward()
-            optimizer_g.step()
-            g_loss_accumulator += g_loss.item()
+            noise = torch.randn(size=(b, args.latent_dim, 1, 1), device=device)
 
             # train discriminator
             optimizer_d.zero_grad()
             real_loss = adversarial_loss(discriminator(real_imgs), valid)
+            gen_imgs = generator(noise)
             fake_loss = adversarial_loss(discriminator(gen_imgs.detach()), fake)
-            d_loss = (real_loss + fake_loss) / 2
+            d_loss = real_loss + fake_loss
             d_loss.backward()
             optimizer_d.step()
             d_loss_accumulator += d_loss.item()
+
+            # train generator
+            optimizer_g.zero_grad()
+            g_loss = adversarial_loss(discriminator(gen_imgs), valid)
+            g_loss.backward()
+            optimizer_g.step()
+            g_loss_accumulator += g_loss.item()
 
         g_loss_mean = g_loss_accumulator / (step + 1)
         d_loss_mean = d_loss_accumulator / (step + 1)
