@@ -26,7 +26,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
-    parser.add_argument("--img_shape", type=int, nargs=3, default=[1, 64, 64], help="image shape: C, H, W")
+    parser.add_argument("--img_shape", type=int, nargs=3, default=[1, 32, 32], help="image shape: C, H, W")
 
     return parser
 

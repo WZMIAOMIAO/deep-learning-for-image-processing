@@ -15,34 +15,36 @@ def weights_init(m):
 class Generator(nn.Module):
     def __init__(self, latent_dim: int, img_shape: List[int]) -> None:
         super().__init__()
+        self.first_channels = 256
         self.img_shape = img_shape  # [C, H, W]
 
         self.conv_blocks = nn.Sequential(
-            nn.ConvTranspose2d(latent_dim, 512, kernel_size=4, stride=1, padding=0, bias=False),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
+            # 1x1 -> 4x4
+            *self._create_block(latent_dim, self.first_channels, stride=1),
 
-            # 2X
-            nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
+            # 4x4 -> 8x8
+            *self._create_block(self.first_channels, self.first_channels // 2),
 
-            # 4X
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
+            # 8x8 -> 16x16
+            *self._create_block(self.first_channels // 2, self.first_channels // 4),
 
-            # 8X
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-
-            # 16X
-            nn.ConvTranspose2d(64, self.img_shape[0], kernel_size=4, stride=2, padding=1, bias=False),
+            # 16x16 -> 32x32
+            nn.ConvTranspose2d(self.first_channels // 4, self.img_shape[0],
+                               kernel_size=4, stride=2, padding=1, bias=False),
             nn.Tanh()
         )
 
         self.apply(weights_init)
+
+    @staticmethod
+    def _create_block(in_feat: int, out_feat: int, stride: int = 2):
+        padding = 1 if stride == 2 else 0
+        layers = nn.Sequential(
+            nn.ConvTranspose2d(in_feat, out_feat, kernel_size=4, stride=stride, padding=padding, bias=False),
+            nn.BatchNorm2d(out_feat),
+            nn.ReLU(inplace=True)
+        )
+        return layers
 
     def forward(self, noise: torch.Tensor) -> torch.Tensor:
         x = self.conv_blocks(noise)
@@ -52,17 +54,21 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, img_shape: List[int]):
         super().__init__()
-
+        self.first_channels = 64
         self.img_shape = img_shape  # [C, H, W]
         self.model = nn.Sequential(
-            *self._create_clock(self.img_shape[0], 64, normlize=False),
-            *self._create_clock(64, 128),
-            *self._create_clock(128, 256),
-            *self._create_clock(256, 512)
+            # 32x32 -> 16x16
+            *self._create_clock(self.img_shape[0], self.first_channels, normlize=False),
+
+            # 16x16 -> 8x8
+            *self._create_clock(self.first_channels, self.first_channels * 2),
+
+            # 8x8 -> 4x4
+            *self._create_clock(self.first_channels * 2, self.first_channels * 4)
         )
 
         self.adv_layer = nn.Sequential(
-            nn.Conv2d(512, 1, kernel_size=4, stride=1, padding=0, bias=False),
+            nn.Conv2d(self.first_channels * 4, 1, kernel_size=4, stride=1, padding=0, bias=False),
             nn.Sigmoid()
         )
 

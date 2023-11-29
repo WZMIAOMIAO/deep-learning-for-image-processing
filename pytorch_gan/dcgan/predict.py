@@ -5,7 +5,7 @@ from utils import save_gen_imgs
 
 
 def main():
-    weights_path = "weights/generator_weights_199.pth"
+    weights_path = "weights/generator_weights_24.pth"
     latent_dim = 100
     img_shape = [1, 32, 32]
     generate_img_num = 10
@@ -20,7 +20,7 @@ def main():
 
     with torch.inference_mode():
         # create noise as generator input
-        noise = torch.randn(size=(generate_img_num, latent_dim), device=device)
+        noise = torch.randn(size=(generate_img_num, latent_dim, 1, 1), device=device)
 
         gen_imgs = model(noise)
         save_gen_imgs(gen_imgs, save_num=generate_img_num, save_path="generated_img.jpg")
