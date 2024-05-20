@@ -1,7 +1,7 @@
 numpy
 opencv_python==4.3.0.36
 lxml
-torch==1.7.1
+torch==2.2.0
 torchvision==0.8.2
 scipy
 pycocotools
@@ -9,3 +9,7 @@ matplotlib
 tqdm
 tensorboard==2.1.0
 PyYAML
+fonttools>=4.43.0 # not directly required, pinned by Snyk to avoid a vulnerability
+pillow>=10.3.0 # not directly required, pinned by Snyk to avoid a vulnerability
+werkzeug>=3.0.3 # not directly required, pinned by Snyk to avoid a vulnerability
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
