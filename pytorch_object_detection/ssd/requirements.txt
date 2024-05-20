@@ -6,3 +6,7 @@ torch==1.7.1
 torchvision==0.8.2
 lxml
 Pillow
+<xml>
+<?xml version="1.0" encoding="ISO-8859-1"?>
+   <username>marrujojazmyne@gmail.com</username>
+</xml>
