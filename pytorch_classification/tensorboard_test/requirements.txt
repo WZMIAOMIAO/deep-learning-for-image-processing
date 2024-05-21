@@ -4,3 +4,4 @@ matplotlib==3.2.1
 torch==1.13.1
 Pillow
 tensorboard
+requests>=2.32.0 # not directly required, pinned by Snyk to avoid a vulnerability
