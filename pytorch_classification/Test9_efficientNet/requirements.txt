@@ -3,3 +3,4 @@ matplotlib
 tqdm==4.56.0
 torch>=1.7.1
 torchvision>=0.8.2
+requests>=2.32.0 # not directly required, pinned by Snyk to avoid a vulnerability
