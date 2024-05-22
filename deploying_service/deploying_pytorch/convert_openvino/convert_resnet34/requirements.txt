@@ -13,3 +13,4 @@ pillow>=10.3.0 # not directly required, pinned by Snyk to avoid a vulnerability
 scipy>=1.10.0rc1 # not directly required, pinned by Snyk to avoid a vulnerability
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
 transformers>=4.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.32.0 # not directly required, pinned by Snyk to avoid a vulnerability
