@@ -358,10 +358,10 @@ class FasterRCNN(FasterRCNNBase):
             rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
             score_thresh=rpn_score_thresh)
 
-        #  Multi-scale RoIAlign pooling
+        #  Multi-scale RoIAlign or RoIPooling
         if box_roi_pool is None:
             box_roi_pool = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi pooling
+                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi RoIAlign
                 output_size=[7, 7],
                 sampling_ratio=2)
             # box_roi_pool = MultiScaleRoIPooling(
