@@ -5,11 +5,57 @@ from typing import Tuple, List, Dict, Optional, Union
 import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
-from torchvision.ops import MultiScaleRoIAlign
+from torchvision.ops import MultiScaleRoIAlign, roi_pool
 
 from .roi_head import RoIHeads
 from .transform import GeneralizedRCNNTransform
 from .rpn_function import AnchorsGenerator, RPNHead, RegionProposalNetwork
+
+
+class MultiScaleRoIPooling(nn.Module):
+    def __init__(self, featmap_names, output_size):
+        super(MultiScaleRoIPooling, self).__init__()
+        assert all([type(featmap_name) == type('') for featmap_name in featmap_names]), \
+            'featmap_name must be a str type.'
+        self.featmap_names = featmap_names
+        self.output_size = output_size
+
+    def forward(self, features, rois, image_shape):
+        """
+        Arguments:
+            features (Dict[Tensor]): FPN feature maps
+            rois (List[Tensor[N, 4]]): proposal boxes
+            image_shape (Tuple[H, W]): image shape
+        Returns:
+            Tensor:
+                Pooled features
+        """
+        rois = self._convert_to_roi_format(rois)
+        featmap_idx = [int(featmap_name) for featmap_name in self.featmap_names]
+
+        k0 = 4
+        box_area = (rois[:, 4] - rois[:, 2]) * (rois[:, 3] - rois[:, 1])
+        k = torch.floor(k0 + torch.log2(torch.sqrt(box_area) / 224))
+        k = torch.clamp(k, 2, 5) - 2
+
+        all_level_pooled_feature = torch.zeros([len(rois), features['0'].shape[1], *self.output_size],
+                                               dtype=features['0'].dtype, device=rois.device)
+        for idx in featmap_idx:
+            featmap_in_level = features[str(idx)]
+            mask_in_level = (k == idx)
+            rois_in_level = rois[mask_in_level] / 2 ** (idx + 2)
+            pooled_feature = roi_pool(featmap_in_level, rois_in_level, self.output_size)
+            all_level_pooled_feature[mask_in_level] = pooled_feature
+
+        return all_level_pooled_feature
+
+    @staticmethod
+    def _convert_to_roi_format(rois):
+        rois = [
+            torch.cat([torch.full((roi.shape[0], 1), batch_idx, device=roi.device), roi], dim=1)
+            for batch_idx, roi in enumerate(rois)]
+        rois = torch.cat(rois, dim=0)
+        return rois
 
 
 class FasterRCNNBase(nn.Module):
@@ -61,13 +107,13 @@ class FasterRCNNBase(nn.Module):
 
         if self.training:
             assert targets is not None
-            for target in targets:         # 进一步判断传入的target的boxes参数是否符合规定
+            for target in targets:  # 进一步判断传入的target的boxes参数是否符合规定
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError("Expected target boxes to be a tensor"
                                          "of shape [N, 4], got {:}.".format(
-                                          boxes.shape))
+                            boxes.shape))
                 else:
                     raise ValueError("Expected target boxes to be of type "
                                      "Tensor, got {:}.".format(type(boxes)))
@@ -246,11 +292,11 @@ class FasterRCNN(FasterRCNNBase):
 
     def __init__(self, backbone, num_classes=None,
                  # transform parameter
-                 min_size=800, max_size=1333,      # 预处理resize时限制的最小尺寸与最大尺寸
+                 min_size=800, max_size=1333,  # 预处理resize时限制的最小尺寸与最大尺寸
                  image_mean=None, image_std=None,  # 预处理normalize时使用的均值和方差
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
-                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,    # rpn中在nms处理前保留的proposal数(根据score)
+                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,  # rpn中在nms处理前保留的proposal数(根据score)
                  rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,  # rpn中在nms处理后保留的proposal数
                  rpn_nms_thresh=0.7,  # rpn中进行nms处理时使用的iou阈值
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,  # rpn计算损失时，采集正负样本设置的阈值
@@ -260,7 +306,7 @@ class FasterRCNN(FasterRCNNBase):
                  box_roi_pool=None, box_head=None, box_predictor=None,
                  # 移除低目标概率      fast rcnn中进行nms处理的阈值   对预测结果根据score排序取前100个目标
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
-                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,   # fast rcnn计算误差时，采集正负样本设置的阈值
+                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,  # fast rcnn计算误差时，采集正负样本设置的阈值
                  box_batch_size_per_image=512, box_positive_fraction=0.25,  # fast rcnn计算误差时采样的样本数，以及正样本占所有样本的比例
                  bbox_reg_weights=None):
         if not hasattr(backbone, "out_channels"):
@@ -312,12 +358,16 @@ class FasterRCNN(FasterRCNNBase):
             rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
             score_thresh=rpn_score_thresh)
 
-        #  Multi-scale RoIAlign pooling
+        #  Multi-scale RoIAlign or RoIPooling
         if box_roi_pool is None:
             box_roi_pool = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi pooling
+                featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi RoIAlign
                 output_size=[7, 7],
                 sampling_ratio=2)
+            # box_roi_pool = MultiScaleRoIPooling(
+            #     featmap_names=['0', '1', '2', '3'],  # 在哪些特征层进行roi pooling
+            #     output_size=[7, 7]
+            # )
 
         # fast RCNN中roi pooling后的展平处理两个全连接层部分
         if box_head is None:
