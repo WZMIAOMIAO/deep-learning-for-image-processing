@@ -50,7 +50,7 @@ CUDA_VISIBLE_DEVICES=4,5,6,7 torchrun --nproc_per_node=4 train.py
 ```
 
 ## 训练好的权重下载地址
-若没有训练条件或者只想简单体验下，可使用本人训练好的模型权重（包含optimizer等信息故文件会略大），该权重在WFLW验证集上的NME指标为`3.427`，百度网盘下载地址：[https://pan.baidu.com/s/1froI_3dRe7vEJnecR9p7nw](https://pan.baidu.com/s/1froI_3dRe7vEJnecR9p7nw) 
+若没有训练条件或者只想简单体验下，可使用本人训练好的模型权重（包含optimizer等信息故文件会略大），该权重在WFLW验证集上的NME指标为`0.049`，百度网盘下载地址：[https://pan.baidu.com/s/1froI_3dRe7vEJnecR9p7nw](https://pan.baidu.com/s/1froI_3dRe7vEJnecR9p7nw) 
 提取码：quxv
 
 下载完成后在当前项目下创建一个`weights`文件夹，并将权重放置该文件夹内。
