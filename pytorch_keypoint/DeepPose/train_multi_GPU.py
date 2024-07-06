@@ -32,6 +32,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--warmup_epoch", type=int, default=10, help="number of warmup epoch for training")
     parser.add_argument('--resume', default='', type=str, help='resume from checkpoint')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    parser.add_argument('--test_only', action="store_true", help='Only test the model')
 
     return parser
 
@@ -135,6 +136,17 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         start_epoch = checkpoint['epoch'] + 1
         print("the training process from epoch{}...".format(start_epoch))
+
+    if args.test_only:
+        evaluate(model=model,
+                 epoch=start_epoch,
+                 val_loader=val_loader,
+                 device=device,
+                 tb_writer=tb_writer,
+                 affine_points_torch_func=transforms.affine_points_torch,
+                 num_keypoints=num_keypoints,
+                 img_hw=img_hw)
+        return
 
     for epoch in range(start_epoch, epochs):
         # train
