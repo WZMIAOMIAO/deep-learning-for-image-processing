@@ -19,9 +19,10 @@ class NMEMetric:
             mask (shape [N, K]): valid keypoints mask
         """
 
-        l2_loss = (pred - gt).pow(2).mean(dim=(1, 2))
+        # equal: (pred - gt).pow(2).sum(dim=2).pow(0.5).mean(dim=1)
+        l2_dis = torch.linalg.norm(pred - gt, dim=2).mean(dim=1)
         # ion: inter-ocular distance normalized error
-        ion = (pred[:, self.keypoint_idxs] - gt[:, self.keypoint_idxs]).pow(2).sum(dim=(1, 2)).pow(0.5)
+        ion = torch.linalg.norm(gt[:, self.keypoint_idxs[0]] - gt[:, self.keypoint_idxs[1]], dim=1)
 
         valid_ion_mask = ion > 0
         if mask is None:
@@ -33,7 +34,7 @@ class NMEMetric:
         # avoid divide by zero
         ion[ion <= 0] = 1e-6
 
-        self.nme_accumulator += l2_loss.div(ion).sum().item()
+        self.nme_accumulator += l2_dis.div(ion).sum().item()
         self.counter += num_valid
 
     def evaluate(self):
