@@ -42,11 +42,11 @@ python train.py
 ### 多卡训练
 使用`train_multi_GPU.py`脚本：
 ```
-torchrun --nproc_per_node=8 train.py
+torchrun --nproc_per_node=8 train_multi_GPU.py
 ```
 若要单独指定使用某些卡可在启动指令前加入`CUDA_VISIBLE_DEVICES`参数，例如：
 ```
-CUDA_VISIBLE_DEVICES=4,5,6,7 torchrun --nproc_per_node=4 train.py
+CUDA_VISIBLE_DEVICES=4,5,6,7 torchrun --nproc_per_node=4 train_multi_GPU.py
 ```
 
 ## 训练好的权重下载地址

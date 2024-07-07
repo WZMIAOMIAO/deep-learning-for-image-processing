@@ -131,8 +131,6 @@
   * U2Net (已完成)
     * [U2Net网络讲解](https://www.bilibili.com/video/BV1yB4y1z7mj)
     * [U2Net源码解析(Pytorch版)](https://www.bilibili.com/video/BV1Kt4y137iS)
-  
-  * SegFormer(规划中)
 
 * 实例分割
   * Mask R-CNN（已完成）
@@ -140,6 +138,10 @@
     * [Mask R-CNN源码解析(Pytorch版)](https://www.bilibili.com/video/BV1hY411E7wD)
 
 * 关键点检测
+  * DeepPose（已完成）
+    * [DeepPose网络讲解](https://www.bilibili.com/video/BV1bm421g7aJ)
+    * [DeepPose源码解析(Pytorch版)](https://www.bilibili.com/video/BV1bm421g7aJ)
+
   * HRNet（已完成）
     * [HRNet网络讲解](https://www.bilibili.com/video/BV1bB4y1y7qP)
     * [HRNet源码解析(Pytorch版)](https://www.bilibili.com/video/BV1ar4y157JM)
