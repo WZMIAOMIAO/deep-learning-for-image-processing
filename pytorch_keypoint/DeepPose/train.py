@@ -146,7 +146,8 @@ def main(args):
                         optimizer=optimizer,
                         lr_scheduler=lr_scheduler,
                         tb_writer=tb_writer,
-                        num_keypoints=num_keypoints)
+                        num_keypoints=num_keypoints,
+                        img_hw=img_hw)
 
         # eval
         if epoch % eval_freq == 0 or epoch == args.epochs - 1:
