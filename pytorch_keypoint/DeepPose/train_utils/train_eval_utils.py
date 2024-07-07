@@ -19,9 +19,11 @@ def train_one_epoch(model: torch.nn.Module,
                     optimizer: torch.optim.Optimizer,
                     lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
                     tb_writer: SummaryWriter,
-                    num_keypoints: int) -> None:
+                    num_keypoints: int,
+                    img_hw: List[int]) -> None:
     # define loss function
     loss_func = WingLoss()
+    wh_tensor = torch.as_tensor(img_hw[::-1], dtype=torch.float32, device=device).reshape([1, 1, 2])
 
     model.train()
     train_bar = train_loader
@@ -36,7 +38,7 @@ def train_one_epoch(model: torch.nn.Module,
         # use mixed precision to speed up training
         with torch.autocast(device_type=device.type):
             pred: torch.Tensor = model(imgs)
-            loss: torch.Tensor = loss_func(pred.reshape((-1, num_keypoints, 2)), labels)
+            loss: torch.Tensor = loss_func(pred.reshape((-1, num_keypoints, 2)), labels, wh_tensor)
 
         loss_value = reduce_value(loss).item()
         if not math.isfinite(loss_value):
@@ -66,6 +68,7 @@ def evaluate(model: torch.nn.Module,
              img_hw: List[int]) -> None:
     model.eval()
     metric = NMEMetric(device=device)
+    wh_tensor = torch.as_tensor(img_hw[::-1], dtype=torch.float32, device=device).reshape([1, 1, 2])
     eval_bar = val_loader
     if is_main_process():
         eval_bar = tqdm(val_loader, file=sys.stdout, desc="evaluation")
@@ -77,7 +80,6 @@ def evaluate(model: torch.nn.Module,
 
         pred = model(imgs)
         pred = pred.reshape((-1, num_keypoints, 2))  # [N, K, 2]
-        wh_tensor = torch.as_tensor(img_hw[::-1], dtype=pred.dtype, device=pred.device).reshape([1, 1, 2])
         pred = pred * wh_tensor  # rel coord to abs coord
         pred = affine_points_torch_func(pred, m_invs)
 

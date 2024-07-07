@@ -1,4 +1,5 @@
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -68,16 +69,21 @@ class WingLoss(nn.Module):
         super().__init__()
         self.w = w
         self.epsilon = epsilon
-        self.C = w * math.log(1.0 + w / epsilon)
+        self.C = w * (1.0 - math.log(1.0 + w / epsilon))
 
-    def forward(self, pred: torch.Tensor, label: torch.Tensor, mask: torch = None) -> torch.Tensor:
+    def forward(self,
+                pred: torch.Tensor,
+                label: torch.Tensor,
+                wh_tensor: torch.Tensor,
+                mask: torch = None) -> torch.Tensor:
         """
         Args:
             pred [N, K, 2]
+            wh_tensor [1, 1, 2]
             label [N, K, 2]
             mask [N, K]
         """
-        delta = (pred - label).abs()
+        delta = (pred - label).abs() * wh_tensor  # rel to abs
         losses = torch.where(condition=self.w > delta,
                              input=self.w * torch.log(1.0 + delta / self.epsilon),
                              other=delta - self.C)
@@ -98,14 +104,19 @@ class SoftWingLoss(nn.Module):
         self.epsilon = epsilon
         self.B = omega1 - omega2 * math.log(1.0 + omega1 / epsilon)
 
-    def forward(self, pred: torch.Tensor, label: torch.Tensor, mask: torch = None) -> torch.Tensor:
+    def forward(self,
+                pred: torch.Tensor,
+                label: torch.Tensor,
+                wh_tensor: torch.Tensor,
+                mask: torch = None) -> torch.Tensor:
         """
         Args:
             pred [N, K, 2]
             label [N, K, 2]
+            wh_tensor [1, 1, 2]
             mask [N, K]
         """
-        delta = (pred - label).abs()
+        delta = (pred - label).abs() * wh_tensor  # rel to abs
         losses = torch.where(condition=delta < self.omega1,
                              input=delta,
                              other=self.omega2 * torch.log(1.0 + delta / self.epsilon) + self.B)
