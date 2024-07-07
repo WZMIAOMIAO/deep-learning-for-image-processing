@@ -29,7 +29,7 @@ def main():
     target = {"box": [0, 0, w, h]}
     img_tensor, target = transform(img, target=target)
     # expand batch dimension
-    img_tensor = img_tensor.unsqueeze_(0)
+    img_tensor = img_tensor.unsqueeze(0)
 
     # create model
     model = create_deep_pose_model(num_keypoints=num_keypoints)

@@ -210,7 +210,7 @@ class AffineTransform(object):
         # from utils import draw_keypoints
         # keypoint[:, 0] /= self.fixed_size[1]
         # keypoint[:, 1] /= self.fixed_size[0]
-        # draw_keypoints(warp_img, keypoint, "affine.jpg", 2)
+        # draw_keypoints(warp_img, keypoint, "affine.jpg", 2, is_rel=True)
 
         target["m"] = m
         target["m_inv"] = m_inv
