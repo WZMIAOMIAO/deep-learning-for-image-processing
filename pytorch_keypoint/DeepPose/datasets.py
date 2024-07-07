@@ -118,4 +118,4 @@ if __name__ == '__main__':
     h, w, c = img.shape
     keypoint[:, 0] /= w
     keypoint[:, 1] /= h
-    draw_keypoints(img, keypoint, "test_plot.jpg")
+    draw_keypoints(img, keypoint, "test_plot.jpg", is_rel=True)

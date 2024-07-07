@@ -10,7 +10,7 @@
 - torchvision0.15.2+cu118（建议大于等于此版本）
 
 ## 训练数据集准备
-该项目采用的训练数据是WFLWD数据集（人脸98点检测），官方链接：[https://wywu.github.io/projects/LAB/WFLW.html](https://wywu.github.io/projects/LAB/WFLW.html)
+该项目采用的训练数据是WFLW数据集（人脸98点检测），官方链接：[https://wywu.github.io/projects/LAB/WFLW.html](https://wywu.github.io/projects/LAB/WFLW.html)
 
 在官方网页下载数据集后解压并组织成如下目录形式：
 ```
