@@ -236,11 +236,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         # 放大裁剪目标的宽高
                         b[2:] = b[2:] * 1.3 + 30  # pad
                         # 将坐标格式从 x,y,w,h -> xmin,ymin,xmax,ymax
-                        b = xywh2xyxy(b.reshape(-1, 4)).revel().astype(np.int)
+                        b = xywh2xyxy(b.reshape(-1, 4)).ravel().astype(np.int)
 
                         # 裁剪bbox坐标到图片内
-                        b[[0, 2]] = np.clip[b[[0, 2]], 0, w]
-                        b[[1, 3]] = np.clip[b[[1, 3]], 0, h]
+                        b[[0, 2]] = np.clip(b[[0, 2]], 0, w)
+                        b[[1, 3]] = np.clip(b[[1, 3]], 0, h)
                         assert cv2.imwrite(f, img[b[1]:b[3], b[0]:b[2]]), "Failure extracting classifier boxes"
             else:
                 ne += 1  # file empty

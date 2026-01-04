@@ -20,14 +20,14 @@ def main():
     json_path = "./data/pascal_voc_classes.json"  # json标签文件
     img_path = "test.jpg"
     assert os.path.exists(cfg), "cfg file {} dose not exist.".format(cfg)
-    assert os.path.exists(weights), "weights file {} dose not exist.".format(weights)
+    assert os.path.exists(weights_path), "weights file {} dose not exist.".format(weights_path)
     assert os.path.exists(json_path), "json file {} dose not exist.".format(json_path)
     assert os.path.exists(img_path), "image file {} dose not exist.".format(img_path)
 
     with open(json_path, 'r') as f:
         class_dict = json.load(f)
 
-    category_index = {str(v): str(k) for k, v in class_dict.items()}
+    category_index = {str(k): str(v) for k, v in class_dict.items()}
 
     input_size = (img_size, img_size)
 
